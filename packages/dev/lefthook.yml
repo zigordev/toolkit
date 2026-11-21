@@ -1,0 +1,30 @@
+pre-commit:
+  commands:
+    biome:
+      priority: 1
+      glob: "*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,json,jsonc,css,md,yml,yaml}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+    markdownlint:
+      priority: 2
+      glob: "*.md"
+      run: pnpm exec markdownlint-cli2 --no-globs {staged_files}
+    gitleaks:
+      priority: 3
+      run: gitleaks git --pre-commit --staged --no-banner --redact
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
+
+pre-push:
+  piped: true
+  commands:
+    not-main:
+      priority: 1
+      use_stdin: true
+      run: "! grep -q ' refs/heads/main '"
+    check:
+      priority: 2
+      run: pnpm run check:quick

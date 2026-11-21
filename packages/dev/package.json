@@ -1,0 +1,38 @@
+{
+  "name": "@zigordev/dev",
+  "version": "0.0.0",
+  "description": "The developer setup every zigordev repo shares: the Biome config, the TypeScript base, the git hooks and the commit rules",
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "biome.json",
+    "commitlint.js",
+    "lefthook.yml",
+    "tsconfig"
+  ],
+  "exports": {
+    "./biome": "./biome.json",
+    "./commitlint": "./commitlint.js",
+    "./lefthook.yml": "./lefthook.yml",
+    "./tsconfig/base.json": "./tsconfig/base.json"
+  },
+  "dependencies": {
+    "@commitlint/config-conventional": "catalog:"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": "^2.6.0",
+    "@commitlint/cli": "^21.2.0",
+    "lefthook": "^2.2.0",
+    "markdownlint-cli2": "^0.24.0"
+  },
+  "devDependencies": {
+    "@commitlint/lint": "catalog:",
+    "@commitlint/load": "catalog:",
+    "vitest": "catalog:"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/dev"
+  }
+}
