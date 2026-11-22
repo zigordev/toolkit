@@ -48,7 +48,7 @@ In the repo's settings, `check` is the one required check on `main`. A new repo 
 
 ## Dependency updates
 
-`zigordev sync` writes `renovate.json`, two lines that point at the preset in this repo. Renovate then proposes updates in that repo the same way as everywhere else. [Dependency updates](handbook/dependency-updates.md) says what merges by itself, and when.
+`zigordev sync` writes `renovate.json`, which points at the preset in this repo and switches off the badges that the Renovate app adds. Renovate then proposes updates in that repo the same way as everywhere else. [Dependency updates](handbook/dependency-updates.md) says what merges by itself, and when.
 
 The Renovate app has to have access to the repo. It is installed on the account, with access to every repo.
 
