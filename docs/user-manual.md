@@ -10,7 +10,7 @@
 | Dependency updates           | `renovate/default.json`           | Yes                                                                                                            |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                                                                            |
 | The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are in the repo, and not on npm yet. The others arrive from phase 4 on |
-| A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.7                                                                   |
+| A product to start from      | `template/`                       | In progress. Its API exists since 2026-11-22, and its web app, images and compose files follow in step 2.7     |
 
 ## The developer setup
 

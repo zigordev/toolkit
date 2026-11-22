@@ -4,5 +4,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["*.ts", "packages/*/*.ts"]
+  "include": ["*.ts", "packages/*/*.ts", "template/apps/*/*.ts"]
 }

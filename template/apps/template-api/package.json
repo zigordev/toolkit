@@ -1,0 +1,28 @@
+{
+  "name": "template-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The API of the product template: a Fastify service that answers the health route and says hello",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "start": "node --import @zigordev/otel/register src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@zigordev/config": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "fastify": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
