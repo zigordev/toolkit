@@ -26,6 +26,8 @@ pnpm check
 
 The first copies the shared files into the repo. The second checks the repo against every rule a machine can check. The third runs the whole check, as the pipeline does.
 
+The pull request template is one of the shared files. A pull request opened on GitHub's site therefore starts with the same six sections in every repo: What, Why, How it was tested, Observability, Docs and Follow-ups.
+
 Until the package is on npm, only this repo can use it, through its own workspace.
 
 ## The session rules

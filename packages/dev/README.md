@@ -44,7 +44,7 @@ The `comments` rule allows the few lines a tool needs to work: the first line of
 
 The `identity` rule accepts two more names: Renovate as the author of its own updates, and GitHub as the committer of a merge it made.
 
-`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc`, `renovate.json` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
+`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc`, `renovate.json`, the pull request template under `.github/` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
 
 The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
@@ -98,6 +98,25 @@ The hook is set to block when it fails. A session cannot commit or push while th
 lefthook skips the push hooks when a push carries no changed file. Such a push to `main` is still refused by GitHub, where the rule on `main` cannot be bypassed.
 
 The same files serve the laptop and the pipeline, and nothing here runs in production.
+
+### The pull request template
+
+`shared/.github/pull_request_template.md` is the description that a pull request starts with when someone opens it on GitHub's site. It has six sections, and one line under each that says what belongs there:
+
+| Section           | What the author writes                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| What              | What the pull request changes                                                                       |
+| Why               | Why the change is needed, and why it is done this way                                               |
+| How it was tested | What was run and what was seen, and what was not tested                                             |
+| Observability     | How the change shows when it runs: its logs, metrics, traces and alerts. Or that nothing of it runs |
+| Docs              | Which docs changed with the behaviour, or why none had to                                           |
+| Follow-ups        | What is left for later                                                                              |
+
+A squash merge turns the title and the description into the commit on `main`. So the author replaces each line with their own words, and every commit on `main` then reads the same way. The lines are plain text and not hidden notes: a hidden note is a comment, and it would land in the commit too.
+
+The template fills in the form on GitHub's site, and nothing else. A session passes its own description to `gh`, with the same six sections, as the `finish-work` skill says. Renovate writes its own short description. A test holds the template and the skill to the same sections, in the same order.
+
+markdownlint leaves the file out. A description starts with a second-level heading, and markdownlint expects a file to start with a top-level one.
 
 ### The configs
 
@@ -163,6 +182,7 @@ The first line runs every rule. The second runs two of them. The third reads one
 | Change a line in `lefthook.yml`, then run `pnpm check`                  | The check fails and asks for `zigordev sync`, which puts the file back                 |
 | Push a branch                                                           | `pnpm check:quick` runs first, and the push waits for it                               |
 | Push a commit to `main`                                                 | The push is refused before it leaves the laptop                                        |
+| Push a branch and open a pull request for it on GitHub's site           | The description starts with the six sections, from What to Follow-ups                  |
 | In a session, commit while the repo is set up to commit as someone else | The commit is refused before git runs, and the session is told how to set the identity |
 | In a session, write a file that holds a comment                         | The file is written, and the session is told to remove the comment                     |
 | In a session, read a migration, then run `/context`                     | `data.md` is among the loaded rules. Before that, it is not                            |
