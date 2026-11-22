@@ -11,5 +11,6 @@ export type { Logger, LoggerOptions, LogLevel } from './logger.ts';
 export { createLogger } from './logger.ts';
 export { createCounterAtZero } from './metrics.ts';
 export { logProcessCrashes, logStarted, logStopping } from './process-events.ts';
+export { nameRoute } from './route.ts';
 export type { Telemetry, TelemetryOptions } from './telemetry.ts';
 export { isProbeRequest, shutdownTelemetry, startTelemetry } from './telemetry.ts';

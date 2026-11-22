@@ -14,16 +14,17 @@ Telemetry is what a running app reports about itself. It comes in three kinds:
 
 OpenTelemetry is the open standard for traces and metrics, and the library that records them. pino is the logger that writes the JSON lines. This package sets both up one way, so a service does not.
 
-| Export                                             | What it does                                                                       |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `@zigordev/otel/register`                          | Starts telemetry when Node.js loads it with `--import`, before the app's own code  |
-| `startTelemetry(options?)`                         | The same start, for an app that adds an instrumentation of its own                 |
-| `shutdownTelemetry()`                              | Sends what the service still holds, then stops. A service calls it before it exits |
-| `createLogger(options)`                            | The logger: one JSON line per event, on standard output                            |
-| `logStarted`, `logStopping`, `logProcessCrashes`   | The standard events that every service writes                                      |
-| `checkHealth(options)`                             | Works out the answer of `GET /health` from the parts the service depends on        |
-| `createCounterAtZero(meter, name, options, known)` | A counter whose known series all start at 0                                        |
-| `isProbeRequest(url)`                              | Says whether a path is a probe, which leaves no trace                              |
+| Export                                             | What it does                                                                                 |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `@zigordev/otel/register`                          | Starts telemetry when Node.js loads it with `--import`, before the app's own code            |
+| `startTelemetry(options?)`                         | The same start, for an app that adds an instrumentation of its own                           |
+| `shutdownTelemetry()`                              | Sends what the service still holds, then stops. A service calls it before it exits           |
+| `createLogger(options)`                            | The logger: one JSON line per event, on standard output                                      |
+| `logStarted`, `logStopping`, `logProcessCrashes`   | The standard events that every service writes                                                |
+| `checkHealth(options)`                             | Works out the answer of `GET /health` from the parts the service depends on                  |
+| `createCounterAtZero(meter, name, options, known)` | A counter whose known series all start at 0                                                  |
+| `nameRoute(route)`                                 | Tells telemetry which route the request in progress matched, such as `/api/v1/pools/:poolId` |
+| `isProbeRequest(url)`                              | Says whether a path is a probe, which leaves no trace                                        |
 
 An instrumentation is code that records telemetry for a library, such as the database driver, without the app writing any. A probe is a request that only asks whether the app is alive.
 
@@ -57,6 +58,8 @@ From then on a service records, by itself:
 | Each request it makes, with `fetch` or `node:http` | A span, and the metric `http.client.request.duration`            |
 | Each PostgreSQL query                              | A span, and the numbers of the connection pool                   |
 | The Node.js runtime                                | Metrics of the event loop, the memory and the garbage collection |
+
+A span and a duration are worth little under the raw path, because every id makes a path of its own. The app's web framework knows the pattern that a request matched, and passes it on with `nameRoute`. The span is then named `GET /api/v1/pools/:poolId`, and the duration metric carries the pattern as `http.route`.
 
 It sends them over OTLP, the protocol of OpenTelemetry, to the telemetry agent: spans every 5 seconds and metrics every 60. Logs never travel that way. The agent reads them from the container's output.
 
@@ -238,6 +241,21 @@ actions.add(1, { action: 'join' });
 
 An attribute holds a value from a short, fixed list: an outcome or a route pattern, never an id, an address or a raw path.
 
+A web framework names the route once it has matched the request. In Fastify that is one hook:
+
+```ts
+import { nameRoute } from '@zigordev/otel';
+
+app.addHook('onRequest', async (request) => {
+  const route = request.routeOptions.url;
+  if (route !== undefined) {
+    nameRoute(route);
+  }
+});
+```
+
+A request that matches no route gets no name. Its raw path would be a new value each time, and a metric must not carry one.
+
 An app that needs one more instrumentation writes its own start file, and loads that file with `--import` in place of the register entry:
 
 ```ts
@@ -270,6 +288,8 @@ When a stop takes about ten seconds, the agent cannot be reached either, and the
 When requests leave no span at all, the service started without `--import`, so the instrumentations came too late.
 
 When a query is missing from a trace, it ran outside a request. Background work starts no trace unless it starts a span of its own.
+
+When every request of a service shows as plain `GET` or `POST`, nothing names the route. Call `nameRoute` from the framework, as shown above.
 
 When a log line has no `traceId`, it was written outside a request, or inside a probe.
 
