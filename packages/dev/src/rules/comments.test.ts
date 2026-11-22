@@ -58,6 +58,50 @@ describe('the comments rule in TypeScript and JavaScript', () => {
     ]);
   });
 
+  it('reads a regular expression as one piece', () => {
+    expect(
+      run('a.ts', [
+        "const branch = ref.replace(/^refs\\/heads\\//, '');",
+        'const ours = /(^|\\/)zigordev\\//i.test(named);',
+        'const f = () => /\\/\\//.test(x);',
+        'function g(path) { return /\\/$/.test(path); }',
+        'const joined = prefix + /\\/$/.source;',
+        `const t = \`${hole("s.replace(/\\//g, '-')")}\`;`,
+      ])
+    ).toEqual([]);
+  });
+
+  it('still reports a comment after a regular expression or a division', () => {
+    expect(
+      run('a.ts', [
+        "const quote = /it's/; // one",
+        'const slash = /[/\\]]+/g; // two',
+        'const half = (a + b) / 2 / 3; // three',
+        'const next = i++ / 2; // four',
+        'call(/ never closes',
+        '); // five',
+        'const last = total /',
+        '  count; // six',
+        'more(/ ends in a backslash \\',
+        '); // seven',
+      ])
+    ).toEqual([
+      '1 a comment: "one"',
+      '2 a comment: "two"',
+      '3 a comment: "three"',
+      '4 a comment: "four"',
+      '6 a comment: "five"',
+      '8 a comment: "six"',
+      '10 a comment: "seven"',
+    ]);
+  });
+
+  it('reads a regular expression at the very start of a file, and one that never ends', () => {
+    expect(run('a.ts', ['/^a\\//.test(x); // start'])).toEqual(['1 a comment: "start"']);
+    box.remove();
+    expect(run('b.ts', ['call(/ never ends'])).toEqual([]);
+  });
+
   it('keeps counting lines through templates and broken strings', () => {
     expect(
       run('a.mjs', [

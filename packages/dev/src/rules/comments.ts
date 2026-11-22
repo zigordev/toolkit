@@ -13,6 +13,7 @@ interface Marks {
   readonly hashes: boolean;
   readonly dashes: boolean;
   readonly templates: boolean;
+  readonly regexes: boolean;
 }
 
 type Family =
@@ -32,9 +33,10 @@ const none: Marks = {
   hashes: false,
   dashes: false,
   templates: false,
+  regexes: false,
 };
 const marksOf: Partial<Record<Family, Marks>> = {
-  script: { ...none, slashes: true, blocks: true, templates: true },
+  script: { ...none, slashes: true, blocks: true, templates: true, regexes: true },
   style: { ...none, blocks: true },
   hash: { ...none, hashes: true },
   sql: { ...none, dashes: true, blocks: true },
@@ -92,6 +94,39 @@ const directives: Record<Family, readonly string[]> = {
 const pinnedAction = /uses:\s*["']?[\w./-]+@[0-9a-f]{40}["']?\s+#\s*v?\d+\.\d+\.\d+\S*\s*$/;
 const fence = /^ {0,3}(```|~~~)/;
 const codeSpan = /`[^`]*`/g;
+const beforeRegex = new Set([
+  '(',
+  ',',
+  '=',
+  ':',
+  '[',
+  '!',
+  '&',
+  '|',
+  '?',
+  '{',
+  ';',
+  '*',
+  '%',
+  '~',
+  '^',
+]);
+const wordsBeforeRegex = new Set([
+  'return',
+  'typeof',
+  'instanceof',
+  'in',
+  'of',
+  'new',
+  'delete',
+  'void',
+  'throw',
+  'case',
+  'do',
+  'else',
+  'yield',
+  'await',
+]);
 
 function familyOf(path: string): Family | undefined {
   const name = basename(path).toLowerCase();
@@ -129,6 +164,56 @@ function skipString(text: string, start: number): number {
     index += 1;
   }
   return index;
+}
+
+function startsRegex(text: string, index: number): boolean {
+  let at = index - 1;
+  while (at >= 0 && isSpace(text[at])) {
+    at -= 1;
+  }
+  const char = text[at];
+  if (char === undefined) {
+    return true;
+  }
+  if (char === '>') {
+    return text[at - 1] === '=';
+  }
+  if (char === '+' || char === '-') {
+    return text[at - 1] !== char;
+  }
+  if (beforeRegex.has(char)) {
+    return true;
+  }
+  const word = /[\w$]+$/.exec(text.slice(Math.max(0, at - 12), at + 1))?.[0];
+  return word !== undefined && wordsBeforeRegex.has(word);
+}
+
+function skipRegex(text: string, start: number): number | undefined {
+  let index = start + 1;
+  let inClass = false;
+  while (index < text.length) {
+    const char = text[index];
+    if (char === '\n' || (char === '\\' && text[index + 1] === '\n')) {
+      return undefined;
+    }
+    if (char === '\\') {
+      index += 2;
+      continue;
+    }
+    if (char === '[') {
+      inClass = true;
+    } else if (char === ']') {
+      inClass = false;
+    } else if (char === '/' && !inClass) {
+      index += 1;
+      while (/[a-z]/i.test(text[index] ?? '')) {
+        index += 1;
+      }
+      return index;
+    }
+    index += 1;
+  }
+  return undefined;
 }
 
 function scanCode(text: string, marks: Marks): Comment[] {
@@ -186,6 +271,13 @@ function scanCode(text: string, marks: Marks): Comment[] {
       comments.push({ line, text: text.slice(index + (hash ? 1 : 2), end).trim() });
       index = end;
       continue;
+    }
+    if (marks.regexes && char === '/' && startsRegex(text, index)) {
+      const end = skipRegex(text, index);
+      if (end !== undefined) {
+        index = end;
+        continue;
+      }
     }
     if (char === '"' || char === "'") {
       index = skipString(text, index);
