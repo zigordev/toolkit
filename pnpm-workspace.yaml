@@ -8,11 +8,14 @@ catalog:
   "@commitlint/lint": 21.2.4
   "@commitlint/load": 21.2.4
   "@opentelemetry/api": 1.10.0
-  "@opentelemetry/auto-instrumentations-node": 0.83.1
   "@opentelemetry/context-async-hooks": 3.1.1
   "@opentelemetry/exporter-trace-otlp-http": 0.301.2
   "@opentelemetry/exporter-trace-otlp-proto": 0.301.2
   "@opentelemetry/instrumentation": 0.301.2
+  "@opentelemetry/instrumentation-http": 0.301.2
+  "@opentelemetry/instrumentation-pg": 0.78.0
+  "@opentelemetry/instrumentation-runtime-node": 0.38.0
+  "@opentelemetry/instrumentation-undici": 0.35.1
   "@opentelemetry/sdk-metrics": 3.1.1
   "@opentelemetry/sdk-node": 0.301.2
   "@opentelemetry/sdk-trace": 3.1.1

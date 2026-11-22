@@ -1,4 +1,4 @@
-import { ROOT_CONTEXT, SpanKind, TraceFlags, trace } from '@opentelemetry/api';
+import { diag, ROOT_CONTEXT, SpanKind, TraceFlags, trace } from '@opentelemetry/api';
 import { BatchSpanProcessor, SamplingDecision } from '@opentelemetry/sdk-trace';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { privacySpanProcessor } from './privacy.ts';
@@ -7,13 +7,29 @@ const sdk = vi.hoisted(() => ({
   startNodeSdk: vi.fn(),
   shutdown: vi.fn(async () => undefined),
   installLoaderHooks: vi.fn(),
-  autoInstrumentations: vi.fn((config: unknown) => ({ auto: config })),
+  instrumentation: (name: string) =>
+    class {
+      readonly name = name;
+      readonly config: unknown;
+      constructor(config?: unknown) {
+        this.config = config;
+      }
+    },
   exporters: [] as string[],
 }));
 
 vi.mock('@opentelemetry/sdk-node', () => ({ startNodeSdk: sdk.startNodeSdk }));
-vi.mock('@opentelemetry/auto-instrumentations-node', () => ({
-  getNodeAutoInstrumentations: sdk.autoInstrumentations,
+vi.mock('@opentelemetry/instrumentation-http', () => ({
+  HttpInstrumentation: sdk.instrumentation('http'),
+}));
+vi.mock('@opentelemetry/instrumentation-undici', () => ({
+  UndiciInstrumentation: sdk.instrumentation('undici'),
+}));
+vi.mock('@opentelemetry/instrumentation-pg', () => ({
+  PgInstrumentation: sdk.instrumentation('pg'),
+}));
+vi.mock('@opentelemetry/instrumentation-runtime-node', () => ({
+  RuntimeNodeInstrumentation: sdk.instrumentation('runtime-node'),
 }));
 vi.mock('@opentelemetry/exporter-trace-otlp-http', () => ({
   OTLPTraceExporter: class {
@@ -40,7 +56,7 @@ type StartOptions = {
   resourceAttributes: Record<string, string>;
   spanProcessors: unknown[];
   logRecordProcessors: unknown[];
-  instrumentations: unknown[];
+  instrumentations: { name: string; config?: Record<string, unknown> }[];
 };
 
 function lastStartOptions(): StartOptions {
@@ -125,41 +141,48 @@ describe('startTelemetry', () => {
     expect(lastStartOptions().logLevel).toBe('warn');
   });
 
-  it('turns off fs and pino instrumentation and skips probe requests', () => {
+  it('records requests in and out, database queries and the runtime, and nothing else', () => {
     startTelemetry();
 
-    const config = sdk.autoInstrumentations.mock.lastCall?.[0] as Record<
-      string,
-      Record<string, unknown>
-    >;
-    expect(config['@opentelemetry/instrumentation-fs']).toEqual({ enabled: false });
-    expect(config['@opentelemetry/instrumentation-pino']).toEqual({ enabled: false });
-    const ignore = config['@opentelemetry/instrumentation-http']
-      ?.ignoreIncomingRequestHook as (request: { url?: string }) => boolean;
+    expect(lastStartOptions().instrumentations.map((entry) => entry.name)).toEqual([
+      'http',
+      'undici',
+      'pg',
+      'runtime-node',
+    ]);
+  });
+
+  it('skips probe requests', () => {
+    startTelemetry();
+
+    const [http] = lastStartOptions().instrumentations;
+    const ignore = http?.config?.ignoreIncomingRequestHook as (request: {
+      url?: string;
+    }) => boolean;
     expect(ignore({ url: '/health' })).toBe(true);
     expect(ignore({ url: '/api/v1/pools' })).toBe(false);
   });
 
-  it('keeps background database and socket calls out of traces', () => {
+  it('keeps background calls and queries out of traces', () => {
     startTelemetry();
 
-    const config = sdk.autoInstrumentations.mock.lastCall?.[0] as Record<
-      string,
-      Record<string, unknown>
-    >;
-    expect(config['@opentelemetry/instrumentation-net']).toEqual({ enabled: false });
-    expect(config['@opentelemetry/instrumentation-dns']).toEqual({ enabled: false });
-    expect(config['@opentelemetry/instrumentation-pg']).toEqual({ requireParentSpan: true });
+    const [http, undici, pg] = lastStartOptions().instrumentations;
+    expect(http?.config).toMatchObject({ requireParentforOutgoingSpans: true });
+    expect(undici?.config).toEqual({ requireParentforSpans: true });
+    expect(pg?.config).toEqual({ requireParentSpan: true });
   });
 
-  it('adds the instrumentations it is given after the automatic ones', () => {
+  it('adds the instrumentations it is given after its own', () => {
     const extra = { name: 'extra' };
 
     startTelemetry({ instrumentations: [extra as never] });
 
-    expect(lastStartOptions().instrumentations).toEqual([
-      expect.objectContaining({ auto: expect.anything() }),
-      extra,
+    expect(lastStartOptions().instrumentations.map((entry) => entry.name)).toEqual([
+      'http',
+      'undici',
+      'pg',
+      'runtime-node',
+      'extra',
     ]);
   });
 
@@ -179,6 +202,20 @@ describe('startTelemetry', () => {
 
     expect(sdk.shutdown).toHaveBeenCalledTimes(1);
     expect(sdk.startNodeSdk).toHaveBeenCalledTimes(2);
+  });
+
+  it('ends the stop normally when the last telemetry cannot be sent', async () => {
+    const warn = vi.spyOn(diag, 'warn').mockImplementation(() => undefined);
+    sdk.shutdown.mockRejectedValueOnce(new Error('connect ECONNREFUSED'));
+    startTelemetry();
+
+    await expect(shutdownTelemetry()).resolves.toBeUndefined();
+
+    expect(warn).toHaveBeenCalledWith(
+      'The last telemetry could not be sent before the stop.',
+      expect.objectContaining({ message: 'connect ECONNREFUSED' })
+    );
+    warn.mockRestore();
   });
 
   it('does nothing on shutdown when telemetry never started', async () => {

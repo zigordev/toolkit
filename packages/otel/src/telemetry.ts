@@ -1,8 +1,11 @@
 import type { IncomingMessage } from 'node:http';
-import { type Attributes, SpanKind } from '@opentelemetry/api';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
+import { type Attributes, diag, SpanKind } from '@opentelemetry/api';
 import { OTLPTraceExporter as JsonTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as ProtobufTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { startNodeSdk } from '@opentelemetry/sdk-node';
 import {
   BatchSpanProcessor,
@@ -76,23 +79,22 @@ export function startTelemetry(options: TelemetryOptions = {}): Telemetry {
     spanProcessors: [privacySpanProcessor, new BatchSpanProcessor({ exporter: traceExporter() })],
     logRecordProcessors: [],
     instrumentations: [
-      getNodeAutoInstrumentations({
-        '@opentelemetry/instrumentation-fs': { enabled: false },
-        '@opentelemetry/instrumentation-pino': { enabled: false },
-        '@opentelemetry/instrumentation-net': { enabled: false },
-        '@opentelemetry/instrumentation-dns': { enabled: false },
-        '@opentelemetry/instrumentation-pg': { requireParentSpan: true },
-        '@opentelemetry/instrumentation-http': {
-          ignoreIncomingRequestHook: (request: IncomingMessage) => isProbeRequest(request.url),
-        },
+      new HttpInstrumentation({
+        ignoreIncomingRequestHook: (request: IncomingMessage) => isProbeRequest(request.url),
+        requireParentforOutgoingSpans: true,
       }),
+      new UndiciInstrumentation({ requireParentforSpans: true }),
+      new PgInstrumentation({ requireParentSpan: true }),
+      new RuntimeNodeInstrumentation(),
       ...(options.instrumentations ?? []),
     ],
   });
   const telemetry: Telemetry = {
     shutdown: async () => {
       delete holder[handleKey];
-      await sdk.shutdown();
+      await sdk.shutdown().catch((error: unknown) => {
+        diag.warn('The last telemetry could not be sent before the stop.', error);
+      });
     },
   };
   holder[handleKey] = telemetry;
