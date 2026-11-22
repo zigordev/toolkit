@@ -7,6 +7,7 @@
 | The developer setup          | `@zigordev/dev`                   | In this repo. On npm from step 2.5                      |
 | The session rules            | `packages/dev/shared/.claude`     | Yes                                                     |
 | The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2 |
+| Dependency updates           | `renovate/default.json`           | Yes                                                     |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                     |
 | The shared packages for apps | `packages/`                       | Not yet. They arrive from phase 2 on                    |
 | A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.6            |
@@ -42,6 +43,12 @@ A repo's own workflow is a short caller. It has two jobs: one calls `check.yml`,
 Another repo's caller differs in one line. Where this repo names itself, the other repo names `zigordev/toolkit` and one commit of it, pinned like any action. That line gets its exact form when `platform` becomes the first outside caller.
 
 In the repo's settings, `check` is the one required check on `main`. A new repo also needs its dependency graph switched on, or the Dependencies job fails.
+
+## Dependency updates
+
+`zigordev sync` writes `renovate.json`, two lines that point at the preset in this repo. Renovate then proposes updates in that repo the same way as everywhere else. [Dependency updates](handbook/dependency-updates.md) says what merges by itself, and when.
+
+The Renovate app has to have access to the repo. It is installed on the account, with access to every repo.
 
 ## Recording a decision
 

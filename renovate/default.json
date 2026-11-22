@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "The zigordev defaults: a one-day wait, patch and minor updates that merge by themselves on weekdays between 08:00 and 18:00, and a major version that waits a month and for a person.",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigestsToSemver", ":semanticCommits"],
+  "timezone": "Europe/Madrid",
+  "minimumReleaseAge": "1 day",
+  "platformAutomerge": false,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "automergeSchedule": ["* 8-17 * * 1-5"],
+  "fetchChangeLogs": "off",
+  "prBodyColumns": ["Package", "Type", "Update", "Change"],
+  "prBodyTemplate": "{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}",
+  "packageRules": [
+    {
+      "description": "A patch or a minor update merges by itself once its check is green.",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest", "pinDigest"],
+      "automerge": true
+    },
+    {
+      "description": "A new major version waits a month, and then for a person.",
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "30 days",
+      "automerge": false
+    },
+    {
+      "description": "A new major version of Node.js is a decision for the whole platform, so it is never proposed.",
+      "matchPackageNames": ["node", "@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Node.js and its types move together.",
+      "matchPackageNames": ["node", "@types/node"],
+      "groupName": "node"
+    },
+    {
+      "description": "pnpm is pinned in mise.toml and in package.json, and both move in one pull request.",
+      "matchPackageNames": ["pnpm"],
+      "groupName": "pnpm"
+    }
+  ]
+}

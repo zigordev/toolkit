@@ -4,11 +4,12 @@
 
 ## What leaves this repo
 
-| What                                        | How it travels                                                                           | State on 2026-11-22                                                                  |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| The pipeline, `.github/workflows/check.yml` | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
-| The shared files in `packages/dev/shared`   | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
-| The packages, `@zigordev/*`                 | Published to the public npm registry on every merge that changes one                     | Nothing is published yet. Publishing arrives with step 2.5 of the build plan         |
+| What                                         | How it travels                                                                           | State on 2026-11-22                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
+| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
+| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                    |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | Nothing is published yet. Publishing arrives with step 2.5 of the build plan         |
 
 ## The path of a change
 
@@ -50,13 +51,14 @@ They were set by hand when the repo was created, on 2026-11-21 and 2026-11-22. F
 
 ## Looking after it
 
-| Situation                           | What to do                                                                                                                                                                                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main` is red                       | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                                       |
-| A pull request's Quality job is red | `pnpm check` on the branch shows the same failure                                                                                                                                           |
-| Its Title job is red                | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                                            |
-| Its Dependencies job is red         | The dependency it adds has a known flaw. Take a fixed version, or do without it                                                                                                             |
-| Its Code scan job is red            | The job's log lists each open finding with a link. Fix the code                                                                                                                             |
-| GitHub emails a Dependabot alert    | Read which package it names and what brings it in, with `pnpm why -r <package>`. A fixed version arrives as an update, and until Renovate is set up in step 1.8 that update is made by hand |
-| A change has to be undone           | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                                           |
-| A job in `check.yml` is renamed     | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset                       |
+| Situation                                          | What to do                                                                                                                                                            |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main` is red                                      | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                 |
+| A pull request's Quality job is red                | `pnpm check` on the branch shows the same failure                                                                                                                     |
+| Its Title job is red                               | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                      |
+| Its Dependencies job is red                        | The dependency it adds has a known flaw. Take a fixed version, or do without it                                                                                       |
+| Its Code scan job is red                           | The job's log lists each open finding with a link. Fix the code                                                                                                       |
+| GitHub emails a Dependabot alert                   | Read which package it names and what brings it in, with `pnpm why -r <package>`. Renovate opens the pull request for a fixed version when one exists                  |
+| A pull request from Renovate is red, or stays open | [Dependency updates](handbook/dependency-updates.md) says what each case means                                                                                        |
+| A change has to be undone                          | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                     |
+| A job in `check.yml` is renamed                    | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset |

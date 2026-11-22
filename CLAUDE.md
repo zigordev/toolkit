@@ -4,15 +4,16 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 
 ## Where things live
 
-| Path                  | What it holds                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------- |
-| `packages/dev`        | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                        |
-| `packages/dev/shared` | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo |
-| `.claude/`            | This repo's own copy of the shared rules, skills, hooks and permissions                                 |
-| `.github/workflows`   | `check.yml` is the pipeline every repo calls, and `ci.yml` runs it here                                 |
-| `docs/`               | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`            |
-| `mise.toml`           | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                               |
-| `pnpm-workspace.yaml` | The workspace, the single version of each dependency, and the supply-chain settings                     |
+| Path                    | What it holds                                                                                             |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                          |
+| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo   |
+| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                   |
+| `.github/workflows`     | `check.yml` is the pipeline every repo calls, and `ci.yml` runs it here                                   |
+| `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values |
+| `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`              |
+| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                 |
+| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                       |
 
 ## Commands
 
