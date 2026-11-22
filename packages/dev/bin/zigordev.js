@@ -21,6 +21,8 @@ process.exitCode = main(process.argv.slice(2), {
       stderr: result.stderr ?? result.error?.message ?? '',
     };
   },
+  interact: (command, args, cwd) => spawnSync(command, args, { cwd, stdio: 'inherit' }).status ?? 1,
+  atTerminal: process.stdin.isTTY === true && process.stdout.isTTY === true,
   write: (text) => {
     process.stdout.write(text);
   },

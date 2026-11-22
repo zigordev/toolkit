@@ -94,6 +94,8 @@ function command(args: readonly string[], run: Run, env: Record<string, string> 
     env,
     shared: join(box.root, 'shared'),
     run,
+    interact: () => 1,
+    atTerminal: false,
     write: (text) => {
       output += text;
     },

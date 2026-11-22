@@ -21,6 +21,8 @@ function run(
     env: { CI: 'true' },
     shared: join(box.root, shared),
     run: () => ({ status: 1, stdout: '', stderr: 'no command runs in this test' }),
+    interact: () => 1,
+    atTerminal: false,
     write: (text) => {
       output += text;
     },
