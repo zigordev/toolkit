@@ -6,12 +6,12 @@ The repo is being built step by step, and each step arrives as its own pull requ
 
 ## What it is
 
-| Path                  | What it holds                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `packages/dev`        | `@zigordev/dev`: the Biome config, the TypeScript base, the git hooks and the commit rules that every repo shares |
-| `mise.toml`           | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                         |
-| `pnpm-workspace.yaml` | The workspace, the single version of each dependency, and the supply-chain settings                               |
-| `.github/workflows`   | The pipeline. `check.yml` is the part every repo will call, and `ci.yml` runs it for this repo                    |
+| Path                  | What it holds                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/dev`        | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares |
+| `mise.toml`           | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                  |
+| `pnpm-workspace.yaml` | The workspace, the single version of each dependency, and the supply-chain settings                                                        |
+| `.github/workflows`   | The pipeline. `check.yml` is the part every repo will call, and `ci.yml` runs it for this repo                                             |
 
 Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
@@ -34,6 +34,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | gitleaks                     | Stops a commit that contains something shaped like a secret                                                                                                                                                                                  |
 | Vitest 5                     | Runs the tests and holds coverage above a 90% floor                                                                                                                                                                                          |
 | zizmor                       | Lints the pipeline files for unsafe patterns, such as an action that is not pinned to a commit                                                                                                                                               |
+| `zigordev`                   | Our own command. `zigordev check` verifies the rules a machine can verify: no comments, pinned actions, links that lead somewhere, the standard scripts and the commit identity                                                              |
 | GitHub Actions               | Runs the pipeline on every pull request and on every merge to `main`                                                                                                                                                                         |
 | CodeQL                       | Scans our own code for vulnerable patterns, in the pipeline                                                                                                                                                                                  |
 | Dependency Review            | Fails a pull request that adds a dependency with a known flaw                                                                                                                                                                                |

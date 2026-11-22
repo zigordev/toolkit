@@ -12,6 +12,12 @@ pre-commit:
     gitleaks:
       priority: 3
       run: gitleaks git --pre-commit --staged --no-banner --redact
+    comments:
+      priority: 4
+      run: pnpm exec zigordev check comments {staged_files}
+    identity:
+      priority: 5
+      run: pnpm exec zigordev check identity
 
 commit-msg:
   commands:
