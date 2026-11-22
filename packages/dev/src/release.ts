@@ -31,6 +31,7 @@ interface Packed {
 }
 
 const versionShape = /^\d+\.\d+\.\d+$/;
+const pause = 15;
 
 function output(run: Run, command: string, args: readonly string[], cwd: string): string {
   const outcome = run(command, args, cwd);
@@ -85,10 +86,17 @@ function missingAt(
   return packages.filter((pkg) => !isPublished(pkg, version, root, run));
 }
 
-export function plan(root: string, run: Run): Plan {
+export function plan(root: string, run: Run, settle = 0): Plan {
   const packages = publicPackages(root, run);
   const version = packages.length === 0 ? undefined : latestVersion(root, run);
-  const missing = version === undefined ? [] : missingAt(packages, version, root, run);
+  if (version === undefined) {
+    return { packages, version, missing: [] };
+  }
+  let missing = missingAt(packages, version, root, run);
+  for (let waited = 0; missing.length > 0 && waited < settle; waited += pause) {
+    run('sleep', [String(pause)], root);
+    missing = missingAt(missing, version, root, run);
+  }
   return { packages, version, missing };
 }
 

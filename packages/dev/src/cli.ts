@@ -21,13 +21,14 @@ function usage(rules: readonly Rule[]): string {
   return [
     'Usage: zigordev check [rule...] [file...]',
     '       zigordev sync',
-    '       zigordev release plan',
+    '       zigordev release plan [--settle <seconds>]',
     '       zigordev release pack <folder> <version>',
     '       zigordev first-publish [--dry-run] <package...>',
     '',
     'check          With no rule, every rule runs. With files, the rules that read files read only those.',
     'sync           Copies the shared files of @zigordev/dev into this repo.',
     'release        plan says which public packages are missing on npm at the latest tagged version.',
+    '               With --settle it first gives npm that long to show a version it is still working on.',
     '               pack writes the tarballs of the missing ones into a folder, at the version given.',
     'first-publish  Puts an empty first version of a new package on npm and ties its name to this repo.',
     '               Only the owner of the npm account runs it. With --dry-run it changes nothing.',
@@ -100,8 +101,25 @@ function count(amount: number, noun: string): string {
   return `${amount} ${noun}${amount === 1 ? '' : 's'}`;
 }
 
-function planRelease(io: Io): number {
-  const { packages, version, missing } = plan(io.cwd, io.run);
+function settleOf(args: readonly string[]): number | undefined {
+  if (args.length === 0) {
+    return 0;
+  }
+  const [flag, seconds, ...rest] = args;
+  return flag === '--settle' && seconds !== undefined && /^\d+$/.test(seconds) && rest.length === 0
+    ? Number(seconds)
+    : undefined;
+}
+
+function planRelease(io: Io, settle: number): number {
+  const first = plan(io.cwd, io.run);
+  if (first.missing.length > 0 && settle > 0) {
+    io.write(
+      `zigordev release: npm lacks ${count(first.missing.length, 'package')} at ${first.version}. An earlier run may have handed them in, so npm gets up to ${settle} seconds to show them\n`
+    );
+  }
+  const { packages, version, missing } =
+    first.missing.length > 0 && settle > 0 ? plan(io.cwd, io.run, settle) : first;
   if (io.env.GITHUB_OUTPUT !== undefined) {
     appendFileSync(
       io.env.GITHUB_OUTPUT,
@@ -139,12 +157,14 @@ function packRelease(folder: string, version: string, io: Io): number {
 }
 
 function release(args: readonly string[], io: Io): number | undefined {
-  const [action, folder, version, ...rest] = args;
+  const [action, ...rest] = args;
+  const [folder, version, ...more] = rest;
   try {
-    if (action === 'plan' && folder === undefined) {
-      return planRelease(io);
+    const settle = settleOf(rest);
+    if (action === 'plan' && settle !== undefined) {
+      return planRelease(io, settle);
     }
-    if (action === 'pack' && folder !== undefined && version !== undefined && rest.length === 0) {
+    if (action === 'pack' && folder !== undefined && version !== undefined && more.length === 0) {
       return packRelease(folder, version, io);
     }
   } catch (error) {

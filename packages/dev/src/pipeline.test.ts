@@ -52,6 +52,10 @@ describe('the release', () => {
     expect(job(release, 'publish')).toContain('for tarball in ./out/*.tgz; do');
   });
 
+  it('gives npm seven minutes to show a version that an earlier run handed in', () => {
+    expect(job(release, 'version')).toContain('zigordev release plan --settle 420');
+  });
+
   it('tags nothing while no package is public', () => {
     expect(job(release, 'version')).toContain("if: steps.packages.outputs.public != '0'");
   });

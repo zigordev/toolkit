@@ -61,6 +61,8 @@ Both ask npm through its own command. Any answer other than "found" or "not foun
 
 The plan starts from what npm lacks, not from what just changed. A release that failed halfway therefore finishes on the next run.
 
+npm needs a few minutes to show a version after it has taken it. With `--settle <seconds>`, the plan gives npm that long before it calls a version missing, so that a second run does not publish what the first one has just handed in.
+
 `semantic-release.js` holds the settings of semantic-release, the tool that works out the next version. It releases from `main` only, reads a title the way commitlint does, with `!` after the type as a breaking change, and writes the release notes on GitHub. It posts no comment, opens no issue and adds no label, because nothing here credits a tool. It does not publish: the pipeline does that with the two commands above.
 
 `zigordev first-publish <package...>` is for the owner of the npm account, once for each new package. npm lets a pipeline publish a package only when the package exists and its name is tied to the repo, and a new tie expires unless the pipeline publishes through it within 2 days. The command does both steps: it publishes an empty version 0.0.0 from a throwaway folder, and it ties the name to this repo, to its `ci.yml` and to the environment named `release`. It works through the owner's own sign-in and second factor, so it refuses to run without a person at a terminal. With `--dry-run` it only says what it would do.
