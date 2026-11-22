@@ -36,3 +36,5 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0026](0026-docs-are-markdown-in-each-repo.md)                 | Docs are Markdown in each repo                                         | 2026-11-21 | accepted |
 | [0027](0027-session-notes-hold-only-what-no-repo-can.md)       | Session notes hold only what no repo can hold                          | 2026-11-21 | accepted |
 | [0028](0028-translations-checked-by-inlang-edited-in-fink.md)  | Translations are checked by inlang and edited in Fink                  | 2026-11-22 | accepted |
+| [0029](0029-codeql-stays-on-while-a-repo-is-public.md)         | CodeQL stays on while a repo is public and earns nothing               | 2026-11-22 | accepted |
+| [0030](0030-no-console-for-feature-flags-for-now.md)           | No console for feature flags for now                                   | 2026-11-22 | accepted |
