@@ -16,6 +16,7 @@
     "biome.json",
     "commitlint.js",
     "lefthook.yml",
+    "shared",
     "tsconfig"
   ],
   "exports": {

@@ -5,5 +5,8 @@ import { docs } from './docs.ts';
 import { identity } from './identity.ts';
 import { links } from './links.ts';
 import { scripts } from './scripts.ts';
+import { shared } from './shared.ts';
 
-export const rules: readonly Rule[] = [actions, comments, docs, identity, links, scripts];
+export function rulesWith(source: string): readonly Rule[] {
+  return [actions, comments, docs, identity, links, scripts, shared(source)];
+}

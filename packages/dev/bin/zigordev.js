@@ -11,6 +11,7 @@ const { main } = await import(entry.href);
 process.exitCode = main(process.argv.slice(2), {
   cwd: process.cwd(),
   env: process.env,
+  shared: fileURLToPath(new URL('../shared/', import.meta.url)),
   write: (text) => {
     process.stdout.write(text);
   },
