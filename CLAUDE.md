@@ -10,6 +10,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/dev/shared` | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo |
 | `.claude/`            | This repo's own copy of the shared rules, skills, hooks and permissions                                 |
 | `.github/workflows`   | `check.yml` is the pipeline every repo calls, and `ci.yml` runs it here                                 |
+| `docs/`               | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`            |
 | `mise.toml`           | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                               |
 | `pnpm-workspace.yaml` | The workspace, the single version of each dependency, and the supply-chain settings                     |
 
@@ -32,3 +33,6 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - The job named `check` is the required check in every repo. Renaming it, or a job inside `check.yml`, breaks merging everywhere, so say it in the pull request.
 - Coverage counts every package's `src`, its root `.js` files and the hook scripts, with a floor of 90%.
 - The test for the guard hook is `packages/dev/guard.test.js`. A new case for the guard starts there.
+- A decision gets a record in `docs/adr/`, written with the `write-decision-record` skill, and a row in the index there.
+- A tool the owner has agreed to gets its row in `docs/handbook/tools.md` in the same pull request that adds it.
+- A handbook page is written in the phase that builds its piece, and `docs/handbook/README.md` lists it in the reading order.
