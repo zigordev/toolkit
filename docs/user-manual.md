@@ -4,7 +4,7 @@
 
 | A repo takes                 | From                              | Exists today                                            |
 | ---------------------------- | --------------------------------- | ------------------------------------------------------- |
-| The developer setup          | `@zigordev/dev`                   | In this repo. On npm from step 2.1                      |
+| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                            |
 | The session rules            | `packages/dev/shared/.claude`     | Yes                                                     |
 | The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2 |
 | Dependency updates           | `renovate/default.json`           | Yes                                                     |
@@ -28,7 +28,7 @@ The first copies the shared files into the repo. The second checks the repo agai
 
 The pull request template is one of the shared files. A pull request opened on GitHub's site therefore starts with the same six sections in every repo: What, Why, How it was tested, Observability, Docs and Follow-ups.
 
-Until the package is on npm, only this repo can use it, through its own workspace.
+Another repo adds `@zigordev/dev` as a dev dependency from npm. This repo uses its own copy, through the workspace.
 
 ## The session rules
 

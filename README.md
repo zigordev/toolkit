@@ -19,7 +19,7 @@ The repo is being built step by step, and each step arrives as its own pull requ
 
 Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
-After a merge, the release works out the next version from the titles that were merged, and publishes every public package under it. It is switched off until `@zigordev/dev` has had its first publish.
+After a merge, the release works out the next version from the titles that were merged, and publishes every public package under it.
 
 ## Why it exists
 

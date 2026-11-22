@@ -4,12 +4,12 @@
 
 ## What leaves this repo
 
-| What                                         | How it travels                                                                           | State on 2026-11-22                                                                                                                          |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2                                                         |
-| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                                                                          |
-| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                                                                            |
-| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | The release job exists since 2026-11-22 and is switched off: `@zigordev/dev` stays marked private until the owner has made its first publish |
+| What                                         | How it travels                                                                           | State on 2026-11-22                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
+| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
+| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                    |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | `@zigordev/dev` is published since 2026-11-22. Every later package starts private    |
 
 ## The path of a change
 
