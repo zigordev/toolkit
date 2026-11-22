@@ -10,6 +10,7 @@ function read(path: string): Settings {
 const preset = read('../../../renovate/default.json');
 const shared = read('../shared/renovate.json');
 const rules = preset.packageRules as Settings[];
+const own = rules.find((rule) => rule.groupName === 'zigordev');
 
 function names(rule: Settings): readonly string[] {
   return (rule.matchPackageNames as string[] | undefined) ?? [];
@@ -51,6 +52,25 @@ describe('the Renovate preset', () => {
   it('never proposes a new major version of Node.js', () => {
     expect(ruleFor('major', 'node')?.enabled).toBe(false);
     expect(ruleFor('major', '@types/node')?.enabled).toBe(false);
+  });
+
+  it('takes our own packages and the pipeline a repo calls at once, in one pull request', () => {
+    expect(own).toMatchObject({
+      matchDepNames: ['@zigordev/**', 'zigordev/toolkit'],
+      groupName: 'zigordev',
+      minimumReleaseAge: null,
+    });
+  });
+
+  it('keeps that rule last, so it lifts the month of a major version and nothing else', () => {
+    expect(rules.at(-1)).toBe(own);
+    expect(Object.keys(own ?? {}).sort()).toEqual([
+      'description',
+      'groupName',
+      'matchDepNames',
+      'minimumReleaseAge',
+    ]);
+    expect(ruleFor('major')?.automerge).toBe(false);
   });
 
   it('pins every action to a commit, with its exact version beside it', () => {
