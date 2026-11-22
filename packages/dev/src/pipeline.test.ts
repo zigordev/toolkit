@@ -48,6 +48,10 @@ describe('the release', () => {
     expect(job(release, 'publish')).not.toContain('pnpm');
   });
 
+  it('hands npm each tarball as a path, which npm would otherwise read as a repo on GitHub', () => {
+    expect(job(release, 'publish')).toContain('for tarball in ./out/*.tgz; do');
+  });
+
   it('tags nothing while no package is public', () => {
     expect(job(release, 'version')).toContain("if: steps.packages.outputs.public != '0'");
   });
