@@ -1,10 +1,18 @@
 {
   "name": "@zigordev/dev",
   "version": "0.0.0",
-  "description": "The developer setup every zigordev repo shares: the Biome config, the TypeScript base, the git hooks and the commit rules",
+  "description": "The developer setup every zigordev repo shares: the zigordev command, the Biome config, the TypeScript bases, the git hooks and the commit rules",
   "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "bin": {
+    "zigordev": "./bin/zigordev.js"
+  },
   "files": [
+    "bin",
+    "dist",
     "biome.json",
     "commitlint.js",
     "lefthook.yml",
@@ -14,7 +22,13 @@
     "./biome": "./biome.json",
     "./commitlint": "./commitlint.js",
     "./lefthook.yml": "./lefthook.yml",
-    "./tsconfig/base.json": "./tsconfig/base.json"
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/node.json": "./tsconfig/node.json",
+    "./tsconfig/library.json": "./tsconfig/library.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@commitlint/config-conventional": "catalog:"
@@ -28,6 +42,8 @@
   "devDependencies": {
     "@commitlint/lint": "catalog:",
     "@commitlint/load": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   },
   "repository": {
