@@ -46,6 +46,20 @@ Another repo's caller differs in one line. Where this repo names itself, the oth
 
 In the repo's settings, `check` is the one required check on `main`. A new repo also needs its dependency graph switched on, or the Dependencies job fails.
 
+## Publishing packages
+
+Most repos publish nothing. A repo that does, such as `platform` with its bundle, takes three things:
+
+| What                 | How                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------- |
+| semantic-release     | A dev dependency of the repo                                                                          |
+| The release settings | A file `release.config.js` with one line: `export { default } from '@zigordev/dev/semantic-release';` |
+| The release job      | A job in the repo's caller that runs `release.yml` after `check`, on a push to `main` only            |
+
+[This repo's caller](../.github/workflows/ci.yml) and [its settings file](../release.config.js) are the models. [How toolkit reaches the other repos](cloud-first-deploy.md) says what the release does, and how a title decides the version.
+
+A package starts marked `"private": true`, and the release leaves it alone. It becomes public once the owner has made its first publish.
+
 ## Dependency updates
 
 `zigordev sync` writes `renovate.json`, which points at the preset in this repo and switches off the badges that the Renovate app adds. Renovate then proposes updates in that repo the same way as everywhere else. [Dependency updates](handbook/dependency-updates.md) says what merges by itself, and when.

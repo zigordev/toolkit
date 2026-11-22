@@ -25,6 +25,7 @@
     "@zigordev/dev": "workspace:*",
     "lefthook": "catalog:",
     "markdownlint-cli2": "catalog:",
+    "semantic-release": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

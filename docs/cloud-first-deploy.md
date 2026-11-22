@@ -4,12 +4,12 @@
 
 ## What leaves this repo
 
-| What                                         | How it travels                                                                           | State on 2026-11-22                                                                  |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
-| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
-| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                    |
-| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | Nothing is published yet. Publishing arrives with step 2.1 of the build plan         |
+| What                                         | How it travels                                                                           | State on 2026-11-22                                                                                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2                                                         |
+| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                                                                          |
+| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                                                                            |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | The release job exists since 2026-11-22 and is switched off: `@zigordev/dev` stays marked private until the owner has made its first publish |
 
 ## The path of a change
 
@@ -20,7 +20,7 @@ flowchart LR
   check -->|red| branch
   check -->|green and marked ready| merge["Squash merge to main"]
   merge --> run["The same pipeline runs on main"]
-  run --> publish["Publish the packages, from step 2.1"]
+  run --> release["Tag the next version and publish the packages"]
 ```
 
 The pipeline has four jobs, and one gate that passes only when all of them passed:
@@ -36,6 +36,31 @@ The pipeline has four jobs, and one gate that passes only when all of them passe
 A pull request opens as a draft. Marking it ready means: merge it when `check` is green. Nobody merges by hand.
 
 Its description has six sections: What, Why, How it was tested, Observability, Docs and Follow-ups. A pull request opened on GitHub's site starts with them, because the template in `.github/pull_request_template.md` is one of the shared files. The squash merge turns the title and the description into the commit on `main`.
+
+## The release
+
+After a merge to `main`, and only when `check` is green there, the release runs. It is `release.yml`, three jobs that each may do one thing:
+
+| Job     | What it does                                                                                                                        | What it may do                                 |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Version | semantic-release reads the titles merged since the last version, tags the next one and writes the release notes on GitHub           | Write tags and releases in this repo           |
+| Pack    | Builds the packages, writes the version into each one, and packs those that npm does not have yet                                   | Read the repo. It runs the build tools         |
+| Publish | Hands each packed file to npm. npm checks with GitHub that this workflow of this repo is the sender, so no token is stored anywhere | Ask GitHub for that proof. It installs nothing |
+
+The job that can publish runs no code from our dependencies, and the job that runs them can neither publish nor write to the repo.
+
+The title of the merged pull request decides the version:
+
+| Title                                                   | Next version                         |
+| ------------------------------------------------------- | ------------------------------------ |
+| `fix: …` or `perf: …`                                   | A patch, such as 1.4.0 to 1.4.1      |
+| `feat: …`                                               | A minor, such as 1.4.1 to 1.5.0      |
+| `!` after the type, or a line `BREAKING CHANGE:`        | A major, such as 1.5.0 to 2.0.0      |
+| Any other type, such as `docs`, `ci`, `test` or `chore` | None. Nothing is tagged or published |
+
+A package that is marked `"private": true` is never packed or published, and while a repo has no public package, nothing is tagged. That is the switch a new package starts with.
+
+The release starts from what npm lacks at the latest version, not from what just changed. A release that failed halfway therefore finishes with the next merge.
 
 ## The settings on GitHub
 
@@ -53,14 +78,15 @@ They were set by hand when the repo was created, on 2026-11-21 and 2026-11-22. F
 
 ## Looking after it
 
-| Situation                                          | What to do                                                                                                                                                            |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main` is red                                      | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                 |
-| A pull request's Quality job is red                | `pnpm check` on the branch shows the same failure                                                                                                                     |
-| Its Title job is red                               | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                      |
-| Its Dependencies job is red                        | The job's summary names the dependency and its flaw. Take a fixed version, or do without it                                                                           |
-| Its Code scan job is red                           | The job's log lists each open finding with a link. Fix the code                                                                                                       |
-| GitHub emails a Dependabot alert                   | Read which package it names and what brings it in, with `pnpm why -r <package>`. Renovate opens the pull request for a fixed version when one exists                  |
-| A pull request from Renovate is red, or stays open | [Dependency updates](handbook/dependency-updates.md) says what each case means                                                                                        |
-| A change has to be undone                          | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                     |
-| A job in `check.yml` is renamed                    | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset |
+| Situation                                          | What to do                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main` is red                                      | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                                                                                                                                                                                 |
+| A pull request's Quality job is red                | `pnpm check` on the branch shows the same failure                                                                                                                                                                                                                                                                                     |
+| Its Title job is red                               | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                                                                                                                                                                                      |
+| Its Dependencies job is red                        | The job's summary names the dependency and its flaw. Take a fixed version, or do without it                                                                                                                                                                                                                                           |
+| The Release is red on `main`                       | Read which of its three jobs failed. Version: the titles could not be read, or the tag could not be written. Pack: the build failed. Publish: npm refused, most often because the package is not tied to this repo yet or the tie has expired, which only the owner can renew. The next merge finishes a release that stopped halfway |
+| Its Code scan job is red                           | The job's log lists each open finding with a link. Fix the code                                                                                                                                                                                                                                                                       |
+| GitHub emails a Dependabot alert                   | Read which package it names and what brings it in, with `pnpm why -r <package>`. Renovate opens the pull request for a fixed version when one exists                                                                                                                                                                                  |
+| A pull request from Renovate is red, or stays open | [Dependency updates](handbook/dependency-updates.md) says what each case means                                                                                                                                                                                                                                                        |
+| A change has to be undone                          | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                                                                                                                                                                                     |
+| A job in `check.yml` is renamed                    | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset                                                                                                                                                                 |
