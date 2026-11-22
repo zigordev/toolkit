@@ -6,16 +6,17 @@ The repo is being built step by step, and each step arrives as its own pull requ
 
 ## What it is
 
-| Path                    | What it holds                                                                                                                                    |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares       |
-| `.claude/`              | The rules, skills, hooks and permissions that every Claude Code session works under. Every other repo holds a copy of them                       |
-| `CLAUDE.md`             | What a session needs to know about this repo: where things live, its commands and its own rules                                                  |
-| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                        |
-| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                              |
-| `.github/workflows`     | The pipeline. `check.yml` is the part every repo will call, `release.yml` tags and publishes after a merge, and `ci.yml` runs both for this repo |
-| `renovate/default.json` | The Renovate preset that every repo extends: how dependency updates are proposed, and when they merge by themselves                              |
-| `docs/`                 | The standard docs, the handbook with its reading order, and the decision records                                                                 |
+| Path                    | What it holds                                                                                                                                                        |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares                           |
+| `packages/config`       | `@zigordev/config`: one function that reads an app's settings from the environment through a Zod schema, and stops the app as it starts when one is missing or wrong |
+| `.claude/`              | The rules, skills, hooks and permissions that every Claude Code session works under. Every other repo holds a copy of them                                           |
+| `CLAUDE.md`             | What a session needs to know about this repo: where things live, its commands and its own rules                                                                      |
+| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                            |
+| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                  |
+| `.github/workflows`     | The pipeline. `check.yml` is the part every repo will call, `release.yml` tags and publishes after a merge, and `ci.yml` runs both for this repo                     |
+| `renovate/default.json` | The Renovate preset that every repo extends: how dependency updates are proposed, and when they merge by themselves                                                  |
+| `docs/`                 | The standard docs, the handbook with its reading order, and the decision records                                                                                     |
 
 Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
@@ -41,6 +42,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | Vitest 5                     | Runs the tests and holds coverage above a 90% floor                                                                                                                                                                                                                          |
 | zizmor                       | Lints the pipeline files for unsafe patterns, such as an action that is not pinned to a commit                                                                                                                                                                               |
 | `zigordev`                   | Our own command. `zigordev check` verifies the rules a machine can verify: no comments, no attribution lines, pinned actions, links that lead somewhere, the standard scripts, the commit identity and the shared files. `zigordev sync` copies the shared files into a repo |
+| Zod 4                        | The schema library that `@zigordev/config` checks an app's settings with                                                                                                                                                                                                     |
 | GitHub Actions               | Runs the pipeline on every pull request and on every merge to `main`                                                                                                                                                                                                         |
 | CodeQL                       | Scans our own code for vulnerable patterns, in the pipeline                                                                                                                                                                                                                  |
 | Dependency Review            | Fails a pull request that adds a dependency with a known flaw                                                                                                                                                                                                                |
@@ -72,9 +74,9 @@ pnpm check
 | `pnpm lint`        | Reports lint and formatting problems without changing a file                                 |
 | `pnpm typecheck`   | Checks the types                                                                             |
 | `pnpm test`        | Runs the tests with coverage                                                                 |
-| `pnpm build`       | Compiles the packages that are published. None is compiled yet                               |
+| `pnpm build`       | Compiles the packages that are published                                                     |
 
-[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do.
+[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings.
 
 ## Where to read more
 
