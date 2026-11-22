@@ -19,6 +19,7 @@ interface World {
   readonly registry?: string;
   readonly hidden?: readonly string[];
   readonly listing?: string;
+  readonly appears?: Readonly<Record<string, number>>;
 }
 
 let box: Sandbox;
@@ -42,6 +43,7 @@ function start(world: World = {}): Run {
   });
   calls = [];
   output = '';
+  let sleeps = 0;
   const entry = (name: string, folder: string) => ({
     name,
     version: '0.0.0',
@@ -62,6 +64,10 @@ function start(world: World = {}): Run {
         ])
       );
     }
+    if (command === 'sleep') {
+      sleeps += 1;
+      return ok('');
+    }
     if (command === 'git') {
       return world.tag === undefined
         ? failed('fatal: No names found, cannot describe anything.')
@@ -72,7 +78,8 @@ function start(world: World = {}): Run {
         return failed(world.registry);
       }
       const wanted = args[1] ?? '';
-      return world.published?.includes(wanted) === true
+      const arrived = (world.appears?.[wanted] ?? Number.POSITIVE_INFINITY) <= sleeps;
+      return arrived || world.published?.includes(wanted) === true
         ? ok(`${wanted.slice(wanted.lastIndexOf('@') + 1)}\n`)
         : failed('npm error code E404\nnpm error 404 Not Found');
     }
@@ -194,6 +201,41 @@ describe('the plan', () => {
   });
 });
 
+describe('waiting for npm', () => {
+  const pauses = () => calls.filter((call) => call === 'sleep 15').length;
+
+  it('gives npm time to show a version it is still working on, and then misses nothing', () => {
+    const run = start({
+      tag: 'v1.4.0',
+      published: ['@zigordev/api@1.4.0'],
+      appears: { '@zigordev/dev@1.4.0': 2 },
+    });
+    expect(plan(box.root, run, 60).missing).toEqual([]);
+    expect(pauses()).toBe(2);
+  });
+
+  it('stops when the time is up, and names what is still missing', () => {
+    const run = start({ tag: 'v1.4.0', published: ['@zigordev/api@1.4.0'] });
+    expect(plan(box.root, run, 30).missing.map((pkg) => pkg.name)).toEqual(['@zigordev/dev']);
+    expect(pauses()).toBe(2);
+  });
+
+  it('does not wait when nothing is missing', () => {
+    const run = start({
+      tag: 'v1.4.0',
+      published: ['@zigordev/api@1.4.0', '@zigordev/dev@1.4.0'],
+    });
+    expect(plan(box.root, run, 60).missing).toEqual([]);
+    expect(pauses()).toBe(0);
+  });
+
+  it('does not wait unless it is asked to', () => {
+    const run = start({ tag: 'v1.4.0' });
+    expect(plan(box.root, run).missing).toHaveLength(2);
+    expect(pauses()).toBe(0);
+  });
+});
+
 describe('packing', () => {
   it('sets the version in every public package and packs only the missing ones', () => {
     const run = start({ published: ['@zigordev/api@1.4.0'] });
@@ -269,6 +311,22 @@ describe('the release command', () => {
     expect(output).toBe('zigordev release: every public package is on npm at 1.4.0\n');
   });
 
+  it('plans: with --settle it says that it waits, and what it found in the end', () => {
+    const run = start({
+      tag: 'v1.4.0',
+      published: ['@zigordev/api@1.4.0'],
+      appears: { '@zigordev/dev@1.4.0': 1 },
+    });
+    expect(command(['release', 'plan', '--settle', '420'], run)).toBe(0);
+    expect(output).toBe(
+      [
+        'zigordev release: npm lacks 1 package at 1.4.0. An earlier run may have handed them in, so npm gets up to 420 seconds to show them',
+        'zigordev release: every public package is on npm at 1.4.0',
+        '',
+      ].join('\n')
+    );
+  });
+
   it('packs: it names each tarball', () => {
     const run = start();
     expect(command(['release', 'pack', 'out', '1.4.0'], run)).toBe(0);
@@ -301,6 +359,8 @@ describe('the release command', () => {
     expect(command(['release'], run)).toBe(2);
     expect(command(['release', 'pack', 'out'], run)).toBe(2);
     expect(command(['release', 'plan', 'now'], run)).toBe(2);
+    expect(command(['release', 'plan', '--settle'], run)).toBe(2);
+    expect(command(['release', 'plan', '--settle', 'soon'], run)).toBe(2);
     expect(output).toContain('       zigordev release pack <folder> <version>');
   });
 });

@@ -28,9 +28,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Count the public packages
+      - name: Count the public packages, and let npm finish an earlier version
         id: packages
-        run: pnpm exec zigordev release plan
+        run: pnpm exec zigordev release plan --settle 420
 
       - name: Tag the next version and write the release notes
         if: steps.packages.outputs.public != '0'
@@ -110,5 +110,5 @@ jobs:
       - name: Publish each package to npm
         run: |
           for tarball in ./out/*.tgz; do
-            npm publish "$tarball" --access public --loglevel verbose
+            npm publish "$tarball" --access public
           done
