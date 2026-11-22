@@ -44,7 +44,7 @@ The `comments` rule allows the few lines a tool needs to work: the first line of
 
 The `identity` rule accepts two more names: Renovate as the author of its own updates, and GitHub as the committer of a merge it made.
 
-`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
+`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc`, `renovate.json` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
 
 The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
