@@ -14,6 +14,7 @@ The repo is being built step by step, and each step arrives as its own pull requ
 | `mise.toml`           | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                  |
 | `pnpm-workspace.yaml` | The workspace, the single version of each dependency, and the supply-chain settings                                                        |
 | `.github/workflows`   | The pipeline. `check.yml` is the part every repo will call, and `ci.yml` runs it for this repo                                             |
+| `docs/`               | The standard docs, the handbook with its reading order, and the decision records                                                           |
 
 Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
@@ -69,3 +70,13 @@ pnpm check
 | `pnpm build`       | Compiles the packages that are published. None is compiled yet                               |
 
 [packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do.
+
+## Where to read more
+
+| You want to                                                         | Read                                                     |
+| ------------------------------------------------------------------- | -------------------------------------------------------- |
+| Run it on a clean laptop, step by step                              | [docs/local-first-start.md](docs/local-first-start.md)   |
+| Know how its work reaches the other repos, and how to look after it | [docs/cloud-first-deploy.md](docs/cloud-first-deploy.md) |
+| Use it from another repo                                            | [docs/user-manual.md](docs/user-manual.md)               |
+| Understand the whole platform                                       | [docs/handbook/](docs/handbook/README.md)                |
+| Know why something was decided                                      | [docs/adr/](docs/adr/README.md)                          |
