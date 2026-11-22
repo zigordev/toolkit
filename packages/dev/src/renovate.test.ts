@@ -64,5 +64,7 @@ describe('the Renovate preset', () => {
   it('keeps release notes from elsewhere out of the pull request, and so out of the commit', () => {
     expect(preset.fetchChangeLogs).toBe('off');
     expect(preset.prBodyTemplate).toBe('{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}');
+    expect(preset.prBodyColumns).toEqual(['Package', 'Type', 'Update', 'Change']);
+    expect(preset.ignorePresets).toEqual(['mergeConfidence:age-confidence-badges']);
   });
 });
