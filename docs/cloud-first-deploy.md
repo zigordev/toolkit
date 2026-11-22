@@ -35,6 +35,8 @@ The pipeline has four jobs, and one gate that passes only when all of them passe
 
 A pull request opens as a draft. Marking it ready means: merge it when `check` is green. Nobody merges by hand.
 
+Its description has six sections: What, Why, How it was tested, Observability, Docs and Follow-ups. A pull request opened on GitHub's site starts with them, because the template in `.github/pull_request_template.md` is one of the shared files. The squash merge turns the title and the description into the commit on `main`.
+
 ## The settings on GitHub
 
 They were set by hand when the repo was created, on 2026-11-21 and 2026-11-22. From phase 3 they are code in `platform`.
