@@ -32,6 +32,9 @@ catalog:
 
 catalogMode: strict
 
+overrides:
+  katex: 0.19.1
+
 minimumReleaseAge: 1440
 trustPolicy: no-downgrade
 
