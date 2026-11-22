@@ -98,8 +98,17 @@ jobs:
           name: packages
           path: out
 
+      - name: Check that GitHub offers this job its proof of origin
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "GitHub offers no proof of origin to this job, so npm cannot know the sender."
+            echo "The job and the job that calls this workflow both need the permission id-token: write."
+            exit 1
+          fi
+          echo "GitHub offers its proof of origin to this job."
+
       - name: Publish each package to npm
         run: |
           for tarball in ./out/*.tgz; do
-            npm publish "$tarball" --access public
+            npm publish "$tarball" --access public --loglevel verbose
           done
