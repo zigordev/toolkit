@@ -44,4 +44,3 @@ The platform is built in eight phases, and a page is written in the phase that b
 | ---------------------------------------- | ------------------------------------------------------------------------------ |
 | [The tools](tools.md)                    | Every tool of the platform, with exactly what it is used for and where it runs |
 | [The decision records](../adr/README.md) | Why each significant decision was taken, and what was not chosen               |
-| [The allowed licences](licences.md)      | Every licence a dependency may carry, what it asks, and why it is on the list  |
