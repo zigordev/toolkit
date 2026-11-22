@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "description": "The developer setup every zigordev repo shares: the zigordev command, the Biome config, the TypeScript bases, the git hooks and the commit rules",
   "license": "UNLICENSED",
-  "private": true,
   "type": "module",
   "engines": {
     "node": ">=26"
