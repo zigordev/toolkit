@@ -8,6 +8,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | ----------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                            |
 | `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo     |
+| `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                  |
 | `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                     |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here |
 | `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values   |

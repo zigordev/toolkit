@@ -1,0 +1,42 @@
+{
+  "name": "@zigordev/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Configuration for zigordev apps: the environment, read once through a Zod schema, and a start that fails when a value is missing or wrong",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/config"
+  }
+}

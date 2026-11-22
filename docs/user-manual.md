@@ -2,15 +2,15 @@
 
 `toolkit` is a library, so its users are the other zigordev repos. This page says what a repo takes from it, and how. Each part says what exists on 2026-11-22, because the platform is still being built.
 
-| A repo takes                 | From                              | Exists today                                            |
-| ---------------------------- | --------------------------------- | ------------------------------------------------------- |
-| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                            |
-| The session rules            | `packages/dev/shared/.claude`     | Yes                                                     |
-| The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2 |
-| Dependency updates           | `renovate/default.json`           | Yes                                                     |
-| The way to record a decision | The `write-decision-record` skill | Yes                                                     |
-| The shared packages for apps | `packages/`                       | Not yet. They arrive from phase 2 on                    |
-| A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.7            |
+| A repo takes                 | From                              | Exists today                                                                             |
+| ---------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                             |
+| The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                      |
+| The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2                                  |
+| Dependency updates           | `renovate/default.json`           | Yes                                                                                      |
+| The way to record a decision | The `write-decision-record` skill | Yes                                                                                      |
+| The shared packages for apps | `packages/`                       | `@zigordev/config` is in the repo, and not on npm yet. The others arrive from phase 2 on |
+| A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.7                                             |
 
 ## The developer setup
 
@@ -29,6 +29,16 @@ The first copies the shared files into the repo. The second checks the repo agai
 The pull request template is one of the shared files. A pull request opened on GitHub's site therefore starts with the same six sections in every repo: What, Why, How it was tested, Observability, Docs and Follow-ups.
 
 Another repo adds `@zigordev/dev` as a dev dependency from npm. This repo uses its own copy, through the workspace.
+
+## The shared packages for apps
+
+An app takes its shared code from npm as packages, all under one version.
+
+| Package            | What it gives an app                                                                                                   | On npm                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `@zigordev/config` | Its settings, read from the environment once through a Zod schema, and a start that fails when one is missing or wrong | Not yet. It waits for its first publish |
+
+[The README of `@zigordev/config`](../packages/config/README.md) says how an app uses it. A package is in this repo before it is on npm, and [Packages](handbook/packages.md) says how it gets there.
 
 ## The session rules
 
