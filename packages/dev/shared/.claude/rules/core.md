@@ -20,7 +20,6 @@ Ask in the conversation and wait for a clear yes before any of these. A yes cove
 - A migration that deletes data.
 - A tool, library or service the handbook does not list yet. Propose it with the reason, the alternatives, the licence and the price.
 - A new major version of a dependency.
-- A licence that is not on the pipeline's list of allowed licences, whether it joins the list or one dependency is exempted from it. Name the dependency that brings it, and say what the licence asks for.
 - A repo's settings and rulesets, and creating or deleting a repo.
 - Deleting data, and running a deploy, a rollback or a pipeline job by hand.
 - A message on a pull request or an issue that the task is not about.
@@ -39,7 +38,6 @@ Two things a session never does, even with a yes: it never sets, rotates or dele
 | Done means checked               | The push hook runs `pnpm check:quick`, and `check` is the one required check on `main`                                                                                                                                                   |
 | Infrastructure waits             | From phase 3, the apply job waits for the owner's approval in GitHub. The guard hook already refuses to give an approval, and the permission rules ask before an apply                                                                   |
 | A destructive migration waits    | From phase 4, a CI check fails until the owner labels the pull request. The guard hook already asks before a label changes                                                                                                               |
-| A new licence waits              | The Dependencies job in CI fails a pull request that adds a dependency under a licence that is not on the list in `check.yml`                                                                                                            |
 | Settings, secrets and repos wait | The permission rules in `.claude/settings.json` ask before a repo, a release or a workflow run is created or changed, and refuse to set a secret. The guard hook asks before any change made through GitHub's API                        |
 
 ## How work flows
