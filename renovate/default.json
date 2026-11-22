@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "The zigordev defaults: a one-day wait, patch and minor updates that merge by themselves on weekdays between 08:00 and 18:00, and a major version that waits a month and for a person.",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigestsToSemver", ":semanticCommits"],
+  "ignorePresets": ["mergeConfidence:age-confidence-badges"],
   "timezone": "Europe/Madrid",
   "minimumReleaseAge": "1 day",
   "platformAutomerge": false,
