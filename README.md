@@ -10,6 +10,7 @@ The repo is being built step by step, and each step arrives as its own pull requ
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares                           |
 | `packages/config`       | `@zigordev/config`: one function that reads an app's settings from the environment through a Zod schema, and stops the app as it starts when one is missing or wrong |
+| `packages/otel`         | `@zigordev/otel`: telemetry for a service: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route              |
 | `.claude/`              | The rules, skills, hooks and permissions that every Claude Code session works under. Every other repo holds a copy of them                                           |
 | `CLAUDE.md`             | What a session needs to know about this repo: where things live, its commands and its own rules                                                                      |
 | `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                            |
@@ -43,6 +44,8 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | zizmor                       | Lints the pipeline files for unsafe patterns, such as an action that is not pinned to a commit                                                                                                                                                                               |
 | `zigordev`                   | Our own command. `zigordev check` verifies the rules a machine can verify: no comments, no attribution lines, pinned actions, links that lead somewhere, the standard scripts, the commit identity and the shared files. `zigordev sync` copies the shared files into a repo |
 | Zod 4                        | The schema library that `@zigordev/config` checks an app's settings with                                                                                                                                                                                                     |
+| OpenTelemetry                | The standard for traces and metrics, and the library that `@zigordev/otel` records them with                                                                                                                                                                                 |
+| pino                         | The logger that `@zigordev/otel` writes its JSON log lines with                                                                                                                                                                                                              |
 | GitHub Actions               | Runs the pipeline on every pull request and on every merge to `main`                                                                                                                                                                                                         |
 | CodeQL                       | Scans our own code for vulnerable patterns, in the pipeline                                                                                                                                                                                                                  |
 | Dependency Review            | Fails a pull request that adds a dependency with a known flaw                                                                                                                                                                                                                |
@@ -76,7 +79,7 @@ pnpm check
 | `pnpm test`        | Runs the tests with coverage                                                                 |
 | `pnpm build`       | Compiles the packages that are published                                                     |
 
-[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings.
+[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings, and [packages/otel](packages/otel/README.md) what a service reports about itself.
 
 ## Where to read more
 
