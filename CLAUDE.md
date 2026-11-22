@@ -35,6 +35,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - The job named `check` is the required check in every repo. Renaming it, or a job inside `check.yml`, breaks merging everywhere, so say it in the pull request.
 - Coverage counts every package's `src`, its root `.js` files and the hook scripts, with a floor of 90%.
 - The test for the guard hook is `packages/dev/guard.test.js`. A new case for the guard starts there.
+- A new package starts with `"private": true`. It goes public only after the owner has run `zigordev first-publish` for it, which a session never runs without `--dry-run`: it signs in to npm as the owner.
 - A decision gets a record in `docs/adr/`, written with the `write-decision-record` skill, and a row in the index there.
 - A tool the owner has agreed to gets its row in `docs/handbook/tools.md` in the same pull request that adds it.
 - A handbook page is written in the phase that builds its piece, and `docs/handbook/README.md` lists it in the reading order.

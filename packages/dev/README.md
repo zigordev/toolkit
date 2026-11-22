@@ -63,6 +63,8 @@ The plan starts from what npm lacks, not from what just changed. A release that 
 
 `semantic-release.js` holds the settings of semantic-release, the tool that works out the next version. It releases from `main` only, reads a title the way commitlint does, with `!` after the type as a breaking change, and writes the release notes on GitHub. It posts no comment, opens no issue and adds no label, because nothing here credits a tool. It does not publish: the pipeline does that with the two commands above.
 
+`zigordev first-publish <package...>` is for the owner of the npm account, once for each new package. npm lets a pipeline publish a package only when the package exists and its name is tied to the repo, and a new tie expires unless the pipeline publishes through it within 2 days. The command does both steps: it publishes an empty version 0.0.0 from a throwaway folder, and it ties the name to this repo, to its `ci.yml` and to the environment named `release`. It works through the owner's own sign-in and second factor, so it refuses to run without a person at a terminal. With `--dry-run` it only says what it would do.
+
 A repo's own `release.config.js` passes these settings on in one line. semantic-release then finds its own plugins, which it cannot do when the settings arrive through its `extends` option under pnpm.
 
 ### The session rules
@@ -183,9 +185,10 @@ pnpm exec zigordev check comments links
 pnpm exec zigordev check comments src/app.ts
 pnpm exec zigordev sync
 pnpm exec zigordev release plan
+pnpm exec zigordev first-publish --dry-run @zigordev/dev
 ```
 
-The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing.
+The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing. The sixth says what the first publish of a package would do, and changes nothing either.
 
 ## How to check that it works
 
@@ -202,6 +205,7 @@ The first line runs every rule. The second runs two of them. The third reads one
 | Push a commit to `main`                                                 | The push is refused before it leaves the laptop                                        |
 | Push a branch and open a pull request for it on GitHub's site           | The description starts with the six sections, from What to Follow-ups                  |
 | Run `pnpm exec zigordev release plan` in a repo with no version tag     | It says how many packages are public, and that no version is tagged yet                |
+| Run `pnpm exec zigordev first-publish --dry-run` with a package's name  | It says whether the name is new on npm, and prints the command that would tie it       |
 | In a session, commit while the repo is set up to commit as someone else | The commit is refused before git runs, and the session is told how to set the identity |
 | In a session, write a file that holds a comment                         | The file is written, and the session is told to remove the comment                     |
 | In a session, read a migration, then run `/context`                     | `data.md` is among the loaded rules. Before that, it is not                            |

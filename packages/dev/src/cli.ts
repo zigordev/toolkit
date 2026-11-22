@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, statSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
 import { repoFiles } from './files.ts';
+import { firstPublish, type Interact } from './first-publish.ts';
 import { pack, plan, type Run } from './release.ts';
 import type { Finding, Rule } from './rule.ts';
 import { rulesWith } from './rules/index.ts';
@@ -11,6 +12,8 @@ export interface Io {
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly shared: string;
   readonly run: Run;
+  readonly interact: Interact;
+  readonly atTerminal: boolean;
   readonly write: (text: string) => void;
 }
 
@@ -20,11 +23,14 @@ function usage(rules: readonly Rule[]): string {
     '       zigordev sync',
     '       zigordev release plan',
     '       zigordev release pack <folder> <version>',
+    '       zigordev first-publish [--dry-run] <package...>',
     '',
-    'check    With no rule, every rule runs. With files, the rules that read files read only those.',
-    'sync     Copies the shared files of @zigordev/dev into this repo.',
-    'release  plan says which public packages are missing on npm at the latest tagged version.',
-    '         pack writes the tarballs of the missing ones into a folder, at the version given.',
+    'check          With no rule, every rule runs. With files, the rules that read files read only those.',
+    'sync           Copies the shared files of @zigordev/dev into this repo.',
+    'release        plan says which public packages are missing on npm at the latest tagged version.',
+    '               pack writes the tarballs of the missing ones into a folder, at the version given.',
+    'first-publish  Puts an empty first version of a new package on npm and ties its name to this repo.',
+    '               Only the owner of the npm account runs it. With --dry-run it changes nothing.',
     '',
     'Rules:',
     ...rules.map((rule) => `  ${rule.name.padEnd(13)}${rule.summary}`),
@@ -148,6 +154,26 @@ function release(args: readonly string[], io: Io): number | undefined {
   return undefined;
 }
 
+function publishFirst(args: readonly string[], io: Io): number | undefined {
+  const dryRun = args[0] === '--dry-run';
+  const names = dryRun ? args.slice(1) : args;
+  if (names.length === 0 || names.some((name) => name.startsWith('-'))) {
+    return undefined;
+  }
+  try {
+    firstPublish(io.cwd, names, dryRun, io);
+  } catch (error) {
+    io.write(`zigordev first-publish: ${error instanceof Error ? error.message : String(error)}\n`);
+    return 1;
+  }
+  io.write(
+    dryRun
+      ? 'zigordev first-publish: this was a dry run, so nothing was changed\n'
+      : `zigordev first-publish: ${count(names.length, 'package')} tied. The pipeline has to publish within 2 days, or the tie expires\n`
+  );
+  return 0;
+}
+
 export function main(argv: readonly string[], io: Io): number {
   const [command, ...rest] = argv;
   const rules = rulesWith(io.shared);
@@ -159,6 +185,12 @@ export function main(argv: readonly string[], io: Io): number {
   }
   if (command === 'release') {
     const code = release(rest, io);
+    if (code !== undefined) {
+      return code;
+    }
+  }
+  if (command === 'first-publish') {
+    const code = publishFirst(rest, io);
     if (code !== undefined) {
       return code;
     }

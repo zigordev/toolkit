@@ -58,7 +58,7 @@ Most repos publish nothing. A repo that does, such as `platform` with its bundle
 
 [This repo's caller](../.github/workflows/ci.yml) and [its settings file](../release.config.js) are the models. [How toolkit reaches the other repos](cloud-first-deploy.md) says what the release does, and how a title decides the version.
 
-A package starts marked `"private": true`, and the release leaves it alone. It becomes public once the owner has made its first publish.
+A package starts marked `"private": true`, and the release leaves it alone. It becomes public once the owner has made its first publish. [Packages](handbook/packages.md) walks through it with an example.
 
 ## Dependency updates
 
