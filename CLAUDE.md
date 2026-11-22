@@ -10,6 +10,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo     |
 | `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                  |
 | `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                  |
+| `template/`             | The product template. Its apps are members of this workspace, and use the packages through `workspace:*`    |
 | `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                     |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here |
 | `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values   |
@@ -35,7 +36,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - A version lives once, in the `catalog` of `pnpm-workspace.yaml`, as an exact version. A package refers to it with `catalog:`.
 - A new rule of `zigordev check` comes with a test that breaks it, and with a line in `packages/dev/README.md` and in the table of the core rules.
 - The job named `check` is the required check in every repo. Renaming it, or a job inside `check.yml`, breaks merging everywhere, so say it in the pull request.
-- Coverage counts every package's `src`, its root `.js` files and the hook scripts, with a floor of 90%.
+- Coverage counts every package's `src`, its root `.js` files, the hook scripts and the `src` of the template's apps, with a floor of 90%.
 - The test for the guard hook is `packages/dev/guard.test.js`. A new case for the guard starts there.
 - A new package starts with `"private": true`. It goes public only after the owner has run `zigordev first-publish` for it, which a session never runs without `--dry-run`: it signs in to npm as the owner.
 - A decision gets a record in `docs/adr/`, written with the `write-decision-record` skill, and a row in the index there.
