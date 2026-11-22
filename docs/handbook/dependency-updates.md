@@ -4,7 +4,9 @@
 
 Renovate is an app on GitHub that reads a repo, notices that something it depends on has a newer version, and opens a pull request that takes it. It follows everything a repo pins: the packages in `pnpm-workspace.yaml` and `package.json`, the tools in `mise.toml`, and the actions in the workflows.
 
-Every repo carries the same two lines in `renovate.json`, which point at one preset, `renovate/default.json` in `toolkit`. The preset holds every setting, so all repos update the same way.
+Every repo carries the same small file, `renovate.json`. It points at one preset, `renovate/default.json` in `toolkit`, and the preset holds the settings, so all repos update the same way.
+
+The file holds one setting itself. The Renovate app adds badge columns to every pull request, such as Age and Confidence, and `renovate.json` switches them off. Renovate reads that switch from a repo's own file, and not from a preset the file points at.
 
 ## Why we have it, and what we would lose without it
 
@@ -43,11 +45,12 @@ To change how updates behave, change `renovate/default.json` in `toolkit`. Every
 
 ## How to check that it works, and what to do when it does not
 
-| What you see                                                                    | What it means                                                                     | What to do                                                                                        |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| An issue titled "Dependency Dashboard"                                          | Renovate reads the repo and its config is valid                                   | Nothing. It is the place to see what waits                                                        |
-| An issue that says the configuration needs fixing                               | The preset or `renovate.json` has an error, and Renovate has stopped              | Fix the file it names. Renovate closes the issue on its next run                                  |
-| A green pull request from Renovate that stays open                              | It is outside the window, or Renovate has not run since the check passed          | Wait for the window and for about two hours of it                                                 |
-| A red pull request from Renovate                                                | The update breaks the check                                                       | Read the failing job. Fix the code on that branch, or close the pull request to skip that version |
-| A pull request from Renovate with a note that the lockfile could not be updated | pnpm refused the new version: it is too new, or its publisher became less trusted | Wait for the next release, or look at why the publisher changed                                   |
-| No pull request for a release you know of                                       | It is still inside its day or its month                                           | The Dependency Dashboard lists it as pending                                                      |
+| What you see                                                                    | What it means                                                                     | What to do                                                                                                        |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| An issue titled "Dependency Dashboard"                                          | Renovate reads the repo and its config is valid                                   | Nothing. It is the place to see what waits                                                                        |
+| An issue that says the configuration needs fixing                               | The preset or `renovate.json` has an error, and Renovate has stopped              | Fix the file it names. Renovate closes the issue on its next run                                                  |
+| A green pull request from Renovate that stays open                              | It is outside the window, or Renovate has not run since the check passed          | Wait for the window and for about two hours of it                                                                 |
+| A red pull request from Renovate                                                | The update breaks the check                                                       | Read the failing job. Fix the code on that branch, or close the pull request to skip that version                 |
+| A pull request from Renovate with a note that the lockfile could not be updated | pnpm refused the new version: it is too new, or its publisher became less trusted | Wait for the next release, or look at why the publisher changed                                                   |
+| No pull request for a release you know of                                       | It is still inside its day or its month                                           | The Dependency Dashboard lists it as pending                                                                      |
+| A pull request from Renovate whose table has badge columns                      | The switch in `renovate.json` no longer names the preset that adds them           | Read which badge preset the Renovate app applies, and name it under `ignorePresets` in the shared `renovate.json` |

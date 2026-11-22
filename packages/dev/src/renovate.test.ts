@@ -65,6 +65,13 @@ describe('the Renovate preset', () => {
     expect(preset.fetchChangeLogs).toBe('off');
     expect(preset.prBodyTemplate).toBe('{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}');
     expect(preset.prBodyColumns).toEqual(['Package', 'Type', 'Update', 'Change']);
-    expect(preset.ignorePresets).toEqual(['mergeConfidence:age-confidence-badges']);
+  });
+
+  it('switches off the badges in the repo file, where Renovate reads that for the hosted app', () => {
+    expect(shared.ignorePresets).toEqual([
+      'mergeConfidence:all-badges',
+      'mergeConfidence:age-confidence-badges',
+    ]);
+    expect(preset.ignorePresets).toBeUndefined();
   });
 });
