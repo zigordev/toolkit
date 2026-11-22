@@ -6,15 +6,16 @@ The developer setup that every zigordev repo shares: the `zigordev` command, one
 
 One command and a handful of files that a repo refers to instead of writing its own.
 
-| Part                    | What it holds                                            | A repo refers to it as                    |
-| ----------------------- | -------------------------------------------------------- | ----------------------------------------- |
-| `zigordev`              | The command that checks a repo against the standards     | `pnpm exec zigordev`                      |
-| `biome.json`            | The lint and format rules                                | `@zigordev/dev/biome`                     |
-| `tsconfig/base.json`    | The strict TypeScript options                            | `@zigordev/dev/tsconfig/base.json`        |
-| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`          | `@zigordev/dev/tsconfig/node.json`        |
-| `tsconfig/library.json` | The same, for a package that is compiled before it ships | `@zigordev/dev/tsconfig/library.json`     |
-| `lefthook.yml`          | The git hooks                                            | `node_modules/@zigordev/dev/lefthook.yml` |
-| `commitlint.js`         | The commit rules                                         | `@zigordev/dev/commitlint`                |
+| Part                    | What it holds                                                                    | A repo refers to it as                    |
+| ----------------------- | -------------------------------------------------------------------------------- | ----------------------------------------- |
+| `zigordev`              | The command that checks a repo against the standards and copies the shared files | `pnpm exec zigordev`                      |
+| `shared/`               | The files that are the same in every repo                                        | Copied into the repo by `zigordev sync`   |
+| `biome.json`            | The lint and format rules                                                        | `@zigordev/dev/biome`                     |
+| `tsconfig/base.json`    | The strict TypeScript options                                                    | `@zigordev/dev/tsconfig/base.json`        |
+| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                  | `@zigordev/dev/tsconfig/node.json`        |
+| `tsconfig/library.json` | The same, for a package that is compiled before it ships                         | `@zigordev/dev/tsconfig/library.json`     |
+| `lefthook.yml`          | The git hooks                                                                    | `node_modules/@zigordev/dev/lefthook.yml` |
+| `commitlint.js`         | The commit rules                                                                 | `@zigordev/dev/commitlint`                |
 
 ## Why we have it
 
@@ -36,10 +37,15 @@ The command exists for the rules that no ready-made tool checks. A rule that onl
 | `identity` | The repo is set up to commit as zigordev, and every commit that `main` on GitHub does not have yet was made as zigordev |
 | `links`    | Every link from one Markdown file to another file leads somewhere                                                       |
 | `scripts`  | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`             |
+| `shared`   | Every shared file in the repo matches the copy in this package                                                          |
 
 The `comments` rule allows the few lines a tool needs to work: the first line of a script that names its interpreter, the version beside a pinned action, a Dockerfile's `syntax` line, and suppressions such as `biome-ignore` and `@ts-expect-error`. It reads code with a small scanner of its own, which knows strings and template literals. It does not look inside the code blocks of a Markdown file.
 
 The `identity` rule accepts two more names: Renovate as the author of its own updates, and GitHub as the committer of a merge it made.
+
+`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json` and `.markdownlint-cli2.jsonc`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
+
+The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
 ### The hooks
 
@@ -66,7 +72,15 @@ The TypeScript base turns on strict mode and three checks beyond it: a value rea
 
 ## How to use it
 
-Add the package and the tools it drives as dev dependencies: `@zigordev/dev`, `@biomejs/biome`, `@commitlint/cli`, `lefthook`, `markdownlint-cli2` and `typescript`. gitleaks is not an npm package, so pin it in `mise.toml`. Then point four small files at the package.
+Add the package and the tools it drives as dev dependencies: `@zigordev/dev`, `@biomejs/biome`, `@commitlint/cli`, `lefthook`, `markdownlint-cli2` and `typescript`. gitleaks is not an npm package, so pin it in `mise.toml`.
+
+Then let the command write the three shared files:
+
+```bash
+pnpm exec zigordev sync
+```
+
+Two files stay yours to write, because each repo may add to them.
 
 `biome.json`:
 
@@ -88,21 +102,6 @@ Add the package and the tools it drives as dev dependencies: `@zigordev/dev`, `@
 }
 ```
 
-`lefthook.yml`:
-
-```yaml
-extends:
-  - node_modules/@zigordev/dev/lefthook.yml
-```
-
-`.commitlintrc.json`:
-
-```json
-{
-  "extends": ["@zigordev/dev/commitlint"]
-}
-```
-
 Last, two scripts in `package.json`. `"prepare": "lefthook install"` makes `pnpm install` install the hooks, and the lint script ends with `zigordev check`, so the pipeline runs every rule.
 
 To run the command by hand:
@@ -111,22 +110,24 @@ To run the command by hand:
 pnpm exec zigordev check
 pnpm exec zigordev check comments links
 pnpm exec zigordev check comments src/app.ts
+pnpm exec zigordev sync
 ```
 
-The first line runs every rule. The second runs two of them. The third reads one file only.
+The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date.
 
 ## How to check that it works
 
-| Try this                                                  | What must happen                                                  |
-| --------------------------------------------------------- | ----------------------------------------------------------------- |
-| Stage a badly formatted `.ts` file and commit             | The commit goes through with the file formatted                   |
-| Stage a Markdown file with two top-level headings         | The commit is refused, and markdownlint names the rule            |
-| Stage a file that holds something shaped like a secret    | The commit is refused, and gitleaks reports one leak              |
-| Stage a file that holds a comment                         | The commit is refused, and `zigordev` names the file and the line |
-| Commit with the message `added things`                    | The commit is refused, because the title has no type              |
-| Link to a file that does not exist, then run `pnpm check` | The check fails, and `zigordev` names the link                    |
-| Push a branch                                             | `pnpm check:quick` runs first, and the push waits for it          |
-| Push a commit to `main`                                   | The push is refused before it leaves the laptop                   |
+| Try this                                                  | What must happen                                                       |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Stage a badly formatted `.ts` file and commit             | The commit goes through with the file formatted                        |
+| Stage a Markdown file with two top-level headings         | The commit is refused, and markdownlint names the rule                 |
+| Stage a file that holds something shaped like a secret    | The commit is refused, and gitleaks reports one leak                   |
+| Stage a file that holds a comment                         | The commit is refused, and `zigordev` names the file and the line      |
+| Commit with the message `added things`                    | The commit is refused, because the title has no type                   |
+| Link to a file that does not exist, then run `pnpm check` | The check fails, and `zigordev` names the link                         |
+| Change a line in `lefthook.yml`, then run `pnpm check`    | The check fails and asks for `zigordev sync`, which puts the file back |
+| Push a branch                                             | `pnpm check:quick` runs first, and the push waits for it               |
+| Push a commit to `main`                                   | The push is refused before it leaves the laptop                        |
 
 When a hook does not run at all, the hooks are not installed: run `pnpm install`, which ends with `sync hooks` and the three hook names. When gitleaks is reported as missing, run `mise install`.
 

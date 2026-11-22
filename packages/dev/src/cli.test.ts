@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type Sandbox, sandbox } from '../test/sandbox.ts';
@@ -7,12 +9,17 @@ import { main } from './cli.ts';
 let box: Sandbox;
 let output = '';
 
-function run(args: readonly string[], files: Record<string, string> = {}): number {
+function run(
+  args: readonly string[],
+  files: Record<string, string> = {},
+  shared = 'node_modules/shared'
+): number {
   box = sandbox(files);
   output = '';
   return main(args, {
     cwd: box.root,
     env: { CI: 'true' },
+    shared: join(box.root, shared),
     write: (text) => {
       output += text;
     },
@@ -27,6 +34,7 @@ describe('the zigordev command', () => {
   it('explains itself when it gets no command', () => {
     expect(run([])).toBe(0);
     expect(output).toContain('Usage: zigordev check [rule...] [file...]');
+    expect(output).toContain('       zigordev sync');
     expect(output).toContain('comments  no file holds a comment');
   });
 
@@ -62,7 +70,8 @@ describe('the zigordev command', () => {
     expect(output).toContain('a.ts:1  comments  a comment: "one"');
     expect(output).toContain('README.md  docs  the file is missing');
     expect(output).toContain('package.json  scripts  the file is missing');
-    expect(output).toContain('(actions, comments, docs, identity, links, scripts)');
+    expect(output).toContain('shared  the package holds no shared files');
+    expect(output).toContain('(actions, comments, docs, identity, links, scripts, shared)');
   });
 
   it('reads only the files it is given', () => {
@@ -76,6 +85,35 @@ describe('the zigordev command', () => {
   it('fails on an argument that is neither a rule nor a file', () => {
     expect(run(['check', 'comments', 'missing.ts'])).toBe(2);
     expect(output).toContain('"missing.ts" is neither a rule nor a file');
+  });
+
+  it('copies the shared files and says which ones changed', () => {
+    const files = {
+      'node_modules/shared/a.yml': 'new',
+      'node_modules/shared/b.yml': 'b',
+      'a.yml': 'old',
+    };
+    expect(run(['sync'], files)).toBe(0);
+    expect(output).toBe('updated  a.yml\nupdated  b.yml\nzigordev sync: 2 files updated\n');
+    expect(readFileSync(join(box.root, 'a.yml'), 'utf8')).toBe('new');
+  });
+
+  it('says so when one shared file changed and when none did', () => {
+    expect(run(['sync'], { 'node_modules/shared/a.yml': 'a' })).toBe(0);
+    expect(output).toBe('updated  a.yml\nzigordev sync: 1 file updated\n');
+    box.remove();
+    expect(run(['sync'], { 'node_modules/shared/a.yml': 'a', 'a.yml': 'a' })).toBe(0);
+    expect(output).toBe('zigordev sync: every shared file is up to date\n');
+  });
+
+  it('fails to sync when the package holds no shared files', () => {
+    expect(run(['sync'])).toBe(1);
+    expect(output).toContain('zigordev sync: the package holds no shared files in');
+  });
+
+  it('explains itself when sync gets an argument', () => {
+    expect(run(['sync', 'now'], { 'node_modules/shared/a.yml': 'a' })).toBe(2);
+    expect(output).toContain('Usage: zigordev check');
   });
 
   it('starts from its launcher', () => {
