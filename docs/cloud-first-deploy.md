@@ -25,13 +25,13 @@ flowchart LR
 
 The pipeline has four jobs, and one gate that passes only when all of them passed:
 
-| Job          | What it checks                                                         | Runs on                            |
-| ------------ | ---------------------------------------------------------------------- | ---------------------------------- |
-| Quality      | `pnpm check`, exactly as on a laptop                                   | Every pull request and every merge |
-| Title        | The pull request's title is a Conventional Commit                      | Pull requests                      |
-| Dependencies | No dependency the pull request adds has a known flaw                   | Pull requests                      |
-| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows | Every pull request and every merge |
-| `check`      | Every job above passed                                                 | Every pull request and every merge |
+| Job          | What it checks                                                                                     | Runs on                            |
+| ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Quality      | `pnpm check`, exactly as on a laptop                                                               | Every pull request and every merge |
+| Title        | The pull request's title is a Conventional Commit                                                  | Pull requests                      |
+| Dependencies | No dependency the pull request adds has a known flaw, or a licence that is not on the allowed list | Pull requests                      |
+| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                             | Every pull request and every merge |
+| `check`      | Every job above passed                                                                             | Every pull request and every merge |
 
 A pull request opens as a draft. Marking it ready means: merge it when `check` is green. Nobody merges by hand.
 
@@ -53,14 +53,14 @@ They were set by hand when the repo was created, on 2026-11-21 and 2026-11-22. F
 
 ## Looking after it
 
-| Situation                                          | What to do                                                                                                                                                            |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `main` is red                                      | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                 |
-| A pull request's Quality job is red                | `pnpm check` on the branch shows the same failure                                                                                                                     |
-| Its Title job is red                               | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                      |
-| Its Dependencies job is red                        | The dependency it adds has a known flaw. Take a fixed version, or do without it                                                                                       |
-| Its Code scan job is red                           | The job's log lists each open finding with a link. Fix the code                                                                                                       |
-| GitHub emails a Dependabot alert                   | Read which package it names and what brings it in, with `pnpm why -r <package>`. Renovate opens the pull request for a fixed version when one exists                  |
-| A pull request from Renovate is red, or stays open | [Dependency updates](handbook/dependency-updates.md) says what each case means                                                                                        |
-| A change has to be undone                          | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                     |
-| A job in `check.yml` is renamed                    | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset |
+| Situation                                          | What to do                                                                                                                                                                                                                                              |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main` is red                                      | Fix it or revert the change before any other work. The run is under Actions, in the workflow named CI                                                                                                                                                   |
+| A pull request's Quality job is red                | `pnpm check` on the branch shows the same failure                                                                                                                                                                                                       |
+| Its Title job is red                               | Rewrite the title as `type(scope): summary`, in lower case, with no final period                                                                                                                                                                        |
+| Its Dependencies job is red                        | The job's summary names the dependency and says why. For a known flaw, take a fixed version or do without it. For a licence that is not on the allowed list, use another package, or ask the owner whether the licence may join the list in `check.yml` |
+| Its Code scan job is red                           | The job's log lists each open finding with a link. Fix the code                                                                                                                                                                                         |
+| GitHub emails a Dependabot alert                   | Read which package it names and what brings it in, with `pnpm why -r <package>`. Renovate opens the pull request for a fixed version when one exists                                                                                                    |
+| A pull request from Renovate is red, or stays open | [Dependency updates](handbook/dependency-updates.md) says what each case means                                                                                                                                                                          |
+| A change has to be undone                          | Revert it through a pull request. Once packages are published, the revert publishes a new version                                                                                                                                                       |
+| A job in `check.yml` is renamed                    | The name of the gate, `check`, is what the ruleset requires in every repo. A job behind it may change, and the gate may not be renamed without changing every ruleset                                                                                   |
