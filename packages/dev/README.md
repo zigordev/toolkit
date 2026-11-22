@@ -16,6 +16,7 @@ One command and a handful of files that a repo refers to instead of writing its 
 | `tsconfig/library.json` | The same, for a package that is compiled before it ships                         | `@zigordev/dev/tsconfig/library.json`     |
 | `lefthook.yml`          | The git hooks                                                                    | `node_modules/@zigordev/dev/lefthook.yml` |
 | `commitlint.js`         | The commit rules                                                                 | `@zigordev/dev/commitlint`                |
+| `semantic-release.js`   | The release settings, for a repo that publishes packages                         | `@zigordev/dev/semantic-release`          |
 
 ## Why we have it
 
@@ -59,6 +60,10 @@ A repo that publishes packages runs two more commands in its pipeline. They hold
 Both ask npm through its own command. Any answer other than "found" or "not found" stops the release, so a network fault never looks like a missing package.
 
 The plan starts from what npm lacks, not from what just changed. A release that failed halfway therefore finishes on the next run.
+
+`semantic-release.js` holds the settings of semantic-release, the tool that works out the next version. It releases from `main` only, reads a title the way commitlint does, with `!` after the type as a breaking change, and writes the release notes on GitHub. It posts no comment, opens no issue and adds no label, because nothing here credits a tool. It does not publish: the pipeline does that with the two commands above.
+
+A repo's own `release.config.js` passes these settings on in one line. semantic-release then finds its own plugins, which it cannot do when the settings arrive through its `extends` option under pnpm.
 
 ### The session rules
 
