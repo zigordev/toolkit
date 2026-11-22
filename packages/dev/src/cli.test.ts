@@ -20,6 +20,7 @@ function run(
     cwd: box.root,
     env: { CI: 'true' },
     shared: join(box.root, shared),
+    run: () => ({ status: 1, stdout: '', stderr: 'no command runs in this test' }),
     write: (text) => {
       output += text;
     },

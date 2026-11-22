@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +13,14 @@ process.exitCode = main(process.argv.slice(2), {
   cwd: process.cwd(),
   env: process.env,
   shared: fileURLToPath(new URL('../shared/', import.meta.url)),
+  run: (command, args, cwd) => {
+    const result = spawnSync(command, args, { cwd, encoding: 'utf8' });
+    return {
+      status: result.status ?? 1,
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? result.error?.message ?? '',
+    };
+  },
   write: (text) => {
     process.stdout.write(text);
   },

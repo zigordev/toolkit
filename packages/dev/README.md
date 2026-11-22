@@ -48,6 +48,18 @@ The `identity` rule accepts two more names: Renovate as the author of its own up
 
 The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
+### The release command
+
+A repo that publishes packages runs two more commands in its pipeline. They hold the one part of a release that no ready-made tool does for us: knowing which packages still have to be published.
+
+`zigordev release plan` looks at three things: the packages of the workspace that are not marked private, the newest version tag in git, and npm. It prints each package that npm does not have at that version, and it tells the pipeline whether anything is left to publish.
+
+`zigordev release pack <folder> <version>` writes that version into the manifest of every public package, and packs the missing ones as tarballs into the folder. pnpm does the packing, so a tarball holds exact versions where the repo says `catalog:` or `workspace:`.
+
+Both ask npm through its own command. Any answer other than "found" or "not found" stops the release, so a network fault never looks like a missing package.
+
+The plan starts from what npm lacks, not from what just changed. A release that failed halfway therefore finishes on the next run.
+
 ### The session rules
 
 Claude Code does the building in every repo, and `shared/.claude/` holds what it works under. `zigordev sync` copies the folder into each repo, so a session finds the same rules everywhere, in a cloud session too.
@@ -165,9 +177,10 @@ pnpm exec zigordev check
 pnpm exec zigordev check comments links
 pnpm exec zigordev check comments src/app.ts
 pnpm exec zigordev sync
+pnpm exec zigordev release plan
 ```
 
-The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date.
+The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing.
 
 ## How to check that it works
 
@@ -183,6 +196,7 @@ The first line runs every rule. The second runs two of them. The third reads one
 | Push a branch                                                           | `pnpm check:quick` runs first, and the push waits for it                               |
 | Push a commit to `main`                                                 | The push is refused before it leaves the laptop                                        |
 | Push a branch and open a pull request for it on GitHub's site           | The description starts with the six sections, from What to Follow-ups                  |
+| Run `pnpm exec zigordev release plan` in a repo with no version tag     | It says how many packages are public, and that no version is tagged yet                |
 | In a session, commit while the repo is set up to commit as someone else | The commit is refused before git runs, and the session is told how to set the identity |
 | In a session, write a file that holds a comment                         | The file is written, and the session is told to remove the comment                     |
 | In a session, read a migration, then run `/context`                     | `data.md` is among the loaded rules. Before that, it is not                            |

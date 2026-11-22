@@ -1,6 +1,7 @@
-import { existsSync, statSync } from 'node:fs';
-import { relative, resolve } from 'node:path';
+import { appendFileSync, existsSync, statSync } from 'node:fs';
+import { basename, relative, resolve } from 'node:path';
 import { repoFiles } from './files.ts';
+import { pack, plan, type Run } from './release.ts';
 import type { Finding, Rule } from './rule.ts';
 import { rulesWith } from './rules/index.ts';
 import { sharedFiles, sync } from './shared.ts';
@@ -9,6 +10,7 @@ export interface Io {
   readonly cwd: string;
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly shared: string;
+  readonly run: Run;
   readonly write: (text: string) => void;
 }
 
@@ -16,9 +18,13 @@ function usage(rules: readonly Rule[]): string {
   return [
     'Usage: zigordev check [rule...] [file...]',
     '       zigordev sync',
+    '       zigordev release plan',
+    '       zigordev release pack <folder> <version>',
     '',
-    'check  With no rule, every rule runs. With files, the rules that read files read only those.',
-    'sync   Copies the shared files of @zigordev/dev into this repo.',
+    'check    With no rule, every rule runs. With files, the rules that read files read only those.',
+    'sync     Copies the shared files of @zigordev/dev into this repo.',
+    'release  plan says which public packages are missing on npm at the latest tagged version.',
+    '         pack writes the tarballs of the missing ones into a folder, at the version given.',
     '',
     'Rules:',
     ...rules.map((rule) => `  ${rule.name.padEnd(13)}${rule.summary}`),
@@ -84,6 +90,64 @@ function copy(io: Io): number {
   return 0;
 }
 
+function count(amount: number, noun: string): string {
+  return `${amount} ${noun}${amount === 1 ? '' : 's'}`;
+}
+
+function planRelease(io: Io): number {
+  const { packages, version, missing } = plan(io.cwd, io.run);
+  if (io.env.GITHUB_OUTPUT !== undefined) {
+    appendFileSync(
+      io.env.GITHUB_OUTPUT,
+      `public=${packages.length}\nversion=${version ?? ''}\npublish=${missing.length > 0}\n`
+    );
+  }
+  if (packages.length === 0) {
+    io.write('zigordev release: no package is public, so nothing is released\n');
+  } else if (version === undefined) {
+    io.write(
+      `zigordev release: ${count(packages.length, 'public package')}, and no version is tagged yet\n`
+    );
+  } else if (missing.length === 0) {
+    io.write(`zigordev release: every public package is on npm at ${version}\n`);
+  } else {
+    for (const pkg of missing) {
+      io.write(`missing  ${pkg.name}@${version}\n`);
+    }
+    io.write(`zigordev release: ${count(missing.length, 'package')} to publish at ${version}\n`);
+  }
+  return 0;
+}
+
+function packRelease(folder: string, version: string, io: Io): number {
+  const tarballs = pack(io.cwd, folder, version, io.run);
+  for (const tarball of tarballs) {
+    io.write(`packed  ${basename(tarball)}\n`);
+  }
+  io.write(
+    tarballs.length === 0
+      ? `zigordev release: every public package is on npm at ${version}, so nothing was packed\n`
+      : `zigordev release: ${count(tarballs.length, 'package')} packed into ${folder}\n`
+  );
+  return 0;
+}
+
+function release(args: readonly string[], io: Io): number | undefined {
+  const [action, folder, version, ...rest] = args;
+  try {
+    if (action === 'plan' && folder === undefined) {
+      return planRelease(io);
+    }
+    if (action === 'pack' && folder !== undefined && version !== undefined && rest.length === 0) {
+      return packRelease(folder, version, io);
+    }
+  } catch (error) {
+    io.write(`zigordev release: ${error instanceof Error ? error.message : String(error)}\n`);
+    return 1;
+  }
+  return undefined;
+}
+
 export function main(argv: readonly string[], io: Io): number {
   const [command, ...rest] = argv;
   const rules = rulesWith(io.shared);
@@ -92,6 +156,12 @@ export function main(argv: readonly string[], io: Io): number {
   }
   if (command === 'sync' && rest.length === 0) {
     return copy(io);
+  }
+  if (command === 'release') {
+    const code = release(rest, io);
+    if (code !== undefined) {
+      return code;
+    }
   }
   io.write(usage(rules));
   return command === undefined || command === 'help' || command === '--help' ? 0 : 2;
