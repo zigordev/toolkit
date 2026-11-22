@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pipeline:
+    name: Pipeline
+    uses: $/.github/workflows/check.yml
+    permissions:
+      contents: read
+      security-events: write
+
+  check:
+    name: check
+    needs: [pipeline]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Pass only when every job passed
+        env:
+          RESULT: ${{ needs.pipeline.result }}
+        run: |
+          echo "The pipeline ended with: $RESULT"
+          test "$RESULT" = "success"
