@@ -4,13 +4,13 @@
 
 | A repo takes                 | From                              | Exists today                                            |
 | ---------------------------- | --------------------------------- | ------------------------------------------------------- |
-| The developer setup          | `@zigordev/dev`                   | In this repo. On npm from step 2.5                      |
+| The developer setup          | `@zigordev/dev`                   | In this repo. On npm from step 2.1                      |
 | The session rules            | `packages/dev/shared/.claude`     | Yes                                                     |
 | The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2 |
 | Dependency updates           | `renovate/default.json`           | Yes                                                     |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                     |
 | The shared packages for apps | `packages/`                       | Not yet. They arrive from phase 2 on                    |
-| A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.6            |
+| A product to start from      | `template/`                       | Not yet. Its first slice arrives in step 2.7            |
 
 ## The developer setup
 

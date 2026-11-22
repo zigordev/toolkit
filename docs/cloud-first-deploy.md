@@ -9,7 +9,7 @@
 | The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
 | The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
 | The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                    |
-| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | Nothing is published yet. Publishing arrives with step 2.5 of the build plan         |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | Nothing is published yet. Publishing arrives with step 2.1 of the build plan         |
 
 ## The path of a change
 
@@ -20,7 +20,7 @@ flowchart LR
   check -->|red| branch
   check -->|green and marked ready| merge["Squash merge to main"]
   merge --> run["The same pipeline runs on main"]
-  run --> publish["Publish the packages, from step 2.5"]
+  run --> publish["Publish the packages, from step 2.1"]
 ```
 
 The pipeline has four jobs, and one gate that passes only when all of them passed:
