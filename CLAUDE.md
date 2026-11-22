@@ -24,6 +24,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm exec vitest run <path>` runs one test file.
 - `pnpm exec zigordev check [rule...] [file...]` runs the rules a machine can check, all of them or the ones named.
 - `pnpm exec zigordev sync` copies the shared files from `packages/dev/shared` to the root of this repo.
+- `pnpm exec zigordev release plan` says which public packages npm lacks at the latest tagged version. It changes nothing.
 
 ## Rules of this repo
 
