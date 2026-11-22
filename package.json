@@ -10,7 +10,7 @@
     "prepare": "lefthook install",
     "format": "biome check --write . && markdownlint-cli2 --fix",
     "format:check": "biome format .",
-    "lint": "biome ci . && markdownlint-cli2 && zizmor --offline . && zigordev check actions comments identity links scripts shared",
+    "lint": "biome ci . && markdownlint-cli2 && zizmor --offline . && zigordev check actions attribution comments identity links scripts shared",
     "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present run typecheck",
     "build": "pnpm -r --if-present run build",
     "test": "vitest run --coverage",

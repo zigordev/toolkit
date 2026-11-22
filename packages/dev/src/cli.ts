@@ -21,7 +21,7 @@ function usage(rules: readonly Rule[]): string {
     'sync   Copies the shared files of @zigordev/dev into this repo.',
     '',
     'Rules:',
-    ...rules.map((rule) => `  ${rule.name.padEnd(10)}${rule.summary}`),
+    ...rules.map((rule) => `  ${rule.name.padEnd(13)}${rule.summary}`),
     '',
   ].join('\n');
 }
