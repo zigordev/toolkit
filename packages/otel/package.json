@@ -26,6 +26,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@opentelemetry/core": "catalog:",
     "@opentelemetry/exporter-trace-otlp-http": "catalog:",
     "@opentelemetry/exporter-trace-otlp-proto": "catalog:",
     "@opentelemetry/instrumentation": "catalog:",

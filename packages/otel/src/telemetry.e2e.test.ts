@@ -34,6 +34,17 @@ interface ResourceSpans {
   readonly scopeSpans: readonly { readonly spans: readonly ExportedSpan[] }[];
 }
 
+interface ResourceMetrics {
+  readonly scopeMetrics: readonly {
+    readonly metrics: readonly {
+      readonly name: string;
+      readonly histogram?: {
+        readonly dataPoints: readonly { readonly attributes: readonly Attribute[] }[];
+      };
+    }[];
+  }[];
+}
+
 interface Run {
   readonly stderr: string;
   readonly stdout: string;
@@ -94,7 +105,7 @@ const app = `
 import { lookup } from 'node:dns';
 import { createServer } from 'node:http';
 import { connect } from 'node:net';
-import { checkHealth, createLogger, logStarted, logStopping, shutdownTelemetry } from ${JSON.stringify(pathToFileURL(join(source, 'index.ts')).href)};
+import { checkHealth, createLogger, logStarted, logStopping, nameRoute, shutdownTelemetry } from ${JSON.stringify(pathToFileURL(join(source, 'index.ts')).href)};
 import { SpanKind, trace } from ${JSON.stringify(api)};
 import pg from ${JSON.stringify(pg)};
 const logger = createLogger({ service: 'toolkit-e2e', release: '9.9.9' });
@@ -122,6 +133,7 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (request.url.startsWith('/work')) {
+    nameRoute('/work');
     await query();
     await resolveName();
     await call('/inner?email=${visitor.email}');
@@ -239,6 +251,22 @@ describe('telemetry in a real process', () => {
       )
     );
     expect(metricNames).toContain('http.server.request.duration');
+  }, 30_000);
+
+  it('puts the route that the app names on the span and on the duration metric', async () => {
+    await runApp({ OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json' });
+
+    const work = serverSpan('/work');
+    expect(work?.name).toBe('GET /work');
+    expect(attribute(work?.attributes ?? [], 'http.route')).toBe('/work');
+    expect(serverSpan('/inner')?.name).toBe('GET');
+    const routes = json('/v1/metrics')
+      .flatMap((body) => body.resourceMetrics as ResourceMetrics[])
+      .flatMap((entry) => entry.scopeMetrics.flatMap((scope) => scope.metrics))
+      .filter((metric) => metric.name === 'http.server.request.duration')
+      .flatMap((metric) => metric.histogram?.dataPoints ?? [])
+      .map((point) => attribute(point.attributes, 'http.route'));
+    expect(routes).toContain('/work');
   }, 30_000);
 
   it('starts no trace for background calls, queries, sockets and lookups', async () => {
