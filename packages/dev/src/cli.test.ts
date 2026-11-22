@@ -35,7 +35,7 @@ describe('the zigordev command', () => {
     expect(run([])).toBe(0);
     expect(output).toContain('Usage: zigordev check [rule...] [file...]');
     expect(output).toContain('       zigordev sync');
-    expect(output).toContain('comments  no file holds a comment');
+    expect(output).toContain('  comments     no file holds a comment');
   });
 
   it('explains itself and fails on a command it does not know', () => {
@@ -71,7 +71,9 @@ describe('the zigordev command', () => {
     expect(output).toContain('README.md  docs  the file is missing');
     expect(output).toContain('package.json  scripts  the file is missing');
     expect(output).toContain('shared  the package holds no shared files');
-    expect(output).toContain('(actions, comments, docs, identity, links, scripts, shared)');
+    expect(output).toContain(
+      '(actions, attribution, comments, docs, identity, links, scripts, shared)'
+    );
   });
 
   it('reads only the files it is given', () => {

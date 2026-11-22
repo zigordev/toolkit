@@ -26,6 +26,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run the check
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: pnpm check
 
   title:

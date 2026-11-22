@@ -1,6 +1,6 @@
 # @zigordev/dev
 
-The developer setup that every zigordev repo shares: the `zigordev` command, one Biome config, the TypeScript bases, one set of git hooks and one set of commit rules.
+The developer setup that every zigordev repo shares: the `zigordev` command, one Biome config, the TypeScript bases, one set of git hooks, one set of commit rules, and the rules that every Claude Code session works under.
 
 ## What it is
 
@@ -29,25 +29,60 @@ The command exists for the rules that no ready-made tool checks. A rule that onl
 
 `zigordev check` reads the repo and prints one line for each thing that breaks a rule. It ends with code 0 when it finds nothing and with code 1 when it finds something.
 
-| Rule       | What it checks                                                                                                          |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `actions`  | Every action in a workflow is pinned to a commit, with its exact version beside it                                      |
-| `comments` | No file holds a comment, in code, config, SQL, Dockerfiles, shell scripts or as a hidden note in Markdown               |
-| `docs`     | The five standard docs exist: `README.md`, the three guides in `docs/` and at least one decision record in `docs/adr/`  |
-| `identity` | The repo is set up to commit as zigordev, and every commit that `main` on GitHub does not have yet was made as zigordev |
-| `links`    | Every link from one Markdown file to another file leads somewhere                                                       |
-| `scripts`  | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`             |
-| `shared`   | Every shared file in the repo matches the copy in this package                                                          |
+| Rule          | What it checks                                                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `actions`     | Every action in a workflow is pinned to a commit, with its exact version beside it                                                |
+| `attribution` | No commit message, pull request title or pull request description carries an attribution line, such as a `Co-Authored-By` trailer |
+| `comments`    | No file holds a comment, in code, config, SQL, Dockerfiles, shell scripts or as a hidden note in Markdown                         |
+| `docs`        | The five standard docs exist: `README.md`, the three guides in `docs/` and at least one decision record in `docs/adr/`            |
+| `identity`    | The repo is set up to commit as zigordev, and every commit that `main` on GitHub does not have yet was made as zigordev           |
+| `links`       | Every link from one Markdown file to another file leads somewhere                                                                 |
+| `scripts`     | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`                       |
+| `shared`      | Every shared file in the repo matches the copy in this package                                                                    |
 
 The `comments` rule allows the few lines a tool needs to work: the first line of a script that names its interpreter, the version beside a pinned action, a Dockerfile's `syntax` line, and suppressions such as `biome-ignore` and `@ts-expect-error`. It reads code with a small scanner of its own, which knows strings and template literals. It does not look inside the code blocks of a Markdown file.
 
 The `identity` rule accepts two more names: Renovate as the author of its own updates, and GitHub as the committer of a merge it made.
 
-`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json` and `.markdownlint-cli2.jsonc`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
+`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
 
 The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
-### The hooks
+### The session rules
+
+Claude Code does the building in every repo, and `shared/.claude/` holds what it works under. `zigordev sync` copies the folder into each repo, so a session finds the same rules everywhere, in a cloud session too.
+
+| Part                                                                                   | What it holds                                                                                   | When a session reads it                                                            |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `rules/core.md`                                                                        | The few rules that hold everywhere, and the check that enforces each one                        | Always                                                                             |
+| `rules/api.md`, `web.md`, `data.md`, `infra.md`, `workflows.md`, `docs.md`, `tests.md` | The standards of one area                                                                       | Only when it reads or edits a file of that area, such as a migration for `data.md` |
+| `skills/`                                                                              | Procedures done the same way each time: `start-work`, `finish-work` and `write-decision-record` | Only when it uses one                                                              |
+| `settings.json`                                                                        | The permission rules and the two hooks                                                          | Always                                                                             |
+| `hooks/`                                                                               | The guard: `guard.sh` and `guard.mjs`                                                           | Before every shell command, and after a file is written                            |
+
+The permission rules are three plain lists. One lets the standard scripts run without a question, such as `pnpm check`. One asks the owner first: creating or changing a repo, a release, a label or a workflow run, applying infrastructure, and publishing a package. One refuses outright: setting or deleting a secret or a variable.
+
+The guard answers what a list cannot, because it has to look at the repo or at the text of the command:
+
+| The session tries to                                                                                   | The guard                                                    |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Commit under an identity other than zigordev                                                           | Refuses, and says how to set the identity                    |
+| Commit, or send text with `gh`, with an attribution line in it                                         | Refuses                                                      |
+| Push to `main`, however the command spells it                                                          | Refuses                                                      |
+| Push, or change something with `gh`, while `gh` acts as another account                                | Refuses, and names the command that switches                 |
+| Approve a pull request or a deployment, or merge with `--admin`                                        | Refuses                                                      |
+| Skip the git hooks, force-push another branch, change a label, or change anything through GitHub's API | Asks the owner                                               |
+| Write a file that holds a comment                                                                      | Lets it happen, then tells the session to remove the comment |
+
+The guard applies the identity, push and account checks only in a zigordev repo, which it knows by the repo's remote or by the repo's own copy of the guard. The attribution check applies in every repo.
+
+`guard.sh` is a launcher of seven lines. Starting Node.js takes between 110 and 190 ms on the laptop, and the hook runs before every shell command. So the launcher looks at the command first, and starts `guard.mjs` only when the command names `git` or `gh`, or when a file was written. Every other command gets its answer in under 10 ms.
+
+`guard.mjs` has no dependency and runs on any Node.js from version 20, so it works before `pnpm install` and in a folder that pins no Node.js version. The check for comments after a write is the exception: it runs the installed `zigordev` command, and it is skipped while that is missing.
+
+The hook is set to block when it fails. A session cannot commit or push while the guard is broken or Node.js is missing, and every other command still runs.
+
+### The git hooks
 
 | When                               | What runs                    | What it does                                                                                                                            |
 | ---------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -66,7 +101,7 @@ The same files serve the laptop and the pipeline, and nothing here runs in produ
 
 ### The configs
 
-The Biome rules are Biome's recommended set plus three: no `console`, type-only imports written as `import type`, and Node.js built-ins imported with the `node:` prefix. Code is formatted with two spaces, single quotes, semicolons and lines of up to 100 characters.
+Biome reads the YAML block at the top of a Markdown file as front matter, because every rule and skill file starts with one. The Biome rules are Biome's recommended set plus three: no `console`, type-only imports written as `import type`, and Node.js built-ins imported with the `node:` prefix. Code is formatted with two spaces, single quotes, semicolons and lines of up to 100 characters.
 
 The TypeScript base turns on strict mode and three checks beyond it: a value read by index may be `undefined`, an override must be marked, and a `switch` case may not fall through. It also accepts only the syntax that Node.js can strip, because Node.js runs the `.ts` files directly.
 
@@ -74,7 +109,7 @@ The TypeScript base turns on strict mode and three checks beyond it: a value rea
 
 Add the package and the tools it drives as dev dependencies: `@zigordev/dev`, `@biomejs/biome`, `@commitlint/cli`, `lefthook`, `markdownlint-cli2` and `typescript`. gitleaks is not an npm package, so pin it in `mise.toml`.
 
-Then let the command write the three shared files:
+Then let the command write the shared files:
 
 ```bash
 pnpm exec zigordev sync
@@ -117,17 +152,22 @@ The first line runs every rule. The second runs two of them. The third reads one
 
 ## How to check that it works
 
-| Try this                                                  | What must happen                                                       |
-| --------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Stage a badly formatted `.ts` file and commit             | The commit goes through with the file formatted                        |
-| Stage a Markdown file with two top-level headings         | The commit is refused, and markdownlint names the rule                 |
-| Stage a file that holds something shaped like a secret    | The commit is refused, and gitleaks reports one leak                   |
-| Stage a file that holds a comment                         | The commit is refused, and `zigordev` names the file and the line      |
-| Commit with the message `added things`                    | The commit is refused, because the title has no type                   |
-| Link to a file that does not exist, then run `pnpm check` | The check fails, and `zigordev` names the link                         |
-| Change a line in `lefthook.yml`, then run `pnpm check`    | The check fails and asks for `zigordev sync`, which puts the file back |
-| Push a branch                                             | `pnpm check:quick` runs first, and the push waits for it               |
-| Push a commit to `main`                                   | The push is refused before it leaves the laptop                        |
+| Try this                                                                | What must happen                                                                       |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Stage a badly formatted `.ts` file and commit                           | The commit goes through with the file formatted                                        |
+| Stage a Markdown file with two top-level headings                       | The commit is refused, and markdownlint names the rule                                 |
+| Stage a file that holds something shaped like a secret                  | The commit is refused, and gitleaks reports one leak                                   |
+| Stage a file that holds a comment                                       | The commit is refused, and `zigordev` names the file and the line                      |
+| Commit with the message `added things`                                  | The commit is refused, because the title has no type                                   |
+| Link to a file that does not exist, then run `pnpm check`               | The check fails, and `zigordev` names the link                                         |
+| Change a line in `lefthook.yml`, then run `pnpm check`                  | The check fails and asks for `zigordev sync`, which puts the file back                 |
+| Push a branch                                                           | `pnpm check:quick` runs first, and the push waits for it                               |
+| Push a commit to `main`                                                 | The push is refused before it leaves the laptop                                        |
+| In a session, commit while the repo is set up to commit as someone else | The commit is refused before git runs, and the session is told how to set the identity |
+| In a session, write a file that holds a comment                         | The file is written, and the session is told to remove the comment                     |
+| In a session, read a migration, then run `/context`                     | `data.md` is among the loaded rules. Before that, it is not                            |
+
+When a session reports that a hook failed and blocked a git command, Node.js is missing from its path or `.claude/hooks/` is incomplete: run `mise install`, then `pnpm exec zigordev sync`.
 
 When a hook does not run at all, the hooks are not installed: run `pnpm install`, which ends with `sync hooks` and the three hook names. When gitleaks is reported as missing, run `mise install`.
 

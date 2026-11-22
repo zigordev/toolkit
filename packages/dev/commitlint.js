@@ -1,4 +1,4 @@
-const attribution = /co-authored-by:|generated with \[?claude|claude\.com\/claude-code|🤖/i;
+export const attribution = /co-authored-by:|generated with \[?claude|claude\.com\/claude-code|🤖/i;
 
 function noAttribution(commit) {
   return [

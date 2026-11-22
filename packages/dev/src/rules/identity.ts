@@ -1,15 +1,12 @@
+import { exists, selection } from '../commits.ts';
 import { git } from '../files.ts';
 import type { Finding, Rule } from '../rule.ts';
 
-const owner = 'zigordev <zigordev@gmail.com>';
+export const owner = 'zigordev <zigordev@gmail.com>';
 const renovate = 'renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>';
 const github = 'GitHub <noreply@github.com>';
 const authors = new Set([owner, renovate]);
 const committers = new Set([owner, renovate, github]);
-
-function exists(root: string, revision: string): boolean {
-  return git(root, ['rev-parse', '--verify', '--quiet', `${revision}^{commit}`]) !== undefined;
-}
 
 function configured(root: string): Finding[] {
   const current = `${git(root, ['config', 'user.name']) ?? ''} <${git(root, ['config', 'user.email']) ?? ''}>`;
@@ -23,19 +20,6 @@ function configured(root: string): Finding[] {
       message: `a commit here would be made as "${current}", not as "${owner}"`,
     },
   ];
-}
-
-function selection(root: string, pullRequest: boolean): string[] | undefined {
-  if (pullRequest) {
-    return exists(root, 'HEAD^2') ? ['HEAD^1..HEAD^2'] : undefined;
-  }
-  if (
-    exists(root, 'origin/main') &&
-    git(root, ['rev-list', '--count', 'origin/main..HEAD']) !== '0'
-  ) {
-    return ['origin/main..HEAD'];
-  }
-  return ['-1', 'HEAD'];
 }
 
 function commits(root: string, pullRequest: boolean): Finding[] {

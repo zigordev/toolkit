@@ -7,7 +7,11 @@ export default defineConfig({
     projects: ['packages/*/vitest.config.ts'],
     coverage: {
       provider: 'v8',
-      include: ['packages/*/src/**/*.{ts,tsx}', 'packages/*/*.js'],
+      include: [
+        'packages/*/src/**/*.{ts,tsx}',
+        'packages/*/*.js',
+        'packages/*/shared/.claude/hooks/*.mjs',
+      ],
       exclude: ['**/*.test.{js,ts,tsx}', '**/*.d.ts'],
       reporter: ['text'],
       thresholds: {
