@@ -6,7 +6,7 @@
 | ---------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                   |
 | The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                            |
-| The pipeline                 | `.github/workflows/check.yml`     | Yes. The first outside caller is `platform`, in phase 2                                                        |
+| The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                      |
 | Dependency updates           | `renovate/default.json`           | Yes                                                                                                            |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                                                                            |
 | The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are in the repo, and not on npm yet. The others arrive from phase 4 on |
@@ -53,7 +53,13 @@ The rules are changed in `toolkit` only. A copy that was edited in another repo 
 
 A repo's own workflow is a short caller. It has two jobs: one calls `check.yml`, and one is the gate named `check`, which passes only when the first one passed. [This repo's caller](../.github/workflows/ci.yml) is the model.
 
-Another repo's caller differs in one line. Where this repo names itself, the other repo names `zigordev/toolkit` and one commit of it, pinned like any action. That line gets its exact form when `platform` becomes the first outside caller.
+Another repo's caller differs in one line. Where this repo names itself, the other repo names `zigordev/toolkit` and one commit of it, pinned like any action. `platform` is the first outside caller, with this line:
+
+```yaml
+uses: zigordev/toolkit/.github/workflows/check.yml@59bfb39019ea676693dde99c0b0a01dc600cad8a # v1.1.0
+```
+
+The commit is the one that the version tag points at, and the job that holds the line grants `contents: read` and `security-events: write`. [The pipeline](handbook/the-pipeline.md) shows the whole file, and says how a new repo takes it.
 
 In the repo's settings, `check` is the one required check on `main`. A new repo also needs its dependency graph switched on, or the Dependencies job fails.
 

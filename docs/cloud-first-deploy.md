@@ -4,12 +4,12 @@
 
 ## What leaves this repo
 
-| What                                         | How it travels                                                                           | State on 2026-11-22                                                                  |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | This repo is its only caller. `platform` becomes the first outside caller in phase 2 |
-| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo and by the workspace folder on the owner's laptop                  |
-| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo                                                                    |
-| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | `@zigordev/dev` is published since 2026-11-22. Every later package starts private    |
+| What                                         | How it travels                                                                           | State on 2026-11-22                                                                |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | `platform` calls it since 2026-11-22, pinned to the commit of version 1.1.0        |
+| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo, by `platform` and by the workspace folder on the owner's laptop |
+| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo and by `platform`                                                |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | `@zigordev/dev` is published since 2026-11-22. Every later package starts private  |
 
 ## The path of a change
 
@@ -32,6 +32,8 @@ The pipeline has four jobs, and one gate that passes only when all of them passe
 | Dependencies | No dependency the pull request adds has a known flaw                   | Pull requests                      |
 | Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows | Every pull request and every merge |
 | `check`      | Every job above passed                                                 | Every pull request and every merge |
+
+[The pipeline](handbook/the-pipeline.md) explains each job, and how another repo calls it.
 
 A pull request opens as a draft. Marking it ready means: merge it when `check` is green. Nobody merges by hand.
 
