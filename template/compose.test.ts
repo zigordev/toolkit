@@ -58,6 +58,26 @@ function rule(from: Model, app: string): string | undefined {
   return from.services[app]?.labels?.[`traefik.http.routers.${app}.rule`];
 }
 
+describe('the scripts', () => {
+  const manifest = JSON.parse(readFileSync(`${folder}package.json`, 'utf8')) as {
+    readonly scripts: Readonly<Record<string, string>>;
+    readonly devDependencies: Readonly<Record<string, string>>;
+  };
+  const product = 'docker compose --file compose.yaml --file compose.local.yaml';
+
+  it('start the shared services first, from the package the template depends on', () => {
+    expect(manifest.scripts['local:up']).toBe(
+      `zigordev-stack up && ${product} up --build --detach --wait`
+    );
+    expect(manifest.devDependencies['@zigordev/stack']).toBe('catalog:');
+  });
+
+  it('stop the product only, and leave the shared services to the other products', () => {
+    expect(manifest.scripts['local:down']).toBe(`${product} down`);
+    expect(manifest.scripts['local:reset']).toBe(`${product} down --volumes && pnpm run local:up`);
+  });
+});
+
 describe('the product', () => {
   it('is one Compose project named after the product, with one service per app', () => {
     expect(everywhere.name).toBe('template');

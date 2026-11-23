@@ -47,19 +47,13 @@ There are two ways to run it. The first is the product as it runs in production,
 
 ### In containers, behind the shared services
 
-It needs Docker, and the shared services of the [platform](https://github.com/zigordev/platform) repo: the ingress, the telemetry agent and Grafana. From this folder:
+It needs Docker. The shared services come with it: the ingress, the telemetry agent and Grafana are the package `@zigordev/stack`, which [platform](https://github.com/zigordev/platform) publishes and this folder takes from npm. From this folder:
 
 ```bash
 pnpm local:up
 ```
 
 The script has two halves. `zigordev-stack up` starts the shared services and waits until each one is healthy. When they already run, it changes nothing. `docker compose up` then builds both images, starts both containers, and returns when both are healthy. The first build takes a few minutes, most of them downloads.
-
-On 2026-11-23 the first half cannot run yet: `zigordev-stack` is the command of `@zigordev/stack`, and that package is not on npm. Until it is, run `pnpm local:up` in a clone of `platform`, and then the second half here:
-
-```bash
-docker compose --file compose.yaml --file compose.local.yaml up --build --detach --wait
-```
 
 | Address                                  | Answers                                                                                           |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------- |

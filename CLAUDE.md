@@ -25,6 +25,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm check:quick` runs the same without coverage. The push hook runs it.
 - `pnpm format` fixes the formatting, the import order and the Markdown problems that have a safe fix.
 - `pnpm exec vitest run <path>` runs one test file.
+- `pnpm --dir template run local:up` starts the shared services from `@zigordev/stack` and the template in containers. `local:down` stops the template only.
 - `pnpm --dir template run check:contract` builds the template's images and holds both apps to the platform contract. It needs Docker running, and the pipeline's Contract job runs the same.
 - `pnpm exec zigordev check [rule...] [file...]` runs the rules a machine can check, all of them or the ones named.
 - `pnpm exec zigordev sync` copies the shared files from `packages/dev/shared` to the root of this repo.
