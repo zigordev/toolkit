@@ -79,7 +79,7 @@ The start reads the standard variables of OpenTelemetry:
 
 Nothing differs between the laptop and production. A service sends to the agent in both, and only the agent knows where the data goes next.
 
-Every span and every metric says who sent it. The start names the service, its version and one id for each running copy, the process with its Node.js version, the operating system, and the host. In a container the host's name is the container's id. The id of the machine is never read: on a laptop it is the hardware's own number, and in a container there is none. `OTEL_NODE_RESOURCE_DETECTORS` is not read, so these facts are the same everywhere.
+Every span and every metric says who sent it, and nothing more. The start names the service, its version and one id for each running copy, the process by its id and the Node.js version that runs it, and the operating system with its version. It sends nothing that names the machine or the person who runs it: no host name, no machine id, no user, no command and no path. On a laptop each of those can hold a person's name, as a computer's name or a home folder often does. `OTEL_NODE_RESOURCE_DETECTORS` is not read, so these facts are the same everywhere.
 
 ### The rules it keeps
 
@@ -87,6 +87,7 @@ Every span and every metric says who sent it. The start names the service, its v
 - **Background work starts no trace.** A query or an outgoing request gets a span only inside another span, so a timer that polls does not fill the store. A background task that is worth a trace starts its own span.
 - **Every trace is kept.** Nothing is sampled, so `OTEL_TRACES_SAMPLER` is not read.
 - **Nothing identifies a visitor.** Before a span leaves the service, it loses the visitor's address, the user agent and the query string. A web address keeps only what comes before its `?`.
+- **Nothing names the machine or its user.** The facts that go with every span and metric name no host, user, command or path.
 - **Starting twice does nothing.** The second call returns the first one's handle.
 - **A stop never fails over telemetry.** `shutdownTelemetry()` sends what the service still holds. When the agent cannot be reached, it waits until the send gives up, says so in a line at the level `warn`, and returns as usual.
 - **Every line is a JSON line.** What a library prints with `console`, what OpenTelemetry says about itself and what Node.js warns of all become lines of the same shape as the service's own.

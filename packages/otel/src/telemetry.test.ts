@@ -1,8 +1,6 @@
-import { hostname } from 'node:os';
 import { DiagLogLevel, diag, ROOT_CONTEXT, SpanKind, TraceFlags, trace } from '@opentelemetry/api';
 import {
   osDetector,
-  processDetector,
   serviceInstanceIdDetector,
   serviceNameEnvDetector,
 } from '@opentelemetry/resources';
@@ -73,7 +71,7 @@ vi.mock('@opentelemetry/core', async (importOriginal) => ({
 }));
 
 const { isProbeRequest, shutdownTelemetry, startTelemetry } = await import('./index.ts');
-const { hostNameDetector, probeAwareSampler } = await import('./telemetry.ts');
+const { probeAwareSampler, runtimeDetector } = await import('./telemetry.ts');
 
 type StartOptions = {
   sampler: unknown;
@@ -151,20 +149,26 @@ describe('startTelemetry', () => {
     expect(lastStartOptions().resourceAttributes).toEqual({});
   });
 
-  it('says who sends: the service, its process, its system and the name of its host', () => {
+  it('says who sends: the service, the runtime of its process and its system, and nothing more', () => {
     startTelemetry();
 
     expect(lastStartOptions().resourceDetectors).toEqual([
       serviceInstanceIdDetector,
       serviceNameEnvDetector,
-      processDetector,
+      runtimeDetector,
       osDetector,
-      hostNameDetector,
     ]);
   });
 
-  it('names the host, and never reads the id of the machine', () => {
-    expect(hostNameDetector.detect()).toEqual({ attributes: { 'host.name': hostname() } });
+  it('names the process by its id and its Node.js, and never by its user, its command or a path', () => {
+    expect(runtimeDetector.detect()).toEqual({
+      attributes: {
+        'process.pid': process.pid,
+        'process.runtime.name': 'nodejs',
+        'process.runtime.version': process.versions.node,
+        'process.runtime.description': 'Node.js',
+      },
+    });
   });
 
   it('lets OTEL_LOG_LEVEL decide the diagnostic level when it is set', () => {
