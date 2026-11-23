@@ -1,10 +1,6 @@
 export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') {
-    return;
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { start } = await import('./lib/start.ts');
+    start();
   }
-  const { logProcessCrashes, logStarted } = await import('@zigordev/otel');
-  const { getLogger } = await import('./lib/logger.ts');
-  const logger = getLogger();
-  logProcessCrashes(logger);
-  logStarted(logger);
 }

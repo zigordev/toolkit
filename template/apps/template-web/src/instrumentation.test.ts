@@ -1,13 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const otel = vi.hoisted(() => ({ logProcessCrashes: vi.fn(), logStarted: vi.fn() }));
-const logger = { name: 'logger' };
+const node = vi.hoisted(() => ({ start: vi.fn() }));
 
-vi.mock('@zigordev/otel', () => ({
-  logProcessCrashes: otel.logProcessCrashes,
-  logStarted: otel.logStarted,
-}));
-vi.mock('./lib/logger.ts', () => ({ getLogger: () => logger }));
+vi.mock('./lib/start.ts', () => ({ start: node.start }));
 
 const { register } = await import('./instrumentation.ts');
 
@@ -17,13 +12,12 @@ afterEach(() => {
 });
 
 describe('register', () => {
-  it('watches for crashes and writes service.started, in the Node.js runtime', async () => {
+  it('starts the app in the Node.js runtime', async () => {
     vi.stubEnv('NEXT_RUNTIME', 'nodejs');
 
     await register();
 
-    expect(otel.logProcessCrashes).toHaveBeenCalledWith(logger);
-    expect(otel.logStarted).toHaveBeenCalledWith(logger);
+    expect(node.start).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing in any other runtime', async () => {
@@ -31,6 +25,6 @@ describe('register', () => {
 
     await register();
 
-    expect(otel.logStarted).not.toHaveBeenCalled();
+    expect(node.start).not.toHaveBeenCalled();
   });
 });

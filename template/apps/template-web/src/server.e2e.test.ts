@@ -94,6 +94,7 @@ async function until(condition: () => boolean | Promise<boolean>, seconds: numbe
 
 interface Started {
   readonly base: string;
+  readonly exited: Promise<number | null>;
   readonly output: () => string;
   readonly errors: () => string;
   readonly stop: () => Promise<{ code: number | null; milliseconds: number }>;
@@ -133,6 +134,7 @@ async function start(env: Record<string, string>): Promise<Started> {
   const exited = new Promise<number | null>((resolve) => started.on('exit', resolve));
   return {
     base,
+    exited,
     output: () => stdout,
     errors: () => stderr,
     stop: async () => {
@@ -238,6 +240,17 @@ describe('the web app as a process', () => {
     expect(printed.filter((line) => line.source === 'console').map((line) => line.message)).toEqual(
       expect.arrayContaining([expect.stringContaining('Next.js')])
     );
+  }, 60_000);
+
+  it('stops at once with code 1, and says which settings are missing, when some are', async () => {
+    const server = await start({ API_URL: '' });
+
+    const code = await server.exited;
+
+    expect(code).toBe(1);
+    expect(server.errors()).toContain('- OTEL_SERVICE_NAME: is missing');
+    expect(server.errors()).toContain('- API_URL: is missing');
+    expect(jsonLines(server.output()).map((line) => line.event)).not.toContain('service.started');
   }, 60_000);
 
   it('stops within seconds of a SIGTERM', async () => {
