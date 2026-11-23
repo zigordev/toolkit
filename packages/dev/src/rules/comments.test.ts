@@ -256,4 +256,23 @@ describe('the comments rule in other files', () => {
     box.remove();
     expect(run('image.png', ['# note'])).toEqual([]);
   });
+
+  it('skips the lock file that tofu init writes, and still reads every other HCL file', () => {
+    const lock = [
+      '# This file is maintained automatically by "tofu init".',
+      '# Manual edits may be lost in future updates.',
+      '',
+      'provider "registry.opentofu.org/hashicorp/aws" {',
+      '  version = "6.20.0"',
+      '}',
+    ];
+
+    expect(run('infra/bootstrap/.terraform.lock.hcl', lock)).toEqual([]);
+    box.remove();
+    expect(run('infra/bootstrap/main.tf', ['# note', 'terraform {}'])).toEqual([
+      '1 a comment: "note"',
+    ]);
+    box.remove();
+    expect(run('infra/bootstrap/terraform.lock.hcl', lock)).toHaveLength(2);
+  });
 });
