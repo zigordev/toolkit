@@ -18,9 +18,46 @@ function job(text: string, name: string): string {
   return next === null ? rest : rest.slice(0, next.index + 1);
 }
 
+function jobs(text: string): string[] {
+  const body = text.slice(text.indexOf('\njobs:\n'));
+  return [...body.matchAll(/^ {2}([\w-]+):$/gm)].map((match) => match[1] ?? '');
+}
+
 function setting(name: string): string | undefined {
   return new RegExp(`^ +${name}: (.+)$`, 'm').exec(workflow)?.[1];
 }
+
+describe('the machines of the pipeline', () => {
+  const ubuntu = 'ubuntu-26.04';
+  const files = { 'check.yml': workflow, 'release.yml': release, 'ci.yml': caller };
+
+  it('reads every job of the three workflows', () => {
+    expect(jobs(workflow)).toEqual(['quality', 'contract', 'title', 'dependencies', 'scan']);
+    expect(jobs(release)).toEqual(['version', 'pack', 'publish']);
+    expect(jobs(caller)).toEqual(['pipeline', 'check', 'release']);
+  });
+
+  it('name Ubuntu 26.04 exactly on every job, or call a workflow of this repo that does', () => {
+    const wrong = Object.entries(files).flatMap(([file, text]) =>
+      jobs(text).flatMap((name) => {
+        const block = job(text, name);
+        const label = /^ {4}runs-on: (.+)$/m.exec(block)?.[1];
+        const calls = /^ {4}uses: \S*\.github\/workflows\/[\w-]+\.yml$/m.test(block);
+        const named = name === 'contract' ? `${ubuntu}-arm` : ubuntu;
+        const right = label === undefined ? calls : label === named;
+        return right ? [] : [`${file}: the job ${name} runs on ${label ?? 'no named machine'}`];
+      })
+    );
+
+    expect(wrong).toEqual([]);
+  });
+
+  it('never name a machine that GitHub moves by itself', () => {
+    for (const text of Object.values(files)) {
+      expect(text).not.toMatch(/runs-on: \S*latest/);
+    }
+  });
+});
 
 describe('the Dependencies job', () => {
   it('fails on a known flaw of any severity', () => {
@@ -36,7 +73,7 @@ describe('the Contract job', () => {
   });
 
   it('runs on an arm64 machine, because the images are built for arm64 only', () => {
-    expect(job(workflow, 'contract')).toContain('runs-on: ubuntu-24.04-arm');
+    expect(job(workflow, 'contract')).toContain('runs-on: ubuntu-26.04-arm');
   });
 
   it('may read the repo, and nothing else', () => {
