@@ -2,19 +2,31 @@ import { attribution as pattern } from '../../commitlint.js';
 import { exists, selection } from '../commits.ts';
 import { git } from '../files.ts';
 import type { Finding, Rule } from '../rule.ts';
+import { renovate } from './identity.ts';
 
 const message = 'the text carries an attribution line, so remove it';
+const addedByGithub = `Co-authored-by: ${renovate}`;
+
+function ownText(author: string, text: string): string {
+  if (author !== renovate) {
+    return text;
+  }
+  return text
+    .split('\n')
+    .filter((line) => line.trimEnd() !== addedByGithub)
+    .join('\n');
+}
 
 function commits(root: string, pullRequest: boolean): Finding[] {
   const chosen = exists(root, 'HEAD') ? selection(root, pullRequest) : undefined;
   if (chosen === undefined) {
     return [];
   }
-  const log = git(root, ['log', '--format=%h%x09%B%x00', ...chosen]) ?? '';
+  const log = git(root, ['log', '--format=%h%x09%an <%ae>%x09%B%x00', ...chosen]) ?? '';
   const findings: Finding[] = [];
   for (const entry of log.split('\0')) {
-    const [hash = '', ...text] = entry.trim().split('\t');
-    if (pattern.test(text.join('\t'))) {
+    const [hash = '', author = '', ...text] = entry.trim().split('\t');
+    if (pattern.test(ownText(author, text.join('\t')))) {
       findings.push({ rule: 'attribution', path: `commit ${hash}`, message });
     }
   }

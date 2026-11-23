@@ -3,7 +3,7 @@ import { git } from '../files.ts';
 import type { Finding, Rule } from '../rule.ts';
 
 export const owner = 'zigordev <zigordev@gmail.com>';
-const renovate = 'renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>';
+export const renovate = 'renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>';
 const github = 'GitHub <noreply@github.com>';
 const authors = new Set([owner, renovate]);
 const committers = new Set([owner, renovate, github]);
