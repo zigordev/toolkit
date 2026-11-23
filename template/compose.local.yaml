@@ -1,0 +1,18 @@
+services:
+  template-api:
+    build:
+      context: ..
+      dockerfile: template/apps/template-api/Dockerfile
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=local
+    labels:
+      traefik.http.routers.template-api.rule: Host(`template.localhost`) && PathPrefix(`/api`)
+
+  template-web:
+    build:
+      context: ..
+      dockerfile: template/apps/template-web/Dockerfile
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=local
+    labels:
+      traefik.http.routers.template-web.rule: Host(`template.localhost`)

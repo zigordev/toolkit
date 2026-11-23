@@ -6,19 +6,19 @@ The repo is being built step by step, and each step arrives as its own pull requ
 
 ## What it is
 
-| Path                    | What it holds                                                                                                                                                        |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares                           |
-| `packages/config`       | `@zigordev/config`: one function that reads an app's settings from the environment through a Zod schema, and stops the app as it starts when one is missing or wrong |
-| `packages/otel`         | `@zigordev/otel`: telemetry for a service: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route              |
-| `template/`             | The product template: a minimal product that runs on the packages of this checkout. Its API and its web app exist, and its containers follow                         |
-| `.claude/`              | The rules, skills, hooks and permissions that every Claude Code session works under. Every other repo holds a copy of them                                           |
-| `CLAUDE.md`             | What a session needs to know about this repo: where things live, its commands and its own rules                                                                      |
-| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                            |
-| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                  |
-| `.github/workflows`     | The pipeline. `check.yml` is the part every repo will call, `release.yml` tags and publishes after a merge, and `ci.yml` runs both for this repo                     |
-| `renovate/default.json` | The Renovate preset that every repo extends: how dependency updates are proposed, and when they merge by themselves                                                  |
-| `docs/`                 | The standard docs, the handbook with its reading order, and the decision records                                                                                     |
+| Path                    | What it holds                                                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the Biome config, the TypeScript bases, the git hooks and the commit rules that every repo shares                             |
+| `packages/config`       | `@zigordev/config`: one function that reads an app's settings from the environment through a Zod schema, and stops the app as it starts when one is missing or wrong   |
+| `packages/otel`         | `@zigordev/otel`: telemetry for a service: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route                |
+| `template/`             | The product template: a minimal product that runs on the packages of this checkout. An API, a web app, their images, and the compose files that run both as containers |
+| `.claude/`              | The rules, skills, hooks and permissions that every Claude Code session works under. Every other repo holds a copy of them                                             |
+| `CLAUDE.md`             | What a session needs to know about this repo: where things live, its commands and its own rules                                                                        |
+| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                              |
+| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                    |
+| `.github/workflows`     | The pipeline. `check.yml` is the part every repo will call, `release.yml` tags and publishes after a merge, and `ci.yml` runs both for this repo                       |
+| `renovate/default.json` | The Renovate preset that every repo extends: how dependency updates are proposed, and when they merge by themselves                                                    |
+| `docs/`                 | The standard docs, the handbook with its reading order, and the decision records                                                                                       |
 
 Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
@@ -49,6 +49,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | pino                         | The logger that `@zigordev/otel` writes its JSON log lines with                                                                                                                                                                                                              |
 | Fastify 5                    | The web server framework of the template's API                                                                                                                                                                                                                               |
 | Next.js 16 with React 19     | The template's web app                                                                                                                                                                                                                                                       |
+| Docker Compose               | Describes the template as two containers. The check only reads its files, which needs the `docker` command and no running Docker. Running the containers needs Docker itself, and the shared services of `platform`                                                          |
 | GitHub Actions               | Runs the pipeline on every pull request and on every merge to `main`                                                                                                                                                                                                         |
 | CodeQL                       | Scans our own code for vulnerable patterns, in the pipeline                                                                                                                                                                                                                  |
 | Dependency Review            | Fails a pull request that adds a dependency with a known flaw                                                                                                                                                                                                                |
@@ -56,7 +57,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | Renovate                     | Opens a pull request for each newer version of a package, a tool or an action. It merges patch and minor updates by itself, on weekdays between 08:00 and 18:00                                                                                                              |
 | Claude Code                  | Does the building, under the rules, skills and hooks in `.claude/`                                                                                                                                                                                                           |
 
-It needs no other repo and no running service.
+The check needs no other repo and no running service. Only running the template in containers does: [template/README.md](template/README.md) says how.
 
 ## Quick start
 
@@ -82,7 +83,7 @@ pnpm check
 | `pnpm test`        | Runs the tests with coverage                                                                 |
 | `pnpm build`       | Compiles the packages that are published                                                     |
 
-[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings, and [packages/otel](packages/otel/README.md) what a service reports about itself.
+[packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings, and [packages/otel](packages/otel/README.md) what a service reports about itself. [template](template/README.md) explains the product template, and how to run it.
 
 ## Where to read more
 

@@ -4,19 +4,19 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 
 ## Where things live
 
-| Path                    | What it holds                                                                                               |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                            |
-| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo     |
-| `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                  |
-| `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                  |
-| `template/`             | The product template. Its apps are members of this workspace, and use the packages through `workspace:*`    |
-| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                     |
-| `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here |
-| `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values   |
-| `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`                |
-| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                   |
-| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                         |
+| Path                    | What it holds                                                                                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                                                                                            |
+| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo                                                                     |
+| `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                  |
+| `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                  |
+| `template/`             | The product template. It and its apps are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
+| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                     |
+| `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here                                                                 |
+| `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values                                                                   |
+| `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`                                                                                |
+| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                                   |
+| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                         |
 
 ## Commands
 

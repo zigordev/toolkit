@@ -1,0 +1,12 @@
+services:
+  template-api:
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=production
+    labels:
+      traefik.http.routers.template-api.rule: Host(`template.zigordev.com`) && PathPrefix(`/api`)
+
+  template-web:
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=production
+    labels:
+      traefik.http.routers.template-web.rule: Host(`template.zigordev.com`)
