@@ -6,18 +6,21 @@ The base every API of the platform stands on. One call gives a Fastify server th
 
 Fastify is the web server framework of every API. Zod describes each request and answer, and the same description validates the request, types the handler and writes the OpenAPI document.
 
-| Export                                                    | What it is                                                                                                  |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `createApi(options)`                                      | A Fastify server with everything below in place, ready for the app's features                               |
-| `serve(app, options)`                                     | Listens, writes `service.started`, and returns a `stop(signal)` that ends the process cleanly               |
-| `stopOnSignals(server)`                                   | Calls `stop` on SIGTERM and SIGINT, and exits with its code                                                 |
-| `ProblemError`, `badRequest`, `notFound`, `conflict`, …   | The errors a route throws. The error handler turns each one into an answer in the platform's format         |
-| `problemResponses(400, 404, …)`                           | The error answers a route declares, so that the OpenAPI document lists them                                 |
-| `listQuery`, `parseSort`, `pageOf`, `pageSchema`, cursors | The query string and the answer of a list: filters, sorting, a limit and a cursor                           |
-| `requireScope(request, scope)`, `principalOf(request)`    | Who signed in, and whether they may do this. `bearerToken(request)` reads an `Authorization: Bearer` header |
-| `clientAddress(request)`, `defaultRateLimit`              | The address a client is counted under, and the limit every API gets unless it sets `rateLimit`              |
-| `addHealthComponent(app, component)`                      | Adds a part the service depends on to the health route                                                      |
-| `openapiDocument(app)`                                    | The OpenAPI document as the committed `openapi.json` holds it                                               |
+| Export                                                        | What it is                                                                                                                         |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `createApi(options)`                                          | A Fastify server with everything below in place, ready for the app's features                                                      |
+| `serve(app, options)`                                         | Listens, writes `service.started`, and returns a `stop(signal)` that ends the process cleanly                                      |
+| `stopOnSignals(server)`                                       | Calls `stop` on SIGTERM and SIGINT, and exits with its code                                                                        |
+| `ProblemError`, `badRequest`, `notFound`, `conflict`, …       | The errors a route throws. The error handler turns each one into an answer in the platform's format                                |
+| `problemResponses(400, 404, …)`                               | The error answers a route declares, so that the OpenAPI document lists them                                                        |
+| `listQuery`, `parseSort`, `pageOf`, `pageSchema`, cursors     | The query string and the answer of a list: filters, sorting, a limit and a cursor                                                  |
+| `requireScope(request, scope)`, `principalOf(request)`        | Who signed in, and whether they may do this. `bearerToken(request)` reads an `Authorization: Bearer` header                        |
+| `clientAddress(request)`, `defaultRateLimit`                  | The address a client is counted under, and the limit every API gets unless it sets `rateLimit`                                     |
+| `addDatabase(app, { url, schema })`                           | A pool of connections to the app's PostgreSQL, Drizzle on top, the part `db` of the health route, and a close at the stop          |
+| `migrateDatabase({ url, adminUrl, folder, logger })`          | What the one-shot migrate job runs: it makes the app's role and database when it has an admin address, then applies the migrations |
+| `afterCursor(columns, direction, values)`, `keysetOrder(...)` | The condition and the order of a list's page in SQL, from its cursor                                                               |
+| `addHealthComponent(app, component)`                          | Adds a part the service depends on to the health route                                                                             |
+| `openapiDocument(app)`                                        | The OpenAPI document as the committed `openapi.json` holds it                                                                      |
 
 ## Why we have it
 
@@ -105,6 +108,14 @@ A cursor is an opaque text that holds the sort values of the last item, and the 
 ### The stop
 
 `stop(signal)` writes `service.stopping`, and closes the server: it takes no new connection, lets every request in flight finish, and closes each connection as soon as its last answer is sent. Then it sends the last telemetry. It ends with code 0. When the close takes longer than 25 seconds, it writes `service.stop_timed_out` and ends with code 1, before the container's 30 seconds of grace run out.
+
+### The database
+
+Each app has its own database and its own role on the product's PostgreSQL, as the data rules ask. Drizzle sends the queries, over a pool of node-postgres connections.
+
+- `addDatabase(app, { url, schema })` opens the pool, gives the app `app.db`, and returns the same database typed by the schema. It adds `db` to the health route as a required part, so the route answers 503 while the database is down. The stop closes the pool. Columns are written in camelCase in TypeScript and in snake_case in SQL.
+- `migrateDatabase` is what the migrate job runs before the app starts. With `adminUrl`, the superuser's address, it first makes the role and the database that `url` names, or sets the role's password to the one in `url`, so a password changed in Parameter Store reaches the database with the next deploy. Then it connects as the app's role and applies the migrations that Drizzle has not applied yet. It writes `migration.started`, `migration.finished` with how many it applied, and `migration.failed` when one fails, and never the password.
+- A list pages by keyset: the next page starts after the sort value and the id of the last item, which the cursor holds. `afterCursor` gives that condition and `keysetOrder` the matching order. Store timestamps with a precision of 3, milliseconds, so that a cursor holds them exactly.
 
 ## How to use it
 
