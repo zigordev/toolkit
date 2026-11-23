@@ -15,18 +15,8 @@ interface World {
   model: {
     name: string;
     networks?: Record<string, unknown>;
-    services: Record<
-      string,
-      {
-        image: string;
-        environment?: Record<string, string>;
-        labels?: Record<string, string>;
-        depends_on?: Record<string, { condition: string }>;
-      }
-    >;
+    services: Record<string, { image: string; environment?: Record<string, string> }>;
   };
-  jobState: string;
-  jobLogs: Outcome;
   configFails: boolean;
   dockerDown: boolean;
   missingImage: string | undefined;
@@ -97,12 +87,6 @@ beforeEach(() => {
     held: '{"response":"HTTP/1.1 200 OK"}',
     heldAfter: 0,
     logs: { status: 0, stdout: `${line}\n`, stderr: '' },
-    jobState: 'exited 0',
-    jobLogs: {
-      status: 0,
-      stdout: `${JSON.stringify({ event: 'migration.finished' })}\n`,
-      stderr: '',
-    },
     agentScript: '/repo/packages/dev/src/contract/agent.ts',
   };
   calls = [];
@@ -160,12 +144,6 @@ const docker: Run = (command, args) => {
   if (/^exec contract-agent-id node \S+ received /.test(call)) {
     return text(JSON.stringify(next(world.received)));
   }
-  if (call.startsWith('inspect --format {{.State.Status}}') && call.endsWith('-migrate-id')) {
-    return text(`${world.jobState}\n`);
-  }
-  if (call === 'logs gpool-api-migrate-id') {
-    return world.jobLogs;
-  }
   if (call.startsWith('inspect --format {{.State.Status}}')) {
     return text(`${next(world.bareStates)}\n`);
   }
@@ -217,17 +195,6 @@ function called(pattern: RegExp): string[] {
   return calls.filter((call) => pattern.test(call));
 }
 
-function withJob(): void {
-  world.model.services['gpool-api-migrate'] = {
-    image: 'ghcr.io/zigordev/gpool-api:local',
-    labels: { 'com.zigordev.job': 'migrate' },
-  };
-  const api = world.model.services['gpool-api'];
-  if (api !== undefined) {
-    api.depends_on = { 'gpool-api-migrate': { condition: 'service_completed_successfully' } };
-  }
-}
-
 describe('the contract command', () => {
   it('says for each app which promises it keeps, and passes when all are kept', () => {
     expect(run()).toBe(0);
@@ -252,34 +219,6 @@ describe('the contract command', () => {
         '',
       ].join('\n')
     );
-  });
-
-  it('holds a job to its own two promises, not to those of an app, and counts it', () => {
-    withJob();
-
-    expect(run()).toBe(0);
-
-    expect(output).toContain(
-      [
-        'gpool-api-migrate, a job',
-        '  kept    1  it ended with code 0 before gpool-api started',
-        '  kept    2  1 line, all JSON',
-        'zigordev contract: 2 apps keep promises 1 to 6, and 1 job keeps promises 1 and 2',
-        '',
-      ].join('\n')
-    );
-    expect(output).not.toMatch(/^gpool-api-migrate$/m);
-    expect(called(/ run --detach .*gpool-api-migrate$/)).toEqual([]);
-  });
-
-  it('fails when a job breaks one of its promises', () => {
-    withJob();
-    world.jobState = 'exited 1';
-
-    expect(run()).toBe(1);
-
-    expect(output).toContain('  broken  1  it ended with code 1\n');
-    expect(output).toContain('zigordev contract: 1 promise is broken\n');
   });
 
   it('starts the product under a name of its own, from the images that are built, on a network of its own', () => {

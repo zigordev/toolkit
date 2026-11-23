@@ -5,16 +5,9 @@ export interface App {
   readonly agent: string | undefined;
 }
 
-export interface Job {
-  readonly service: string;
-  readonly kind: string;
-  readonly waitedForBy: readonly string[];
-}
-
 export interface Product {
   readonly name: string;
   readonly apps: readonly App[];
-  readonly jobs: readonly Job[];
   readonly networks: readonly string[];
 }
 
@@ -29,8 +22,6 @@ export interface AgentPlace {
 interface Service {
   readonly image?: string;
   readonly environment?: Readonly<Record<string, string | null>>;
-  readonly labels?: Readonly<Record<string, string>>;
-  readonly depends_on?: Readonly<Record<string, { readonly condition?: string }>>;
 }
 
 interface Model {
@@ -40,26 +31,12 @@ interface Model {
 }
 
 export const ownImages = 'ghcr.io/zigordev/';
-export const jobLabel = 'com.zigordev.job';
 export const agentService = 'contract-agent';
 
 export function readProduct(config: string): Product {
   const model = JSON.parse(config) as Model;
-  const services = Object.entries(model.services ?? {});
-  const isJob = (service: Service): boolean => service.labels?.[jobLabel] !== undefined;
-  const jobs = services
-    .filter(([, service]) => isJob(service))
-    .map(([name, service]) => ({
-      service: name,
-      kind: service.labels?.[jobLabel] ?? '',
-      waitedForBy: services
-        .filter(
-          ([, other]) => other.depends_on?.[name]?.condition === 'service_completed_successfully'
-        )
-        .map(([other]) => other),
-    }));
-  const apps = services
-    .filter(([, service]) => !isJob(service) && service.image?.startsWith(ownImages))
+  const apps = Object.entries(model.services ?? {})
+    .filter(([, service]) => service.image?.startsWith(ownImages))
     .map(([name, service]) => ({
       service: name,
       image: service.image ?? '',
@@ -69,7 +46,6 @@ export function readProduct(config: string): Product {
   return {
     name: model.name ?? '',
     apps,
-    jobs,
     networks: Object.keys(model.networks ?? {}),
   };
 }

@@ -14,15 +14,6 @@ export interface Evidence {
   readonly stop: { readonly code: number; readonly seconds: number; readonly held: Held };
 }
 
-export interface JobEvidence {
-  readonly service: string;
-  readonly waitedForBy: readonly string[];
-  readonly status: string;
-  readonly code: number;
-  readonly stdout: string;
-  readonly stderr: string;
-}
-
 export interface Verdict {
   readonly promise: number;
   readonly kept: boolean;
@@ -192,35 +183,4 @@ export function judge(evidence: Evidence): Verdict[] {
     telemetry(evidence),
     stop(evidence),
   ];
-}
-
-function ended(evidence: JobEvidence): Verdict {
-  if (evidence.waitedForBy.length === 0) {
-    return broken(
-      1,
-      'no service waits for it with depends_on and the condition service_completed_successfully'
-    );
-  }
-  if (evidence.status !== 'exited') {
-    return broken(1, `it is still ${evidence.status || 'missing'} after the product started`);
-  }
-  if (evidence.code !== 0) {
-    return broken(1, `it ended with code ${evidence.code}`);
-  }
-  return kept(1, `it ended with code 0 before ${evidence.waitedForBy.join(' and ')} started`);
-}
-
-function jobLines(evidence: JobEvidence): Verdict {
-  const lines = `${evidence.stdout}\n${evidence.stderr}`
-    .split('\n')
-    .filter((line) => line.trim() !== '');
-  const plain = lines.find((line) => !isJsonObject(line));
-  if (plain !== undefined) {
-    return broken(2, `a line it printed is not JSON: "${short(plain)}"`);
-  }
-  return kept(2, `${lines.length} ${lines.length === 1 ? 'line' : 'lines'}, all JSON`);
-}
-
-export function judgeJob(evidence: JobEvidence): Verdict[] {
-  return [ended(evidence), jobLines(evidence)];
 }
