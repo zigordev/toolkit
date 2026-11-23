@@ -11,6 +11,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                  |
 | `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                  |
 | `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, and the harness that builds an app for API tests                                       |
+| `packages/api`          | `@zigordev/api`: the Fastify base of every API: the error format, paging, sign-in checks, the OpenAPI pages, the health route and a clean stop                              |
 | `template/`             | The product template. It and its apps are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
 | `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                     |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here                                                                 |
