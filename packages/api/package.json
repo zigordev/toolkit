@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/api",
   "version": "0.0.0",
-  "private": true,
   "description": "The base every zigordev API stands on: one Fastify start with the error format, paging, the OpenAPI pages, the health route, sign-in checks and a clean stop",
   "license": "UNLICENSED",
   "type": "module",
