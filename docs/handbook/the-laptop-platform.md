@@ -90,7 +90,7 @@ The web app gets the product's whole address, and the API gets the same address 
 
 Each app's container is boxed in the same way: a user that is not root, a read-only file system, no capability, no new privilege, an init process, 30 seconds to stop, and a memory and a CPU limit. In the template, the test `compose.test.ts` holds the files to these rules, and `zigordev contract` holds the running images to the first six promises of the contract.
 
-A service that is not an app says what it is with a label of the platform, and the platform does the rest. [Record 0035](../adr/0035-labels-tell-the-platform-what-a-service-is.md), proposed on 2026-11-23, sets both labels. The template gets one of each with its notes API:
+A service that is not an app says what it is with a label of the platform, and the platform does the rest. [Record 0035](../adr/0035-labels-tell-the-platform-what-a-service-is.md), accepted on 2026-11-23, sets both labels. The template gets one of each with its notes API:
 
 | Label                           | On                                                     | What the platform does with it                                                                                                                                                                 |
 | ------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,6 +1,6 @@
 # 0035. Labels tell the platform what a service is
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-23
 - Supersedes: none
 
@@ -11,7 +11,7 @@ A product's `compose.yaml` describes the whole product. Two jobs of the platform
 - **The deploy** (step 3.7 of the build plan) has to run a product's migration job once, before the new version starts, and stop when the job fails. The job runs the app's own image and ends after its work. `zigordev contract` takes every service on a `ghcr.io/zigordev/` image for an app, so it would hold the job to the six promises of an app, and the job would fail them.
 - **The backup** (step 3.8) has to find every product's PostgreSQL and dump it each hour. [Record 0017](0017-one-postgresql-server-per-product.md) says that it finds the databases by a label, but not which label, nor how the job gets in without a secret.
 
-The two lanes of the build agreed on both on 2026-11-23.
+The two lanes of the build agreed on both on 2026-11-23, and the owner accepted this record the same day: "Yes, accept it".
 
 ## Decision
 
