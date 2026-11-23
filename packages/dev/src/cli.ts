@@ -75,15 +75,20 @@ function check(args: readonly string[], rules: readonly Rule[], io: Io): number 
       (left, right) => left.path.localeCompare(right.path) || (left.line ?? 0) - (right.line ?? 0)
     );
   const ran = active.map((rule) => rule.name).join(', ');
-  if (findings.length === 0) {
+  const warnings = findings.filter((finding) => finding.level === 'warning');
+  const errors = findings.filter((finding) => finding.level !== 'warning');
+  for (const finding of warnings) {
+    io.write(`${place(finding)}  ${finding.rule}  warning: ${finding.message}\n`);
+  }
+  if (errors.length === 0) {
     io.write(`zigordev check: no findings (${ran})\n`);
     return 0;
   }
-  for (const finding of findings) {
+  for (const finding of errors) {
     io.write(`${place(finding)}  ${finding.rule}  ${finding.message}\n`);
   }
   io.write(
-    `zigordev check: ${findings.length} ${findings.length === 1 ? 'finding' : 'findings'} (${ran})\n`
+    `zigordev check: ${errors.length} ${errors.length === 1 ? 'finding' : 'findings'} (${ran})\n`
   );
   return 1;
 }

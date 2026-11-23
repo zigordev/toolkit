@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { idle } from '../test/idle.ts';
-import { type Sandbox, sandbox } from '../test/sandbox.ts';
+import { repo, type Sandbox, sandbox } from '../test/sandbox.ts';
 import { main } from './cli.ts';
 
 let box: Sandbox;
@@ -33,6 +33,40 @@ function run(
 
 afterEach(() => {
   box.remove();
+});
+
+describe('a rule that only warns', () => {
+  it('prints its warning, and the check still passes', () => {
+    box = sandbox({ 'drizzle/0000_create.sql': 'CREATE TABLE "a" ("id" uuid);\n' });
+    repo(box);
+    box.git('add', '.');
+    box.commit('feat: create a');
+    box.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    box.write('drizzle/0001_drop.sql', 'DROP TABLE "a";\n');
+    output = '';
+
+    const code = main(['check', 'migrations'], {
+      cwd: box.root,
+      env: { CI: 'true' },
+      shared: join(box.root, 'node_modules/shared'),
+      run: () => ({ status: 1, stdout: '', stderr: 'no command runs in this test' }),
+      interact: () => 1,
+      atTerminal: false,
+      write: (text) => {
+        output += text;
+      },
+      ...idle,
+    });
+
+    expect(code).toBe(0);
+    expect(output).toBe(
+      [
+        'drizzle/0001_drop.sql:1  migrations  warning: DROP TABLE deletes data: the pull request waits for the owner, who adds the label destructive-migration',
+        'zigordev check: no findings (migrations)',
+        '',
+      ].join('\n')
+    );
+  });
 });
 
 describe('the zigordev command', () => {
@@ -92,7 +126,7 @@ describe('the zigordev command', () => {
     expect(output).toContain('package.json  scripts  the file is missing');
     expect(output).toContain('shared  the package holds no shared files');
     expect(output).toContain(
-      '(actions, attribution, comments, docs, identity, links, scripts, shared)'
+      '(actions, attribution, comments, docs, identity, links, migrations, scripts, shared)'
     );
   });
 

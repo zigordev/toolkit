@@ -102,7 +102,7 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -135,6 +135,8 @@ jobs:
           echo "The pipeline ended with: $RESULT"
           test "$RESULT" = "success"
 ```
+
+The pull request runs the pipeline again when a label is added or removed, because the `migrations` rule of `zigordev check` reads one: a migration that deletes data passes only with the owner's label `destructive-migration`.
 
 A new repo takes it in three steps:
 

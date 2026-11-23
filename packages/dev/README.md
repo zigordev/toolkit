@@ -31,16 +31,19 @@ The command exists for the rules that no ready-made tool checks. A rule that onl
 
 `zigordev check` reads the repo and prints one line for each thing that breaks a rule. It ends with code 0 when it finds nothing and with code 1 when it finds something.
 
-| Rule          | What it checks                                                                                                                    |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `actions`     | Every action in a workflow is pinned to a commit, with its exact version beside it                                                |
-| `attribution` | No commit message, pull request title or pull request description carries an attribution line, such as a `Co-Authored-By` trailer |
-| `comments`    | No file holds a comment, in code, config, SQL, Dockerfiles, shell scripts or as a hidden note in Markdown                         |
-| `docs`        | The five standard docs exist: `README.md`, the three guides in `docs/` and at least one decision record in `docs/adr/`            |
-| `identity`    | The repo is set up to commit as zigordev, and every commit that `main` on GitHub does not have yet was made as zigordev           |
-| `links`       | Every link from one Markdown file to another file leads somewhere                                                                 |
-| `scripts`     | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`                       |
-| `shared`      | Every shared file in the repo matches the copy in this package                                                                    |
+| Rule          | What it checks                                                                                                                                                                |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actions`     | Every action in a workflow is pinned to a commit, with its exact version beside it                                                                                            |
+| `attribution` | No commit message, pull request title or pull request description carries an attribution line, such as a `Co-Authored-By` trailer                                             |
+| `comments`    | No file holds a comment, in code, config, SQL, Dockerfiles, shell scripts or as a hidden note in Markdown                                                                     |
+| `docs`        | The five standard docs exist: `README.md`, the three guides in `docs/` and at least one decision record in `docs/adr/`                                                        |
+| `identity`    | The repo is set up to commit as zigordev, and every commit that `main` on GitHub does not have yet was made as zigordev                                                       |
+| `links`       | Every link from one Markdown file to another file leads somewhere                                                                                                             |
+| `migrations`  | A migration that a pull request adds and that deletes data waits for the owner's label `destructive-migration`. In CI it fails without the label. On the laptop it only warns |
+| `scripts`     | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`                                                                   |
+| `shared`      | Every shared file in the repo matches the copy in this package                                                                                                                |
+
+The `migrations` rule reads each SQL file in a `drizzle/` folder that is new: one that the pull request adds in CI, or one that `origin/main` lacks on the laptop. It finds the statements that delete data: `DROP TABLE`, `DROP COLUMN`, `DROP SCHEMA`, `DROP DATABASE`, `TRUNCATE`, `DELETE` and a change of a column's type. `DROP INDEX`, `DROP CONSTRAINT`, `DROP DEFAULT` and `DROP NOT NULL` lose no data, so they pass. In a pull request it fails until the pull request has the label `destructive-migration`, which only the owner adds, and the pipeline runs again when a label changes. On the laptop it cannot see labels, so it prints a warning and does not stop the commit. [Record 0037](../../docs/adr/0037-a-migration-that-deletes-data-waits-for-the-owners-label.md) holds the decision.
 
 The `comments` rule allows the few lines a tool needs to work: the first line of a script that names its interpreter, the version beside a pinned action, a Dockerfile's `syntax` line, and suppressions such as `biome-ignore` and `@ts-expect-error`. It reads code with a small scanner of its own, which knows strings, template literals and regular expressions. It does not look inside the code blocks of a Markdown file. It skips the two lock files that a tool writes and rewrites, `pnpm-lock.yaml` and OpenTofu's `.terraform.lock.hcl`, whose header `tofu init` puts back on every change of providers.
 
