@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/test",
   "version": "0.0.0",
-  "private": true,
   "description": "Test helpers for zigordev services: a real PostgreSQL with one migrated copy per test file, and the harness that builds an app for API tests",
   "license": "UNLICENSED",
   "type": "module",

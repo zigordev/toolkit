@@ -2,15 +2,15 @@
 
 `toolkit` is a library, so its users are the other zigordev repos. This page says what a repo takes from it, and how. Each part says what exists on 2026-11-22, because the platform is still being built.
 
-| A repo takes                 | From                              | Exists today                                                                                                                                                                     |
-| ---------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                                                                                     |
-| The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                                                                                              |
-| The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                                                                        |
-| Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                                                              |
-| The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                                                              |
-| The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are on npm since 2026-11-23. The others arrive from phase 4 on                                                                           |
-| A product to start from      | `template/`                       | Its first slice is complete since 2026-11-23: an API, a web app, their images, the compose files, and the contract test in the pipeline. The other slices follow from phase 4 on |
+| A repo takes                 | From                              | Exists today                                                                                                                                                                                                                                                                           |
+| ---------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                                                                                                                                                                                           |
+| The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                                                                                                                                                                                                    |
+| The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                                                                                                                                                                              |
+| Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                                                                                                                                                                    |
+| The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                                                                                                                                                                    |
+| The shared packages for apps | `packages/`                       | `@zigordev/config`, `@zigordev/otel`, `@zigordev/test` and `@zigordev/api` are on npm since 2026-11-23. The others arrive from phase 6 on                                                                                                                                              |
+| A product to start from      | `template/`                       | Its first two slices are complete since 2026-11-23: an API and a web app with their images, the compose files and the contract test, then the notes API on its own PostgreSQL with its migrate job, its OpenAPI file and its generated client. The other slices follow from phase 6 on |
 
 ## The developer setup
 
@@ -34,12 +34,14 @@ Another repo adds `@zigordev/dev` as a dev dependency from npm. This repo uses i
 
 An app takes its shared code from npm as packages, all under one version.
 
-| Package            | What it gives an app                                                                                                        | On npm                                 |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `@zigordev/config` | Its settings, read from the environment once through a Zod schema, and a start that fails when one is missing or wrong      | Yes, since version 1.8.0 of 2026-11-23 |
-| `@zigordev/otel`   | Its telemetry: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route | Yes, since version 1.8.0 of 2026-11-23 |
+| Package            | What it gives an app                                                                                                                           | On npm                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `@zigordev/config` | Its settings, read from the environment once through a Zod schema, and a start that fails when one is missing or wrong                         | Yes, since version 1.8.0 of 2026-11-23  |
+| `@zigordev/otel`   | Its telemetry: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route                    | Yes, since version 1.8.0 of 2026-11-23  |
+| `@zigordev/api`    | The base of an API: the error format, paging, sign-in checks, a rate limit, the OpenAPI pages, the health route, the database and a clean stop | Yes, since version 1.16.0 of 2026-11-23 |
+| `@zigordev/test`   | Its tests' helpers: a real PostgreSQL with one migrated copy per test file, and the harness for API tests                                      | Yes, since version 1.16.0 of 2026-11-23 |
 
-Each package's README says how an app uses it: [`@zigordev/config`](../packages/config/README.md) and [`@zigordev/otel`](../packages/otel/README.md). A package is in this repo before it is on npm, and [Packages](handbook/packages.md) says how it gets there.
+Each package's README says how an app uses it: [`@zigordev/config`](../packages/config/README.md), [`@zigordev/otel`](../packages/otel/README.md), [`@zigordev/api`](../packages/api/README.md) and [`@zigordev/test`](../packages/test/README.md). A package is in this repo before it is on npm, and [Packages](handbook/packages.md) says how it gets there.
 
 ## The session rules
 
