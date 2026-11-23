@@ -14,17 +14,18 @@ Telemetry is what a running app reports about itself. It comes in three kinds:
 
 OpenTelemetry is the open standard for traces and metrics, and the library that records them. pino is the logger that writes the JSON lines. This package sets both up one way, so a service does not.
 
-| Export                                             | What it does                                                                                 |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `@zigordev/otel/register`                          | Starts telemetry when Node.js loads it with `--import`, before the app's own code            |
-| `startTelemetry(options?)`                         | The same start, for an app that adds an instrumentation of its own                           |
-| `shutdownTelemetry()`                              | Sends what the service still holds, then stops. A service calls it before it exits           |
-| `createLogger(options)`                            | The logger: one JSON line per event, on standard output                                      |
-| `logStarted`, `logStopping`, `logProcessCrashes`   | The standard events that every service writes                                                |
-| `checkHealth(options)`                             | Works out the answer of `GET /health` from the parts the service depends on                  |
-| `createCounterAtZero(meter, name, options, known)` | A counter whose known series all start at 0                                                  |
-| `nameRoute(route)`                                 | Tells telemetry which route the request in progress matched, such as `/api/v1/pools/:poolId` |
-| `isProbeRequest(url)`                              | Says whether a path is a probe, which leaves no trace                                        |
+| Export                                             | What it does                                                                                              |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `@zigordev/otel/register`                          | Captures the output and starts telemetry when Node.js loads it with `--import`, before the app's own code |
+| `startTelemetry(options?)`                         | The same start, for an app that adds an instrumentation of its own                                        |
+| `shutdownTelemetry()`                              | Sends what the service still holds, then stops. A service calls it before it exits                        |
+| `createLogger(options)`                            | The logger: one JSON line per event, on standard output                                                   |
+| `logStarted`, `logStopping`, `logProcessCrashes`   | The standard events that every service writes                                                             |
+| `captureOutput(logger?)`                           | Turns what `console` prints, and what Node.js warns of, into JSON lines. The register entry calls it      |
+| `checkHealth(options)`                             | Works out the answer of `GET /health` from the parts the service depends on                               |
+| `createCounterAtZero(meter, name, options, known)` | A counter whose known series all start at 0                                                               |
+| `nameRoute(route)`                                 | Tells telemetry which route the request in progress matched, such as `/api/v1/pools/:poolId`              |
+| `isProbeRequest(url)`                              | Says whether a path is a probe, which leaves no trace                                                     |
 
 An instrumentation is code that records telemetry for a library, such as the database driver, without the app writing any. A probe is a request that only asks whether the app is alive.
 
@@ -78,6 +79,8 @@ The start reads the standard variables of OpenTelemetry:
 
 Nothing differs between the laptop and production. A service sends to the agent in both, and only the agent knows where the data goes next.
 
+Every span and every metric says who sent it. The start names the service, its version and one id for each running copy, the process with its Node.js version, the operating system, and the host. In a container the host's name is the container's id. The id of the machine is never read: on a laptop it is the hardware's own number, and in a container there is none. `OTEL_NODE_RESOURCE_DETECTORS` is not read, so these facts are the same everywhere.
+
 ### The rules it keeps
 
 - **A probe leaves no trace.** A request to `/health`, `/favicon.ico` or `/_next/static/` gets no span, whichever part of the app would start one.
@@ -85,27 +88,27 @@ Nothing differs between the laptop and production. A service sends to the agent 
 - **Every trace is kept.** Nothing is sampled, so `OTEL_TRACES_SAMPLER` is not read.
 - **Nothing identifies a visitor.** Before a span leaves the service, it loses the visitor's address, the user agent and the query string. A web address keeps only what comes before its `?`.
 - **Starting twice does nothing.** The second call returns the first one's handle.
-- **A stop never fails over telemetry.** `shutdownTelemetry()` sends what the service still holds. When the agent cannot be reached, it waits until the send gives up, says so on the error output, and returns as usual.
+- **A stop never fails over telemetry.** `shutdownTelemetry()` sends what the service still holds. When the agent cannot be reached, it waits until the send gives up, says so in a line at the level `warn`, and returns as usual.
+- **Every line is a JSON line.** What a library prints with `console`, what OpenTelemetry says about itself and what Node.js warns of all become lines of the same shape as the service's own.
 
 The attributes a span loses are `client.address`, `client.port`, `network.peer.address`, `network.peer.port`, `url.query` and `user_agent.original`, and their older names. `url.full`, `http.url` and `http.target` are cut at the query.
-
-OpenTelemetry's own warnings are the one thing that is not a JSON line. When the agent cannot be reached, they appear as plain text on the error output.
 
 ### Logs
 
 Each line is one JSON object on standard output:
 
-| Field       | Present           | Holds                                           |
-| ----------- | ----------------- | ----------------------------------------------- |
-| `timestamp` | Always            | The time in UTC, as ISO 8601                    |
-| `level`     | Always            | `debug`, `info`, `warn` or `error`              |
-| `service`   | Always            | The app's name, the same as `OTEL_SERVICE_NAME` |
-| `release`   | When it is given  | The version, the same as `OTEL_SERVICE_VERSION` |
-| `event`     | On an event line  | The event's name                                |
-| `message`   | On a message line | Free text                                       |
-| `traceId`   | Inside a request  | The trace this line belongs to                  |
-| `spanId`    | Inside a request  | The step of that trace                          |
-| `error`     | On a failure      | The error's `name`, `message` and `stack`       |
+| Field       | Present                                               | Holds                                           |
+| ----------- | ----------------------------------------------------- | ----------------------------------------------- |
+| `timestamp` | Always                                                | The time in UTC, as ISO 8601                    |
+| `level`     | Always                                                | `debug`, `info`, `warn` or `error`              |
+| `service`   | Always                                                | The app's name, the same as `OTEL_SERVICE_NAME` |
+| `release`   | When it is given                                      | The version, the same as `OTEL_SERVICE_VERSION` |
+| `event`     | On an event line                                      | The event's name                                |
+| `message`   | On a message line                                     | Free text                                       |
+| `traceId`   | Inside a request                                      | The trace this line belongs to                  |
+| `spanId`    | Inside a request                                      | The step of that trace                          |
+| `error`     | On a failure                                          | The error's `name`, `message` and `stack`       |
+| `source`    | On a line that the service's own logger did not write | `console` or `opentelemetry`                    |
 
 Any other field that the code passes sits at the top level, beside these.
 
@@ -128,7 +131,33 @@ An event is named `area.what_happened`, in lower case, such as `pool.created`. D
 | `logStopping`       | `service.stopping`                                          | On the signal that asks it to stop                |
 | `logProcessCrashes` | `process.uncaught_exception`, `process.unhandled_rejection` | Before the process dies of an error nobody caught |
 
+The register entry writes one more by itself, `process.warning`, whenever Node.js warns.
+
 `logProcessCrashes` only watches. Node.js still ends the process, as it would without it.
+
+### What a library prints
+
+A library does not know the service's logger. Next.js prints a few lines as it starts, OpenTelemetry reports its own failures, and Node.js warns of a function that is going away. Left alone, each of them is plain text, and the agent cannot tell its level.
+
+The register entry therefore captures the output before any other code runs. Each of these becomes one JSON line on standard output, with the service's name and version, and with the trace when it is printed inside a request:
+
+| What writes                                  | The line it becomes                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `console.log`, `console.info`, `console.dir` | `info`, with `"source":"console"` and the text as `message`                                             |
+| `console.debug`, `console.trace`             | `debug`. A trace keeps the stack of its caller                                                          |
+| `console.warn`                               | `warn`                                                                                                  |
+| `console.error`                              | `error`. An error that is printed keeps its stack, inside `message`                                     |
+| A warning of Node.js                         | `warn`, with the event `process.warning`, the warning as `error`, and its `code` when it has one        |
+| OpenTelemetry about itself                   | `warn` or `error`, with `"source":"opentelemetry"`. A failure to send comes with the failure as `error` |
+
+The other `console` methods, such as `console.table` and `console.assert`, are built on these, so they are caught too.
+
+A line of the service's own logger has no `source`. Searching the logs for `source="console"` therefore shows what libraries print, and any call to `console` that was left in our own code.
+
+Two things can still be plain text:
+
+- **A crash.** Node.js prints the error itself when the process dies of one that nobody caught, after the `process.uncaught_exception` line.
+- **OpenTelemetry while it starts**, before its logger is in place. At the usual level it writes then only to complain about a setting, such as an unknown name in `OTEL_PROPAGATORS`. With `OTEL_LOG_LEVEL=debug`, its first lines are plain text.
 
 ### Health
 
@@ -269,6 +298,7 @@ startTelemetry({ instrumentations: [frameworkInstrumentation] });
 | Try this                                             | What must happen                                                                   |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Start the service and read its output                | The first line is JSON and has `"event":"service.started"`                         |
+| Print with `console.log` anywhere in the service     | One JSON line with `"source":"console"` appears, and nothing on the error output   |
 | Call a route, then search for the service in Grafana | A trace shows the request as a span, with its queries and calls beneath it         |
 | Log inside a request                                 | The line has a `traceId`, and searching for that id finds the trace                |
 | Call `/health`                                       | It answers 200 with `"status":"ok"`, and no trace appears                          |
@@ -276,13 +306,14 @@ startTelemetry({ instrumentations: [frameworkInstrumentation] });
 | Send the service a SIGTERM                           | It writes `service.stopping`, exits with code 0, and its last spans still arrive   |
 | Make a required part fail, then call `/health`       | It answers 503 with `"status":"error"`, and the body names the part that is `down` |
 
-The package's own test does the first six in a real process, against a stand-in for the agent:
+The package's own test does the first seven in a real process, against a stand-in for the agent:
 
 ```bash
 pnpm exec vitest run packages/otel/src/telemetry.e2e.test.ts
 ```
 
-When no telemetry arrives, the service cannot reach the agent, and OpenTelemetry says so on the error output. Check `OTEL_EXPORTER_OTLP_ENDPOINT`, and that `OTEL_SDK_DISABLED` is not set.
+When no telemetry arrives, the service cannot reach the agent, and OpenTelemetry says so in lines at the level `error`, with `"source":"opentelemetry"`. Check `OTEL_EXPORTER_OTLP_ENDPOINT`, and that `OTEL_SDK_DISABLED` is not set.
+
 When a stop takes about ten seconds, the agent cannot be reached either, and the last send waits until it gives up. The service still exits with code 0. A smaller `OTEL_EXPORTER_OTLP_TIMEOUT` shortens the wait.
 
 When requests leave no span at all, the service started without `--import`, so the instrumentations came too late.

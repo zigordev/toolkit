@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
+import { hostname, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -156,6 +156,34 @@ process.on('SIGTERM', async () => {
 });
 `;
 
+const noisy = `
+console.log('a library says %s', 'hello');
+console.error(new Error('boom'));
+process.emitWarning('The old way is going away', { type: 'DeprecationWarning', code: 'DEP9999' });
+`;
+
+async function runScript(
+  content: string,
+  env: Record<string, string>
+): Promise<{ code: number | null; stdout: string; stderr: string }> {
+  const script = join(dir, 'script.mjs');
+  writeFileSync(script, content);
+  const child = spawn(process.execPath, ['--import', join(source, 'register.ts'), script], {
+    env,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk: Buffer) => {
+    stdout += chunk.toString();
+  });
+  child.stderr.on('data', (chunk: Buffer) => {
+    stderr += chunk.toString();
+  });
+  const code = await new Promise<number | null>((resolve) => child.on('exit', resolve));
+  return { code, stdout, stderr };
+}
+
 async function runApp(env: Record<string, string>): Promise<Run> {
   const script = join(dir, 'app.mjs');
   writeFileSync(script, app);
@@ -234,12 +262,20 @@ function serverSpan(path: string): ExportedSpan | undefined {
 
 describe('telemetry in a real process', () => {
   it('exports the service, one span per real request and the HTTP metrics over OTLP', async () => {
-    const { stderr } = await runApp({ OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json' });
-    expect(stderr).not.toMatch(/DEP0205|module\.register\(\)|Warning/);
+    const { stderr, lines } = await runApp({ OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json' });
+    expect(stderr).toBe('');
+    expect(lines.map((line) => line.event)).not.toContain('process.warning');
 
     const resource = resourceSpans()[0]?.resource.attributes ?? [];
     expect(attribute(resource, 'service.name')).toBe('toolkit-e2e');
     expect(attribute(resource, 'service.version')).toBe('9.9.9');
+    expect(attribute(resource, 'host.name')).toBe(hostname());
+    expect(attribute(resource, 'process.runtime.name')).toBe('nodejs');
+    const facts = resource.map((entry) => entry.key);
+    expect(facts).toEqual(
+      expect.arrayContaining(['service.instance.id', 'process.pid', 'os.type'])
+    );
+    expect(facts).not.toContain('host.id');
     const paths = spans()
       .filter((span) => span.kind === serverKind)
       .map(pathOf);
@@ -308,6 +344,80 @@ describe('telemetry in a real process', () => {
     for (const value of personal) {
       expect(sent).not.toContain(value);
     }
+  }, 30_000);
+
+  it('writes what a library prints, and what Node.js warns of, as JSON lines too', async () => {
+    const { code, stdout, stderr } = await runScript(noisy, {
+      OTEL_SERVICE_NAME: 'toolkit-e2e',
+      OTEL_SERVICE_VERSION: '9.9.9',
+      OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}`,
+    });
+
+    expect(stderr).toBe('');
+    expect(code).toBe(0);
+    const lines = stdout
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(lines).toEqual([
+      expect.objectContaining({
+        level: 'info',
+        source: 'console',
+        message: 'a library says hello',
+      }),
+      expect.objectContaining({
+        level: 'error',
+        source: 'console',
+        message: expect.stringMatching(/^Error: boom\n {4}at /),
+      }),
+      expect.objectContaining({
+        level: 'warn',
+        event: 'process.warning',
+        code: 'DEP9999',
+        error: expect.objectContaining({ name: 'DeprecationWarning' }),
+      }),
+    ]);
+    for (const line of lines) {
+      expect(line).toMatchObject({ service: 'toolkit-e2e', release: '9.9.9' });
+    }
+  }, 30_000);
+
+  it('says in JSON lines that the agent cannot be reached, and still stops normally', async () => {
+    const silent = `
+import { shutdownTelemetry } from ${JSON.stringify(pathToFileURL(join(source, 'index.ts')).href)};
+import { metrics, trace } from ${JSON.stringify(api)};
+metrics.getMeter('toolkit-e2e').createCounter('toolkit.e2e.tries').add(1);
+await new Promise((resolve) => setTimeout(resolve, 600));
+trace.getTracer('toolkit-e2e').startSpan('the last work').end();
+await shutdownTelemetry();
+`;
+    const { code, stdout, stderr } = await runScript(silent, {
+      OTEL_SERVICE_NAME: 'toolkit-e2e',
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://127.0.0.1:9',
+      OTEL_EXPORTER_OTLP_TIMEOUT: '500',
+      OTEL_METRIC_EXPORT_INTERVAL: '200',
+      OTEL_METRIC_EXPORT_TIMEOUT: '150',
+    });
+
+    expect(stderr).toBe('');
+    expect(code).toBe(0);
+    const lines = stdout
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    for (const line of lines) {
+      expect(line).toMatchObject({ service: 'toolkit-e2e', source: 'opentelemetry' });
+    }
+    const failed = lines.filter((line) => line.level === 'error');
+    const stopped = lines.filter((line) => line.level === 'warn');
+    expect(failed.length).toBeGreaterThan(0);
+    expect(failed[0]?.message).toContain('metrics export failed');
+    expect(JSON.stringify(failed[0]?.error)).toContain('ECONNREFUSED');
+    expect(stopped.map((line) => line.message)).toEqual([
+      'The last telemetry could not be sent before the stop.',
+    ]);
+    expect(JSON.stringify(stopped[0]?.error)).toContain('ECONNREFUSED');
+    expect(failed.length + stopped.length).toBe(lines.length);
   }, 30_000);
 
   it('writes JSON lines to standard output, with the trace of the request in them', async () => {

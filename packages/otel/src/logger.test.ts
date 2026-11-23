@@ -1,8 +1,9 @@
 import { context, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { AlwaysOffSampler, AlwaysOnSampler, TracerProvider } from '@opentelemetry/sdk-trace';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createLogger, type LoggerOptions } from './index.ts';
+import { createProcessLogger } from './logger.ts';
 
 interface LineStream {
   readonly lines: string[];
@@ -180,5 +181,28 @@ describe('createLogger', () => {
     const logger = createLogger({ service: 'toolkit-test', level: 'error' });
 
     expect(() => logger.info('filtered out')).not.toThrow();
+  });
+});
+
+describe('createProcessLogger', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('names the service and its version from the environment, and lets every level through', () => {
+    vi.stubEnv('OTEL_SERVICE_NAME', 'gpool-api');
+    vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
+
+    const logger = createProcessLogger();
+
+    expect(logger.bindings()).toEqual({ service: 'gpool-api', release: '1f3a9c2' });
+    expect(logger.level).toBe('debug');
+  });
+
+  it('still makes a logger when the service has no name and no version', () => {
+    vi.stubEnv('OTEL_SERVICE_NAME', '');
+    vi.stubEnv('OTEL_SERVICE_VERSION', '');
+
+    expect(createProcessLogger().bindings()).toEqual({ service: 'unknown_service' });
   });
 });

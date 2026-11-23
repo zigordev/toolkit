@@ -163,5 +163,4 @@ The web app's build stage has one more step. Next.js keeps a few modules outside
 
 - The web app's duration metric has no route, and the first span of a request is named by its method only. Next.js names the route on a span of its own, one level down.
 - The web app loses its last seconds of telemetry at each stop, and exits with code 143, because Next.js ends the process itself on a SIGTERM.
-- A few lines are plain text, not JSON: the ones Next.js prints as it starts, and one warning of OpenTelemetry in a container, `dropping invalid resource attribute value for key "host.id"`.
 - More than half of the web image is Next.js. Its compiler alone is 87 MB unpacked, and a running app does not use it.

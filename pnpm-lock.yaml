@@ -218,6 +218,9 @@ catalogs:
     '@opentelemetry/instrumentation-undici':
       specifier: 0.35.1
       version: 0.35.1
+    '@opentelemetry/resources':
+      specifier: 3.1.1
+      version: 3.1.1
     '@opentelemetry/sdk-metrics':
       specifier: 3.1.1
       version: 3.1.1
@@ -392,6 +395,9 @@ importers:
       '@opentelemetry/instrumentation-undici':
         specifier: 'catalog:'
         version: 0.35.1(@opentelemetry/api@1.10.0)(supports-color@7.2.0)
+      '@opentelemetry/resources':
+        specifier: 'catalog:'
+        version: 3.1.1(@opentelemetry/api@1.10.0)
       '@opentelemetry/sdk-node':
         specifier: 'catalog:'
         version: 0.301.2(@opentelemetry/api@1.10.0)(supports-color@7.2.0)

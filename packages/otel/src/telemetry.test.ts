@@ -1,4 +1,11 @@
-import { diag, ROOT_CONTEXT, SpanKind, TraceFlags, trace } from '@opentelemetry/api';
+import { hostname } from 'node:os';
+import { DiagLogLevel, diag, ROOT_CONTEXT, SpanKind, TraceFlags, trace } from '@opentelemetry/api';
+import {
+  osDetector,
+  processDetector,
+  serviceInstanceIdDetector,
+  serviceNameEnvDetector,
+} from '@opentelemetry/resources';
 import { BatchSpanProcessor, SamplingDecision } from '@opentelemetry/sdk-trace';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { privacySpanProcessor } from './privacy.ts';
@@ -7,6 +14,18 @@ const sdk = vi.hoisted(() => ({
   startNodeSdk: vi.fn(),
   shutdown: vi.fn(async () => undefined),
   installLoaderHooks: vi.fn(),
+  captureOutput: vi.fn(),
+  setGlobalErrorHandler: vi.fn(),
+  diagnostics: {
+    logger: {
+      error: () => undefined,
+      warn: () => undefined,
+      info: () => undefined,
+      debug: () => undefined,
+      verbose: () => undefined,
+    },
+    onError: () => undefined,
+  },
   instrumentation: (name: string) =>
     class {
       readonly name = name;
@@ -46,14 +65,21 @@ vi.mock('@opentelemetry/exporter-trace-otlp-proto', () => ({
   },
 }));
 vi.mock('./loader-hooks.ts', () => ({ installLoaderHooks: sdk.installLoaderHooks }));
+vi.mock('./output.ts', () => ({ captureOutput: sdk.captureOutput }));
+vi.mock('./diagnostics.ts', () => ({ createDiagnostics: () => sdk.diagnostics }));
+vi.mock('@opentelemetry/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@opentelemetry/core')>()),
+  setGlobalErrorHandler: sdk.setGlobalErrorHandler,
+}));
 
 const { isProbeRequest, shutdownTelemetry, startTelemetry } = await import('./index.ts');
-const { probeAwareSampler } = await import('./telemetry.ts');
+const { hostNameDetector, probeAwareSampler } = await import('./telemetry.ts');
 
 type StartOptions = {
   sampler: unknown;
   logLevel?: string;
   resourceAttributes: Record<string, string>;
+  resourceDetectors: unknown[];
   spanProcessors: unknown[];
   logRecordProcessors: unknown[];
   instrumentations: { name: string; config?: Record<string, unknown> }[];
@@ -125,12 +151,64 @@ describe('startTelemetry', () => {
     expect(lastStartOptions().resourceAttributes).toEqual({});
   });
 
+  it('says who sends: the service, its process, its system and the name of its host', () => {
+    startTelemetry();
+
+    expect(lastStartOptions().resourceDetectors).toEqual([
+      serviceInstanceIdDetector,
+      serviceNameEnvDetector,
+      processDetector,
+      osDetector,
+      hostNameDetector,
+    ]);
+  });
+
+  it('names the host, and never reads the id of the machine', () => {
+    expect(hostNameDetector.detect()).toEqual({ attributes: { 'host.name': hostname() } });
+  });
+
   it('lets OTEL_LOG_LEVEL decide the diagnostic level when it is set', () => {
     vi.stubEnv('OTEL_LOG_LEVEL', 'debug');
 
     startTelemetry();
 
-    expect(lastStartOptions()).not.toHaveProperty('logLevel');
+    expect(lastStartOptions().logLevel).toBe('debug');
+  });
+
+  it('has OpenTelemetry say what it has to say through the logger, warnings and errors only', () => {
+    const setLogger = vi.spyOn(diag, 'setLogger');
+
+    startTelemetry();
+
+    expect(setLogger).toHaveBeenCalledTimes(1);
+    expect(setLogger).toHaveBeenCalledWith(sdk.diagnostics.logger, {
+      logLevel: DiagLogLevel.WARN,
+      suppressOverrideMessage: true,
+    });
+    expect(sdk.startNodeSdk.mock.invocationCallOrder[0]).toBeLessThan(
+      setLogger.mock.invocationCallOrder[0] ?? 0
+    );
+    setLogger.mockRestore();
+  });
+
+  it('lets it say more through the same logger when OTEL_LOG_LEVEL asks for more', () => {
+    const setLogger = vi.spyOn(diag, 'setLogger');
+    vi.stubEnv('OTEL_LOG_LEVEL', 'debug');
+
+    startTelemetry();
+
+    expect(setLogger).toHaveBeenCalledWith(sdk.diagnostics.logger, {
+      logLevel: DiagLogLevel.DEBUG,
+      suppressOverrideMessage: true,
+    });
+    setLogger.mockRestore();
+  });
+
+  it('hands the failures inside OpenTelemetry to the same logger', () => {
+    startTelemetry();
+
+    expect(sdk.setGlobalErrorHandler).toHaveBeenCalledTimes(1);
+    expect(sdk.setGlobalErrorHandler).toHaveBeenCalledWith(sdk.diagnostics.onError);
   });
 
   it('treats an empty OTEL_LOG_LEVEL as not set', () => {
@@ -224,10 +302,15 @@ describe('startTelemetry', () => {
     expect(sdk.shutdown).not.toHaveBeenCalled();
   });
 
-  it('starts from the register entry point', async () => {
+  it('captures the output, then starts, from the register entry point', async () => {
     await import('./register.ts');
 
+    expect(sdk.captureOutput).toHaveBeenCalledTimes(1);
+    expect(sdk.captureOutput).toHaveBeenCalledWith();
     expect(sdk.startNodeSdk).toHaveBeenCalledTimes(1);
+    expect(sdk.captureOutput.mock.invocationCallOrder[0]).toBeLessThan(
+      sdk.startNodeSdk.mock.invocationCallOrder[0] ?? 0
+    );
   });
 });
 
