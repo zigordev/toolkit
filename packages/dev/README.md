@@ -76,7 +76,7 @@ A repo's own `release.config.js` passes these settings on in one line. semantic-
 
 Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves.
 
-It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already.
+It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already. A service with the label `com.zigordev.job`, such as a migration job on the app's own image, is a job and not an app: it runs once and ends. Record 0035 sets the label, accepted by the owner on 2026-11-23, in [toolkit#68](https://github.com/zigordev/toolkit/pull/68).
 
 The command starts the product once more, under the name `<product>-contract` and on a network of its own. Nothing of it touches a product that already runs on the laptop, or the shared services. In place of the telemetry agent it starts a stand-in: one small script in a Node.js container, under the name and the port that `compose.yaml` gives the apps. The stand-in records what the apps send. Every request to an app is also made from there, so no port is published.
 
@@ -103,6 +103,22 @@ template-api
   kept    6  it stopped 1.3 s after a SIGTERM with code 0, and answered the request it had begun
 zigordev contract: 1 app keeps promises 1 to 6
 ```
+
+A job keeps two promises of its own, and gets the same kind of lines under its name:
+
+| #   | The promise of a job                      | What the command does to see it                                                                                                                          |
+| --- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | It ends with code 0 before its app starts | It reads the job's state once the product has started. A service has to wait for it with `depends_on` and the condition `service_completed_successfully` |
+| 2   | Every line it prints is JSON              | Every line on both of its outputs must be a JSON object                                                                                                  |
+
+```text
+template-api-migrate, a job
+  kept    1  it ended with code 0 before template-api started
+  kept    2  3 lines, all JSON
+zigordev contract: 2 apps keep promises 1 to 6, and 1 job keeps promises 1 and 2
+```
+
+When a job fails, its app never starts, and the command says that the product did not start, with the last lines of Compose, which name the job.
 
 It ends with code 0 when every promise is kept and with code 1 when one is broken. Either way it removes everything it started. Two apps that keep the contract take about 25 seconds. An app that breaks it takes longer, up to a minute more, because the command waits before it gives up.
 
