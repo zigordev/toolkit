@@ -113,6 +113,10 @@ Both start the same way: Node.js loads `@zigordev/otel/register` with `--import`
 
 An app that misses a setting stops at once: it writes which settings are wrong to its error output, and ends with code 1 before it takes a request. The API gets this from Node.js, which ends a process on an error that nobody caught. Next.js catches what its start hook throws and carries on, so the web app ends the process itself. Its start hook is `src/instrumentation.ts`, and the part of it that only Node.js can run is `src/lib/start.ts`.
 
+The API's start lives in `src/start.ts` too. `start()` reads the settings, builds the app, listens and writes `service.started`. The server it returns has a `stop()`, which writes `service.stopping`, closes the app, sends the last telemetry and gives the exit code. `stopOnSignals()` calls it on a SIGTERM or a SIGINT. `src/main.ts` is the two lines that join them.
+
+That keeps every line that does something inside the tests' reach. A test that starts `src/main.ts` as a process of its own proves the real start and stop, but coverage cannot see inside that process. A product copied from the template counts the coverage of its apps alone, against the same floor of 90%, so it starts with a check that passes.
+
 ## How it runs in containers
 
 `compose.yaml` describes each service once, the way it runs everywhere. The other two files hold only what differs.
