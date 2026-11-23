@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
 import { ConfigError } from '@zigordev/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from './config.ts';
@@ -31,6 +33,21 @@ describe('readConfig', () => {
       'OTEL_SERVICE_NAME',
       'API_URL',
     ]);
+  });
+});
+
+describe('the settings of pnpm dev', () => {
+  it('pass the same check as in the container, and reach the API through the ingress', () => {
+    const development = parseEnv(
+      readFileSync(new URL('../../.env.development', import.meta.url), 'utf8')
+    );
+
+    expect(readConfig(development)).toEqual({
+      LOG_LEVEL: 'info',
+      OTEL_SERVICE_NAME: 'template-web',
+      OTEL_SERVICE_VERSION: 'dev',
+      API_URL: 'http://template.localhost',
+    });
   });
 });
 

@@ -66,31 +66,43 @@ The script has two halves. `zigordev-stack up` starts the shared services and wa
 
 [The laptop platform](../docs/handbook/the-laptop-platform.md) explains the shared services and what an app does to be served. [Telemetry](../docs/handbook/telemetry.md) follows one request of this template through Grafana, as a trace, a log line and a metric.
 
-### As two plain processes
+### While you edit one app: hot reload
 
-From the root of `toolkit`, after `pnpm install`:
-
-```bash
-pnpm build
-OTEL_SDK_DISABLED=true OTEL_SERVICE_NAME=template-api HOST=127.0.0.1 pnpm --filter template-api start
-```
-
-The first command compiles the shared packages and builds the web app. The second starts the API on port 3000. In a second terminal, start the web app on port 3001 and point it at the API:
+With the product up in containers, run the one app you are editing on this Mac itself. From this folder:
 
 ```bash
-OTEL_SDK_DISABLED=true OTEL_SERVICE_NAME=template-web API_URL=http://127.0.0.1:3000 PORT=3001 pnpm --filter template-web start -H 127.0.0.1
+pnpm dev web
+pnpm dev api
 ```
 
-Then open `http://127.0.0.1:3001`. The page reads "Hello from template-api", which the web app fetched from the API while it rendered. Stop the API and load the page again: it still renders, and says that the API does not answer.
+| Command        | What runs                                                   | Its address             | A saved change                               |
+| -------------- | ----------------------------------------------------------- | ----------------------- | -------------------------------------------- |
+| `pnpm dev web` | `next dev`, the web app's dev server                        | `http://127.0.0.1:3001` | Shows on the next look at the page, at once  |
+| `pnpm dev api` | The API under `node --watch`, which restarts it on a change | `http://127.0.0.1:3000` | The API answers with it about a second later |
 
-| Address                              | Answers                                                                                       |
-| ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `http://127.0.0.1:3000/api/v1/hello` | `{"message":"Hello from template-api"}`                                                       |
-| `http://127.0.0.1:3000/health`       | `{"status":"ok","service":"template-api","components":{}}`                                    |
-| `http://127.0.0.1:3001/`             | The page                                                                                      |
-| `http://127.0.0.1:3001/health`       | `ok` while the API is up, and `degraded` while it is down. Both come with the status code 200 |
+No image is built, and the rest of the product keeps running in its containers, behind the shared services. `pnpm dev` alone says how to name the app.
 
-`OTEL_SDK_DISABLED=true` keeps telemetry off, because no telemetry agent runs beside the two processes.
+By default the web app's dev server asks the API in its container, through the ingress at `http://template.localhost`. So `pnpm local:up` has to run first. To see a change of the API on the page, run both: `pnpm dev api` in one terminal, and this in a second:
+
+```bash
+API_URL=http://127.0.0.1:3000 pnpm dev web
+```
+
+Each app reads its dev settings from its own `.env.development`. The file holds no secret, so it is committed. The app checks those settings with the same schema as in its container, and a variable set in the shell wins over the file. A missing setting stops the app with the same message as in its container. The API's watcher then waits for a change of a file before it tries again.
+
+A dev process differs from its container in a few ways, all on purpose:
+
+| What                | In its container                       | With `pnpm dev`                                                             |
+| ------------------- | -------------------------------------- | --------------------------------------------------------------------------- |
+| Where it listens    | Port 3000, reached through the ingress | `127.0.0.1` only, so nothing outside this Mac reaches it                    |
+| Its version         | `local`                                | `dev`, so Grafana tells the two copies apart                                |
+| Its log lines       | Read by the agent, and kept in Grafana | Printed in the terminal, where the agent does not read them                 |
+| The API's telemetry | Sent to the agent at `alloy:4318`      | Sent to the agent at `127.0.0.1:4318`, giving up on a send after one second |
+| The web's telemetry | Sent to the agent                      | None: `next dev` runs without `@zigordev/otel/register`, see below          |
+
+The web app's dev server sends no traces and no metrics. `next dev` compiles a page the first time it is asked for, so its timings say nothing about the app. And the register entry turns every line printed to the console into a JSON line, which would hide the compiler's messages from the person reading the terminal. To see the web app's telemetry, run it in its container.
+
+The API's dev process sends to the agent's port on this Mac. On 2026-11-23 the shared services do not publish that port yet, and `platform` publishes it in a coming version of `@zigordev/stack`. Until then the dev API writes one error line a minute about it, and carries on. The short send timeout keeps a restart at about a second.
 
 ## The settings
 

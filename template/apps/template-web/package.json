@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "dev": "NEXT_TELEMETRY_DISABLED=1 next dev --hostname 127.0.0.1 --port 3001",
     "start": "NEXT_TELEMETRY_DISABLED=1 NEXT_OTEL_FETCH_DISABLED=1 node --import @zigordev/otel/register node_modules/next/dist/bin/next start",
     "typecheck": "tsc -p tsconfig.json"
   },
