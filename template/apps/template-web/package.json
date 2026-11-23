@@ -1,0 +1,33 @@
+{
+  "name": "template-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The web app of the product template: a Next.js app that shows what the API says",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
+    "start": "NEXT_TELEMETRY_DISABLED=1 NEXT_OTEL_FETCH_DISABLED=1 node --import @zigordev/otel/register node_modules/next/dist/bin/next start",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@zigordev/config": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
