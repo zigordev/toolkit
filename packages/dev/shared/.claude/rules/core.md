@@ -5,7 +5,7 @@ These rules hold in every zigordev repo and in every session. `toolkit` owns thi
 ## The rules
 
 1. **Identity.** Every commit is authored and committed as `zigordev <zigordev@gmail.com>`, and `gh` acts as `zigordev`.
-2. **No attribution.** Nothing credits a tool or a co-author: no `Co-Authored-By` trailer, no "Generated with" line, no line that names Claude or another AI tool as an author, and no robot emoji. This covers commits, pull requests, issues, comments, release notes, code and docs.
+2. **No attribution.** Nothing credits a tool or a co-author: no `Co-Authored-By` trailer, no "Generated with" line, no line that names Claude or another AI tool as an author, and no robot emoji. This covers commits, pull requests, issues, comments, release notes, code and docs. The one exception is a line that nobody writes: when GitHub squashes a pull request that Renovate opened, it adds a co-author line for Renovate. The `attribution` rule of `zigordev check` accepts that line on Renovate's own commits, and nowhere else.
 3. **No comments.** No file gets a comment of any kind. The reasoning goes in the commit body, the pull request, the docs or a decision record. A line that a tool needs is not a comment: a shebang, a `# syntax=` line, the version label after a pinned action, and a suppression that cannot be avoided, which the pull request names.
 4. **Protected history.** Nothing is pushed to `main`. The git hooks are never skipped. A force push goes only to your own working branch.
 5. **One format.** Commits and pull request titles follow Conventional Commits: `type(scope): summary`, in lower case, with no final period.
