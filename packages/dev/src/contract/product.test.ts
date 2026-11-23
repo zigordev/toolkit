@@ -36,6 +36,7 @@ describe('readProduct', () => {
     expect(product()).toEqual({
       name: 'gpool',
       networks: ['zigordev'],
+      jobs: [],
       apps: [
         {
           service: 'gpool-api',
@@ -61,6 +62,7 @@ describe('readProduct', () => {
     expect(read).toEqual({
       name: '',
       networks: [],
+      jobs: [],
       apps: [
         {
           service: 'gpool-api',
@@ -70,6 +72,32 @@ describe('readProduct', () => {
         },
       ],
     });
+  });
+
+  it('takes a service with the job label for a job, not an app, and names who waits for it', () => {
+    const read = product((services) => ({
+      ...services,
+      'gpool-api': {
+        ...services['gpool-api'],
+        depends_on: {
+          'gpool-api-migrate': { condition: 'service_completed_successfully', required: true },
+          db: { condition: 'service_healthy' },
+        },
+      },
+      'gpool-web': {
+        ...services['gpool-web'],
+        depends_on: { 'gpool-api-migrate': { condition: 'service_started' } },
+      },
+      'gpool-api-migrate': {
+        image: 'ghcr.io/zigordev/gpool-api:local',
+        labels: { 'com.zigordev.job': 'migrate' },
+      },
+    }));
+
+    expect(read.apps.map((app) => app.service)).toEqual(['gpool-api', 'gpool-web']);
+    expect(read.jobs).toEqual([
+      { service: 'gpool-api-migrate', kind: 'migrate', waitedForBy: ['gpool-api'] },
+    ]);
   });
 
   it('finds no app in a model without services', () => {
