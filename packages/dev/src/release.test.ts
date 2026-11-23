@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { idle } from '../test/idle.ts';
 import { type Sandbox, sandbox } from '../test/sandbox.ts';
 import { main } from './cli.ts';
 import {
@@ -106,6 +107,7 @@ function command(args: readonly string[], run: Run, env: Record<string, string> 
     write: (text) => {
       output += text;
     },
+    ...idle,
   });
 }
 
