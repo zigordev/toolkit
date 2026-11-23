@@ -14,6 +14,7 @@ A product on the platform is an API and a web app that is one of its clients. Th
 | `compose.local.yaml`      | What differs on the laptop: the images are built here, and the address is `template.localhost`              |
 | `compose.production.yaml` | What differs in production: the address                                                                     |
 | `compose.test.ts`         | The test that holds the three compose files and the two Dockerfiles to the container rules                  |
+| `package.json`            | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                    |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -154,6 +155,36 @@ The web app's build stage has one more step. Next.js keeps a few modules outside
 | -------------- | ----------------------- | --------- |
 | `template-api` | 79 MB                   | arm64     |
 | `template-web` | 167 MB                  | arm64     |
+
+## The contract test
+
+Every app on the platform keeps twelve promises, and [the platform page](../docs/handbook/the-platform.md) lists them. The first six are checked on the images themselves:
+
+```bash
+pnpm check:contract
+```
+
+It builds both images, starts them once more under the name `template-contract`, on a network of their own, and holds each app to the six promises with `zigordev contract`. A product that already runs at `template.localhost` is not touched. It takes about half a minute once the images are built, and it needs Docker running, but not the shared services.
+
+```text
+template-api
+  kept    1  an arm64 image that runs as the user 1000:1000
+  kept    2  without its settings it stops at once, with code 1
+  kept    3  it listens on the port in PORT, and answers GET /health with 200
+  kept    4  6 lines, all JSON, with nothing a visitor sent
+  kept    5  traces and metrics reached the agent under the name template-api
+  kept    6  it stopped 1.3 s after a SIGTERM with code 0, and answered the request it had begun
+template-web
+  kept    1  an arm64 image that runs as the user 1000:1000
+  kept    2  without its settings it stops at once, with code 1
+  kept    3  it listens on the port in PORT, and answers GET /health with 200
+  kept    4  6 lines, all JSON, with nothing a visitor sent
+  kept    5  traces and metrics reached the agent under the name template-web
+  kept    6  it stopped 1.3 s after a SIGTERM with code 143, and answered the request it had begun
+zigordev contract: 2 apps keep promises 1 to 6
+```
+
+The pipeline runs the same script on every pull request, in a job named Contract, on an arm64 machine. [The developer setup](../packages/dev/README.md) says what the command does to see each promise.
 
 ## What slice 1 leaves for later
 

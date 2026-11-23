@@ -20,7 +20,7 @@ The repo is being built step by step, and each step arrives as its own pull requ
 | `renovate/default.json` | The Renovate preset that every repo extends: how dependency updates are proposed, and when they merge by themselves                                                    |
 | `docs/`                 | The standard docs, the handbook with its reading order, and the decision records                                                                                       |
 
-Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
+Every pull request runs the pipeline. It runs `pnpm check`, exactly as on a laptop, and three jobs that only GitHub can run: the pull request's title, the dependencies it adds, and a scan of the code. A fifth job builds the images of the product template on an arm64 machine, and holds both apps to the platform contract. One job named `check` passes only when all of them passed, and it is the only check `main` requires.
 
 After a merge, the release works out the next version from the titles that were merged, and publishes every public package under it.
 
@@ -73,15 +73,16 @@ pnpm check
 
 `mise install` installs the pinned tools. `pnpm install` installs the dependencies and the git hooks. `pnpm check` runs the full check, and on a clean clone it must end with `check took` and a number of seconds, with no error above it.
 
-| Command            | What it does                                                                                 |
-| ------------------ | -------------------------------------------------------------------------------------------- |
-| `pnpm check`       | The full check: lint, build, type check, and tests with coverage. It prints how long it took |
-| `pnpm check:quick` | The part of the check that needs no containers. The push hook runs it                        |
-| `pnpm format`      | Fixes the formatting, the import order and the Markdown problems that have a safe fix        |
-| `pnpm lint`        | Reports lint and formatting problems without changing a file                                 |
-| `pnpm typecheck`   | Checks the types                                                                             |
-| `pnpm test`        | Runs the tests with coverage                                                                 |
-| `pnpm build`       | Compiles the packages that are published                                                     |
+| Command                                  | What it does                                                                                      |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `pnpm check`                             | The full check: lint, build, type check, and tests with coverage. It prints how long it took      |
+| `pnpm check:quick`                       | The part of the check that needs no containers. The push hook runs it                             |
+| `pnpm format`                            | Fixes the formatting, the import order and the Markdown problems that have a safe fix             |
+| `pnpm lint`                              | Reports lint and formatting problems without changing a file                                      |
+| `pnpm typecheck`                         | Checks the types                                                                                  |
+| `pnpm test`                              | Runs the tests with coverage                                                                      |
+| `pnpm build`                             | Compiles the packages that are published                                                          |
+| `pnpm --dir template run check:contract` | Builds the template's two images and holds them to the platform contract. It needs Docker running |
 
 [packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings, and [packages/otel](packages/otel/README.md) what a service reports about itself. [template](template/README.md) explains the product template, and how to run it.
 

@@ -2,15 +2,15 @@
 
 `toolkit` is a library, so its users are the other zigordev repos. This page says what a repo takes from it, and how. Each part says what exists on 2026-11-22, because the platform is still being built.
 
-| A repo takes                 | From                              | Exists today                                                                                                                         |
-| ---------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                                         |
-| The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                                                  |
-| The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                            |
-| Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                  |
-| The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                  |
-| The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are in the repo, and not on npm yet. The others arrive from phase 4 on                       |
-| A product to start from      | `template/`                       | In progress. Since 2026-11-23 it has its API, its web app, their images and its compose files. Its contract test follows in step 2.7 |
+| A repo takes                 | From                              | Exists today                                                                                                                                                                     |
+| ---------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                                                                                     |
+| The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                                                                                              |
+| The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                                                                        |
+| Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                                                              |
+| The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                                                              |
+| The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are in the repo, and not on npm yet. The others arrive from phase 4 on                                                                   |
+| A product to start from      | `template/`                       | Its first slice is complete since 2026-11-23: an API, a web app, their images, the compose files, and the contract test in the pipeline. The other slices follow from phase 4 on |
 
 ## The developer setup
 
@@ -62,6 +62,8 @@ uses: zigordev/toolkit/.github/workflows/check.yml@59bfb39019ea676693dde99c0b0a0
 The commit is the one that the version tag points at, and the job that holds the line grants `contents: read` and `security-events: write`. [The pipeline](handbook/the-pipeline.md) shows the whole file, and says how a new repo takes it.
 
 In the repo's settings, `check` is the one required check on `main`. A new repo also needs its dependency graph switched on, or the Dependencies job fails.
+
+A repo that holds a product adds `with:` and `product-folder: .` under that line. The pipeline then builds the product's images and holds each app to the platform contract, with the product's own script `check:contract`. [The pipeline](handbook/the-pipeline.md) has both.
 
 ## Publishing packages
 

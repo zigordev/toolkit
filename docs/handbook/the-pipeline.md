@@ -6,13 +6,14 @@ The pipeline is the set of checks that every change passes on GitHub: on its pul
 
 It is written once, in `toolkit`, as the file `.github/workflows/check.yml`. GitHub calls such a file a reusable workflow, because the workflow of another repo can call it. Every repo's own workflow is a short caller, and holds no check of its own.
 
-| Job          | What it checks                                                                        | Runs on                            |
-| ------------ | ------------------------------------------------------------------------------------- | ---------------------------------- |
-| Quality      | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage | Every pull request and every merge |
-| Title        | The pull request's title is a Conventional Commit                                     | Pull requests                      |
-| Dependencies | No package the pull request adds has a known flaw                                     | Pull requests                      |
-| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                | Every pull request and every merge |
-| `check`      | Every job above passed. It is the gate, and the one check that `main` requires        | Every pull request and every merge |
+| Job          | What it checks                                                                                      | Runs on                                                          |
+| ------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Quality      | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage               | Every pull request and every merge                               |
+| Title        | The pull request's title is a Conventional Commit                                                   | Pull requests                                                    |
+| Dependencies | No package the pull request adds has a known flaw                                                   | Pull requests                                                    |
+| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                              | Every pull request and every merge                               |
+| Contract     | Each app of a product keeps promises 1 to 6 of [the contract](the-platform.md), on its built images | Every pull request and every merge, in a repo that has a product |
+| `check`      | Every job above passed. It is the gate, and the one check that `main` requires                      | Every pull request and every merge                               |
 
 The gate sits in the caller, not in `check.yml`. It is the same few lines in every repo.
 
@@ -34,15 +35,19 @@ flowchart LR
   pipeline --> title["Title"]
   pipeline --> deps["Dependencies"]
   pipeline --> scan["Code scan"]
+  pipeline --> contract["Contract"]
   quality --> gate{check}
   title --> gate
   deps --> gate
   scan --> gate
+  contract --> gate
   gate -->|"green, and marked ready"| merge["Squash merge to main"]
   merge --> again["The same pipeline on main"]
 ```
 
-On the laptop, `pnpm check` runs what the Quality job runs, and the push hook runs `pnpm check:quick` before a branch leaves. The other three jobs need GitHub: they read the pull request, GitHub's list of known flaws, and GitHub's code scanner.
+On the laptop, `pnpm check` runs what the Quality job runs, and the push hook runs `pnpm check:quick` before a branch leaves. In a product's folder, `pnpm check:contract` runs what the Contract job runs, and it needs Docker running. The other three jobs need GitHub: they read the pull request, GitHub's list of known flaws, and GitHub's code scanner.
+
+The Contract job has a machine of its own, one of GitHub's arm64 runners, because an app's image is built for arm64 only. It builds the product's images from the pull request's code, starts them, and runs `zigordev contract`. [The developer setup](../../packages/dev/README.md) says what that command does for each promise. A repo without a product does not name a product folder, and the job is skipped there.
 
 Nothing of the pipeline runs on the host. In a repo that publishes packages, the release follows a green `check` on `main`. In a product, the deploy will follow it, from phase 3.
 
@@ -72,12 +77,13 @@ On `main`, the caller starts on every push, which is every merge. A run in progr
 
 ### What a repo has to bring
 
-| The job      | Needs from the repo                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------- |
-| Quality      | `mise.toml` with the pinned tools, the lockfile, and the script `check` in `package.json` |
-| Title        | `@commitlint/cli` among the dev dependencies, and the shared `.commitlintrc.json`         |
-| Dependencies | The dependency graph, switched on in the repo's settings. It is off in a new repo         |
-| Code scan    | Nothing. It scans the JavaScript, the TypeScript and the workflows it finds               |
+| The job      | Needs from the repo                                                                                                               |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Quality      | `mise.toml` with the pinned tools, the lockfile, and the script `check` in `package.json`                                         |
+| Title        | `@commitlint/cli` among the dev dependencies, and the shared `.commitlintrc.json`                                                 |
+| Dependencies | The dependency graph, switched on in the repo's settings. It is off in a new repo                                                 |
+| Code scan    | Nothing. It scans the JavaScript, the TypeScript and the workflows it finds                                                       |
+| Contract     | The folder of its product, named in the caller. In that folder: `compose.yaml`, and the script `check:contract` in `package.json` |
 
 ## How to use it, with one worked example
 
@@ -135,24 +141,40 @@ A new repo takes it in three steps:
 
 A repo that publishes packages adds a third job, the release. [Packages](packages.md) and [this repo's caller](../../.github/workflows/ci.yml) show it.
 
+A repo that holds a product names the product's folder, with two more lines under `uses`. A product repo's folder is the repo itself:
+
+```yaml
+with:
+  product-folder: .
+```
+
+`toolkit` names `template`, where the product template lives. The script that the job runs is the same in every product:
+
+```json
+"check:contract": "docker compose --file compose.yaml --file compose.local.yaml build && zigordev contract"
+```
+
 To add a check for every repo, add a job to `check.yml` in `toolkit`. It reaches the others with the next version. A check that a laptop can run belongs inside `pnpm check` instead, where the Quality job already runs it.
 
 ## How to check that it works, and what to do when it does not
 
-| Try this                                         | What must happen                                                                 |
-| ------------------------------------------------ | -------------------------------------------------------------------------------- |
-| Open a draft pull request                        | Four jobs and `check` appear on it, and `check` turns green after the other four |
-| Push a file that holds a comment                 | Quality turns red, `check` turns red, and the pull request cannot merge          |
-| Title a pull request `added things`              | Title turns red                                                                  |
-| Add a package that has a known flaw              | Dependencies turns red, and its summary names the package and the flaw           |
-| Mark a green pull request ready, with auto-merge | It merges by itself, as one commit, and the same pipeline starts on `main`       |
+| Try this                                         | What must happen                                                                                               |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Open a draft pull request                        | Four jobs and `check` appear on it, or five in a repo with a product, and `check` turns green after the others |
+| Push a file that holds a comment                 | Quality turns red, `check` turns red, and the pull request cannot merge                                        |
+| Title a pull request `added things`              | Title turns red                                                                                                |
+| Add a package that has a known flaw              | Dependencies turns red, and its summary names the package and the flaw                                         |
+| Make an app print a line of plain text           | Contract turns red, and its log says which app broke promise 4, and quotes the line                            |
+| Mark a green pull request ready, with auto-merge | It merges by itself, as one commit, and the same pipeline starts on `main`                                     |
 
-| What you see                                                              | What it means                                                                         | What to do                                                                                                              |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `check` is red, and every job of the newest run is green or still running | The red `check` belongs to an older run that a newer one cancelled                    | Wait for the newest run. The link of each check names its run                                                           |
-| Quality is red on GitHub and green on the laptop                          | The laptop runs other tool versions, or a test leans on something only the laptop has | Run `mise install` and `pnpm install`, then `pnpm check`. If it still passes, read the job's log for the test           |
-| Dependencies fails with a 403 in a new repo                               | The dependency graph is off                                                           | The owner switches it on in the repo's settings                                                                         |
-| Dependencies names a package that the pull request did not add by name    | Another package brought it in. In a new repo that is katex, which markdownlint brings | `pnpm why <name> -r` shows what brings it in. For katex, add `katex: 0.19.1` under `overrides` in `pnpm-workspace.yaml` |
-| `zigordev check` refuses the `uses` line                                  | It is not a 40-character commit with its version beside it                            | Take the commit from the command above, and write the version after `#`                                                 |
+| What you see                                                              | What it means                                                                         | What to do                                                                                                                        |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `check` is red, and every job of the newest run is green or still running | The red `check` belongs to an older run that a newer one cancelled                    | Wait for the newest run. The link of each check names its run                                                                     |
+| Quality is red on GitHub and green on the laptop                          | The laptop runs other tool versions, or a test leans on something only the laptop has | Run `mise install` and `pnpm install`, then `pnpm check`. If it still passes, read the job's log for the test                     |
+| Dependencies fails with a 403 in a new repo                               | The dependency graph is off                                                           | The owner switches it on in the repo's settings                                                                                   |
+| Contract is red, and its log has a line that says `broken`                | An app does not keep one of the first six promises                                    | The line names the app, the promise and what was seen. `pnpm check:contract` in the product's folder shows the same on the laptop |
+| Contract is red before any line says `kept` or `broken`                   | An image did not build, or the product did not start and get healthy                  | The lines above the failure name the step. `docker compose --file compose.yaml --file compose.local.yaml build` repeats the build |
+| Dependencies names a package that the pull request did not add by name    | Another package brought it in. In a new repo that is katex, which markdownlint brings | `pnpm why <name> -r` shows what brings it in. For katex, add `katex: 0.19.1` under `overrides` in `pnpm-workspace.yaml`           |
+| `zigordev check` refuses the `uses` line                                  | It is not a 40-character commit with its version beside it                            | Take the commit from the command above, and write the version after `#`                                                           |
 
 [How toolkit reaches the other repos](../cloud-first-deploy.md) lists every other case, the release included.
