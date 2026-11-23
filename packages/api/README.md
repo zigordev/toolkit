@@ -167,6 +167,10 @@ stopOnSignals(await serve(app, { port: 3000, host: '0.0.0.0', logger }));
 
 The package needs `fastify`, `zod` and `@zigordev/otel` beside it, at the versions the app itself uses.
 
+### The contract
+
+The OpenAPI document is the contract between an API and every caller. An app commits it as `openapi.json` beside itself, written by `openapiDocument(app)`, and a test fails while the file and the code differ. The callers' typed client is generated from that file, in the same pull request as the change. The template shows all three: `apps/template-api/src/openapi.ts` writes the file, `src/openapi.test.ts` holds it to the code, and `packages/template-api-client` is the client. [Its README](../../template/README.md) says how to write both again.
+
 ## How to check that it works
 
 - `pnpm exec vitest run --project api` in `toolkit` runs this package's tests. They build a small API and send it requests: each error, each sign-in case, a walk through every page of a list, the OpenAPI document, the health route, and a stop with a request in flight.
