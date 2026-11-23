@@ -16,6 +16,11 @@ services:
       OTEL_SERVICE_NAME: template-api
       OTEL_SERVICE_VERSION: ${VERSION:-local}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      DATABASE_URL: postgresql://template_api:${TEMPLATE_API_DATABASE_PASSWORD:-}@template-postgres:5432/template_api
+      API_KEYS: ${TEMPLATE_API_KEYS:-}
+    depends_on:
+      template-api-migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: [CMD, wget, -q, -T, "4", -O, /dev/null, "http://127.0.0.1:3000/health"]
       interval: 10s
@@ -26,7 +31,52 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.services.template-api.loadbalancer.server.port: "3000"
-    networks: [zigordev]
+    networks: [zigordev, template]
+
+  template-api-migrate:
+    image: ghcr.io/zigordev/template-api:${VERSION:-local}
+    command: [node, src/migrate.ts]
+    user: "1000:1000"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+    mem_limit: 128m
+    cpus: 1
+    environment:
+      OTEL_SERVICE_NAME: template-api-migrate
+      OTEL_SERVICE_VERSION: ${VERSION:-local}
+      DATABASE_URL: postgresql://template_api:${TEMPLATE_API_DATABASE_PASSWORD:-}@template-postgres:5432/template_api
+      DATABASE_ADMIN_URL: postgresql://postgres:${POSTGRES_PASSWORD:-}@template-postgres:5432/postgres
+    labels:
+      com.zigordev.job: migrate
+    depends_on:
+      template-postgres:
+        condition: service_healthy
+    networks: [zigordev, template]
+
+  template-postgres:
+    image: postgres:18.7-alpine3.24
+    init: true
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    mem_limit: 256m
+    cpus: 1
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - template-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD, pg_isready, --username=postgres, --dbname=postgres]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+      start_interval: 1s
+    labels:
+      com.zigordev.backup: postgres
+    networks: [template]
 
   template-web:
     image: ghcr.io/zigordev/template-web:${VERSION:-local}
@@ -61,3 +111,7 @@ services:
 networks:
   zigordev:
     external: true
+  template: {}
+
+volumes:
+  template-postgres-data: {}

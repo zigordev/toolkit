@@ -5,8 +5,20 @@ services:
       dockerfile: template/apps/template-api/Dockerfile
     environment:
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment.name=local
+      DATABASE_URL: postgresql://template_api:local-only@template-postgres:5432/template_api
     labels:
       traefik.http.routers.template-api.rule: Host(`template.localhost`) && PathPrefix(`/api`)
+
+  template-api-migrate:
+    environment:
+      DATABASE_URL: postgresql://template_api:local-only@template-postgres:5432/template_api
+      DATABASE_ADMIN_URL: postgresql://postgres:local-only@template-postgres:5432/postgres
+
+  template-postgres:
+    environment:
+      POSTGRES_PASSWORD: local-only
+    ports:
+      - 127.0.0.1:5433:5432
 
   template-web:
     build:

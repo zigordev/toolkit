@@ -1,8 +1,10 @@
-import { defineProject } from 'vitest/config';
+import { configDefaults, defineProject } from 'vitest/config';
 
 export default defineProject({
   test: {
     name: 'template-api',
     include: ['src/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, 'src/**/*.db.test.ts'],
+    testTimeout: 20_000,
   },
 });

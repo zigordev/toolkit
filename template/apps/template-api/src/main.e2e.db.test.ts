@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
 import { type AddressInfo, createServer as createTcpServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { useTestDatabase } from '@zigordev/test/postgres';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 interface Attribute {
@@ -28,6 +29,7 @@ interface Run {
 }
 
 const folder = fileURLToPath(new URL('..', import.meta.url));
+const database = useTestDatabase();
 let receiver: Server;
 let bodies: { path: string; body: Record<string, unknown> }[];
 
@@ -70,6 +72,7 @@ async function run(env: Record<string, string>, paths: readonly string[]): Promi
       OTEL_EXPORTER_OTLP_ENDPOINT: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}`,
       OTEL_EXPORTER_OTLP_PROTOCOL: 'http/json',
       OTEL_METRIC_EXPORT_INTERVAL: '600000',
+      DATABASE_URL: database.url,
       ...env,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -131,7 +134,10 @@ describe('the API as a process', () => {
     expect(outcome.code).toBe(0);
     expect(outcome.answers).toEqual([
       { status: 200, body: { message: 'Hello from template-api' } },
-      { status: 200, body: { status: 'ok', service: 'template-api', components: {} } },
+      {
+        status: 200,
+        body: { status: 'ok', service: 'template-api', components: { db: { status: 'up' } } },
+      },
     ]);
   }, 30_000);
 

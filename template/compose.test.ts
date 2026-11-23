@@ -22,6 +22,10 @@ interface Service {
   readonly networks?: Readonly<Record<string, unknown>>;
   readonly healthcheck?: { readonly test?: readonly string[] };
   readonly tmpfs?: readonly string[];
+  readonly command?: readonly string[];
+  readonly restart?: string;
+  readonly depends_on?: Readonly<Record<string, { readonly condition: string }>>;
+  readonly volumes?: readonly { readonly source?: string; readonly target?: string }[];
 }
 
 interface Model {
@@ -30,6 +34,7 @@ interface Model {
   readonly networks: Readonly<
     Record<string, { readonly name: string; readonly external?: boolean }>
   >;
+  readonly volumes?: Readonly<Record<string, unknown>>;
 }
 
 const folder = fileURLToPath(new URL('.', import.meta.url));
@@ -131,14 +136,21 @@ describe('the web image', () => {
 });
 
 describe('the product', () => {
-  it('is one Compose project named after the product, with one service per app', () => {
+  it('is one Compose project named after the product: its apps, the job and the store', () => {
     expect(everywhere.name).toBe('template');
-    expect(Object.keys(everywhere.services).sort()).toEqual(apps);
+    expect(Object.keys(everywhere.services).sort()).toEqual([
+      'template-api',
+      'template-api-migrate',
+      'template-postgres',
+      'template-web',
+    ]);
   });
 
-  it('joins the network of the shared services, and makes none of its own', () => {
-    expect(Object.keys(everywhere.networks)).toEqual(['zigordev']);
+  it('joins the network of the shared services, and keeps its database on one of its own', () => {
+    expect(Object.keys(everywhere.networks).sort()).toEqual(['template', 'zigordev']);
     expect(everywhere.networks.zigordev).toMatchObject({ name: 'zigordev', external: true });
+    expect(everywhere.networks.template).toMatchObject({ name: 'template_template' });
+    expect(everywhere.networks.template?.external).toBeUndefined();
   });
 
   it('is built from its own Dockerfiles on the laptop, and only there', () => {
@@ -226,7 +238,9 @@ describe.each(apps)('%s', (app) => {
     expect(service?.labels?.['traefik.enable']).toBe('true');
     expect(service?.labels?.[`traefik.http.services.${app}.loadbalancer.server.port`]).toBe('3000');
     expect(service?.ports).toBeUndefined();
-    expect(Object.keys(service?.networks ?? {})).toEqual(['zigordev']);
+    expect(Object.keys(service?.networks ?? {}).sort()).toEqual(
+      app === 'template-api' ? ['template', 'zigordev'] : ['zigordev']
+    );
   });
 
   it('has a Dockerfile that ends as the user node, with its own ignore file', () => {
@@ -253,5 +267,87 @@ describe.each(apps)('%s', (app) => {
     expect(images.size).toBe(1);
     expect(image).toMatch(/^node:\d+\.\d+\.\d+-alpine\d+\.\d+$/);
     expect(manifest.engines.node).toBe(`>=${image?.match(/^node:(\d+)\./)?.[1]}`);
+  });
+});
+
+describe('template-api-migrate, the one-shot job', () => {
+  const job = everywhere.services['template-api-migrate'];
+
+  it('runs the image of the API once, with the command of the migrations, under the job label', () => {
+    expect(job?.image).toBe('ghcr.io/zigordev/template-api:local');
+    expect(released.services['template-api-migrate']?.image).toBe(
+      'ghcr.io/zigordev/template-api:1f3a9c2'
+    );
+    expect(job?.command).toEqual(['node', 'src/migrate.ts']);
+    expect(job?.restart).toBe('no');
+    expect(job?.labels).toEqual({ 'com.zigordev.job': 'migrate' });
+  });
+
+  it('waits for a healthy database, and the API waits for it on the laptop only', () => {
+    expect(job?.depends_on?.['template-postgres']?.condition).toBe('service_healthy');
+    expect(laptop.services['template-api']?.depends_on?.['template-api-migrate']?.condition).toBe(
+      'service_completed_successfully'
+    );
+    expect(production.services['template-api']?.depends_on).toBeUndefined();
+  });
+
+  it('is boxed like an app, and reaches the database and the agent, with no route', () => {
+    expect(job?.user).toBe('1000:1000');
+    expect(job?.read_only).toBe(true);
+    expect(job?.cap_drop).toEqual(['ALL']);
+    expect(job?.security_opt).toEqual(['no-new-privileges:true']);
+    expect(Number(job?.mem_limit)).toBeGreaterThan(0);
+    expect(job?.labels?.['traefik.enable']).toBeUndefined();
+    expect(Object.keys(job?.networks ?? {}).sort()).toEqual(['template', 'zigordev']);
+  });
+});
+
+describe('template-postgres, the store', () => {
+  const store = everywhere.services['template-postgres'];
+
+  it('runs PostgreSQL 18, the same image as the API tests', async () => {
+    const { postgresImage } = await import('./apps/template-api/global-setup.ts');
+
+    expect(store?.image).toBe(postgresImage);
+    expect(store?.image).toMatch(/^postgres:18\.\d+-alpine\d+\.\d+$/);
+  });
+
+  it('is found by the backup through its label, and keeps its data in a volume of its own', () => {
+    expect(store?.labels).toEqual({ 'com.zigordev.backup': 'postgres' });
+    expect(store?.volumes).toEqual([
+      expect.objectContaining({ source: 'template-postgres-data', target: '/var/lib/postgresql' }),
+    ]);
+    expect(Object.keys(everywhere.volumes ?? {})).toEqual(['template-postgres-data']);
+  });
+
+  it('is reached only on the network of the product, and from this Mac on the laptop', () => {
+    expect(Object.keys(store?.networks ?? {})).toEqual(['template']);
+    expect(store?.ports).toBeUndefined();
+    expect(laptop.services['template-postgres']?.ports).toEqual([
+      expect.objectContaining({ host_ip: '127.0.0.1', published: '5433', target: 5432 }),
+    ]);
+    expect(production.services['template-postgres']?.ports).toBeUndefined();
+  });
+
+  it('has a health check, limits, an init, and 30 seconds to stop', () => {
+    expect(store?.healthcheck?.test?.slice(0, 2)).toEqual(['CMD', 'pg_isready']);
+    expect(Number(store?.mem_limit)).toBeGreaterThan(0);
+    expect(store?.cpus).toBeGreaterThan(0);
+    expect(store?.init).toBe(true);
+    expect(store?.security_opt).toEqual(['no-new-privileges:true']);
+    expect(store?.stop_grace_period).toBe('30s');
+  });
+});
+
+describe('the secrets of production', () => {
+  it('are named in .env.production.example, and only named', () => {
+    const example = parseEnv(readFileSync(`${folder}.env.production.example`, 'utf8'));
+
+    expect(Object.keys(example).sort()).toEqual([
+      'POSTGRES_PASSWORD',
+      'TEMPLATE_API_DATABASE_PASSWORD',
+      'TEMPLATE_API_KEYS',
+    ]);
+    expect(Object.values(example).every((value) => value === '')).toBe(true);
   });
 });

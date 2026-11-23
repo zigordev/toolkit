@@ -30,6 +30,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm exec vitest run <path>` runs one test file.
 - `pnpm --dir template run local:up` starts the shared services from `@zigordev/stack` and the template in containers. `local:down` stops the template only.
 - `pnpm --dir template dev web` or `pnpm --dir template dev api` runs that one app on this Mac with hot reload, beside the containers. Its settings are in the app's `.env.development`.
+- `pnpm --dir template/apps/template-api run db:generate --name <change>` writes the SQL of a change to the API's schema into its `drizzle/` folder. `run openapi` rewrites its `openapi.json`, and a test fails while the file and the code differ.
 - `pnpm --dir template run check:contract` builds the template's images and holds both apps to the platform contract. It needs Docker running, and the pipeline's Contract job runs the same.
 - `pnpm exec zigordev check [rule...] [file...]` runs the rules a machine can check, all of them or the ones named.
 - `pnpm exec zigordev sync` copies the shared files from `packages/dev/shared` to the root of this repo.

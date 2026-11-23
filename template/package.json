@@ -13,7 +13,7 @@
     "local:down": "docker compose --file compose.yaml --file compose.local.yaml down",
     "local:reset": "docker compose --file compose.yaml --file compose.local.yaml down --volumes && pnpm run local:up",
     "dev": "sh -c 'test -n \"$1\" || { echo \"Name the app: pnpm dev api, or pnpm dev web\" >&2; exit 2; }; exec pnpm --fail-if-no-match --filter \"./apps/*-$1\" run dev' --",
-    "check:contract": "docker compose --file compose.yaml --file compose.local.yaml build && zigordev contract",
+    "check:contract": "docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only zigordev contract",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {

@@ -1,26 +1,32 @@
 import { metrics } from '@opentelemetry/api';
+import type { ApiPlugin } from '@zigordev/api';
 import { createCounterAtZero } from '@zigordev/otel';
-import type { FastifyInstance } from 'fastify';
+import * as z from 'zod';
 
 export interface HelloOptions {
   readonly service: string;
 }
 
-const greeting = {
-  type: 'object',
-  properties: { message: { type: 'string' } },
-  required: ['message'],
-  additionalProperties: false,
-} as const;
-
-export async function hello(app: FastifyInstance, options: HelloOptions): Promise<void> {
+export const hello: ApiPlugin<HelloOptions> = async (app, options) => {
   const greetings = createCounterAtZero(metrics.getMeter(options.service), 'template.greetings', {
     description: 'Greetings sent',
   });
 
-  app.get('/hello', { schema: { response: { 200: greeting } } }, async (request) => {
-    greetings.add(1);
-    request.log.info({ event: 'greeting.sent' });
-    return { message: `Hello from ${options.service}` };
-  });
-}
+  app.get(
+    '/hello',
+    {
+      config: { public: true },
+      schema: {
+        summary: 'Say hello',
+        tags: ['hello'],
+        operationId: 'getHello',
+        response: { 200: z.object({ message: z.string() }) },
+      },
+    },
+    async (request) => {
+      greetings.add(1);
+      request.log.info({ event: 'greeting.sent' });
+      return { message: `Hello from ${options.service}` };
+    }
+  );
+};
