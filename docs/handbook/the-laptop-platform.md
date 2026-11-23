@@ -91,16 +91,18 @@ Each app's container is boxed in the same way: a user that is not root, a read-o
 
 ### Two ways to run a product
 
-| Command            | What runs                                                                              | When to use it                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `pnpm local:up`    | The shared services, then the whole product in containers, built from the working copy | To see the product as production will run it                                                        |
-| `pnpm dev`         | The one app being edited, on the laptop itself, with hot reload                        | While writing code. It arrives with a later slice of the template, and does not exist on 2026-11-23 |
-| `pnpm local:down`  | Stops and removes the product's containers. The shared services stay                   | When done                                                                                           |
-| `pnpm local:reset` | The same, deletes the product's data, and starts it again                              | To start from seed data                                                                             |
+| Command                        | What runs                                                                                                                | When to use it                               |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| `pnpm local:up`                | The shared services, then the whole product in containers, built from the working copy                                   | To see the product as production will run it |
+| `pnpm dev web`, `pnpm dev api` | The one app being edited, on the laptop itself, with hot reload. The rest of the product keeps running in its containers | While writing code                           |
+| `pnpm local:down`              | Stops and removes the product's containers. The shared services stay                                                     | When done                                    |
+| `pnpm local:reset`             | The same, deletes the product's data, and starts it again                                                                | To start from seed data                      |
 
 `pnpm local:up` is two steps in one script. `zigordev-stack up` starts the shared services and waits until each is healthy. `docker compose up --build --detach --wait` then builds the product's images, starts its containers, and returns when every one is healthy.
 
 A product takes `@zigordev/stack` from npm, as a dev dependency. The first step therefore needs no clone of `platform`, and every product on the laptop starts the same five containers.
+
+`pnpm dev <app>` runs the app named on the command line, found by its folder `apps/<product>-<app>`. The API runs under `node --watch`, which restarts it on a saved change, and the web app runs `next dev`, which shows a change on the next look at the page. Each app takes its dev settings from its committed `.env.development`, checked by the same schema as in its container. A dev process listens on `127.0.0.1` only, and calls itself version `dev`. [The template's README](../../template/README.md) has the details, and which telemetry a dev process sends.
 
 ### The laptop and production
 

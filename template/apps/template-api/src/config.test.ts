@@ -1,6 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
 import { ConfigError } from '@zigordev/config';
 import { describe, expect, it } from 'vitest';
 import { readConfig } from './config.ts';
+
+const development = parseEnv(readFileSync(new URL('../.env.development', import.meta.url), 'utf8'));
 
 describe('readConfig', () => {
   it('needs only the name of the service, and fills in the rest', () => {
@@ -47,5 +51,25 @@ describe('readConfig', () => {
 
   it('reads the environment of the process when it is given none', () => {
     expect(() => readConfig()).toThrow(ConfigError);
+  });
+});
+
+describe('the settings of pnpm dev', () => {
+  it('pass the same check as in the container, and keep the server on this Mac', () => {
+    expect(readConfig(development)).toEqual({
+      PORT: 3000,
+      HOST: '127.0.0.1',
+      LOG_LEVEL: 'info',
+      OTEL_SERVICE_NAME: 'template-api',
+      OTEL_SERVICE_VERSION: 'dev',
+    });
+  });
+
+  it('send the telemetry to the agent on this Mac, and give up on a send within a second', () => {
+    expect(development).toMatchObject({
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://127.0.0.1:4318',
+      OTEL_EXPORTER_OTLP_TIMEOUT: '1000',
+      OTEL_RESOURCE_ATTRIBUTES: 'deployment.environment.name=local',
+    });
   });
 });

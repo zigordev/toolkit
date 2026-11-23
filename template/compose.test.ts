@@ -1,6 +1,7 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 import { describe, expect, it } from 'vitest';
 
 interface Service {
@@ -75,6 +76,43 @@ describe('the scripts', () => {
   it('stop the product only, and leave the shared services to the other products', () => {
     expect(manifest.scripts['local:down']).toBe(`${product} down`);
     expect(manifest.scripts['local:reset']).toBe(`${product} down --volumes && pnpm run local:up`);
+  });
+
+  it('run the one app named on the command line with hot reload, and find it by its folder', () => {
+    expect(manifest.scripts.dev).toBe(
+      `sh -c 'test -n "$1" || { echo "Name the app: pnpm dev api, or pnpm dev web" >&2; exit 2; }; exec pnpm --fail-if-no-match --filter "./apps/*-$1" run dev' --`
+    );
+  });
+
+  it('say how to name the app when none is named', () => {
+    const ran = spawnSync('pnpm', ['run', '--silent', 'dev'], { cwd: folder, encoding: 'utf8' });
+
+    expect(ran.status).toBe(2);
+    expect(ran.stderr).toContain('Name the app: pnpm dev api, or pnpm dev web');
+  });
+});
+
+describe.each(apps)('%s while it is edited', (app) => {
+  const scripts = (
+    JSON.parse(readFileSync(`${folder}apps/${app}/package.json`, 'utf8')) as {
+      readonly scripts: Readonly<Record<string, string>>;
+    }
+  ).scripts;
+  const development = parseEnv(readFileSync(`${folder}apps/${app}/.env.development`, 'utf8'));
+
+  it('has a dev script that reloads it on a change, on this Mac only', () => {
+    expect(scripts.dev).toBe(
+      app === 'template-api'
+        ? 'node --env-file=.env.development --watch --import @zigordev/otel/register src/main.ts'
+        : 'NEXT_TELEMETRY_DISABLED=1 next dev --hostname 127.0.0.1 --port 3001'
+    );
+  });
+
+  it('takes the same name in its dev settings as in compose.yaml, and the version dev', () => {
+    expect(development.OTEL_SERVICE_NAME).toBe(
+      everywhere.services[app]?.environment?.OTEL_SERVICE_NAME
+    );
+    expect(development.OTEL_SERVICE_VERSION).toBe('dev');
   });
 });
 
@@ -197,7 +235,9 @@ describe.each(apps)('%s', (app) => {
 
     expect(dockerfile).toMatch(/^USER node$/m);
     expect(dockerfile).toMatch(/^CMD \["node", "--import", "@zigordev\/otel\/register", /m);
-    expect(ignored.split('\n')).toEqual(expect.arrayContaining(['.git', '**/node_modules']));
+    expect(ignored.split('\n')).toEqual(
+      expect.arrayContaining(['.git', '**/node_modules', '**/.env*'])
+    );
   });
 
   it('is built on one exact Node.js image, of the major version its package asks for', () => {
