@@ -76,7 +76,7 @@ A repo's own `release.config.js` passes these settings on in one line. semantic-
 
 Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves.
 
-It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already. A service with the label `com.zigordev.job`, such as a migration job on the app's own image, is a job and not an app: it runs once and ends. Record 0035 sets the label, accepted by the owner on 2026-11-23, in [toolkit#68](https://github.com/zigordev/toolkit/pull/68).
+It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already. A service with the label `com.zigordev.job`, such as a migration job on the app's own image, is a job and not an app: it runs once and ends. [Record 0035](../../docs/adr/0035-labels-tell-the-platform-what-a-service-is.md) sets the label.
 
 The command starts the product once more, under the name `<product>-contract` and on a network of its own. Nothing of it touches a product that already runs on the laptop, or the shared services. In place of the telemetry agent it starts a stand-in: one small script in a Node.js container, under the name and the port that `compose.yaml` gives the apps. The stand-in records what the apps send. Every request to an app is also made from there, so no port is published.
 

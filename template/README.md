@@ -6,15 +6,16 @@ A minimal product, kept inside `toolkit`. It is being built in slices, and this 
 
 A product on the platform is an API and a web app that is one of its clients. The template is the smallest product of that shape, wired with the shared packages of this repo.
 
-| Path                      | What it holds                                                                                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `apps/template-api`       | The API: a Fastify service that answers `GET /health` and `GET /api/v1/hello`, and the `Dockerfile` of it   |
-| `apps/template-web`       | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it               |
-| `compose.yaml`            | The whole product as it runs everywhere: both services, each with its limits, health check and route labels |
-| `compose.local.yaml`      | What differs on the laptop: the images are built here, and the address is `template.localhost`              |
-| `compose.production.yaml` | What differs in production: the address                                                                     |
-| `compose.test.ts`         | The test that holds the three compose files and the two Dockerfiles to the container rules                  |
-| `package.json`            | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                    |
+| Path                      | What it holds                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/template-api`       | The API: a Fastify service on `@zigordev/api` with a greeting and the notes, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
+| `apps/template-web`       | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                      |
+| `compose.yaml`            | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check      |
+| `compose.local.yaml`      | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                     |
+| `compose.production.yaml` | What differs in production: the address, and that the deploy runs the migrate job itself                                                           |
+| `compose.test.ts`         | The test that holds the three compose files and the two Dockerfiles to the container rules                                                         |
+| `package.json`            | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                           |
+| `.env.production.example` | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                             |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -37,6 +38,10 @@ It stays minimal on purpose, and it is never deployed.
 | React 19           | The web app's page                                                                                       |
 | `@zigordev/config` | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
 | `@zigordev/otel`   | Each app's traces, metrics and log lines, and the answer of its health route                             |
+| `@zigordev/api`    | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop   |
+| PostgreSQL 18      | The product's database, in a container of its own on a network of its own                                |
+| Drizzle            | The API's queries, and with drizzle-kit the SQL of each migration                                        |
+| `@zigordev/test`   | A real PostgreSQL for the API's tests, with one migrated copy per test file                              |
 | Docker Compose     | Runs the product as one project of two containers, on the network of the shared services                 |
 | The Node.js image  | The official image on Alpine Linux, at the same Node.js version as `mise.toml`. Both images are built on |
 | Vitest 5           | Tests the routes and the page, each app once as a real process, and the compose files                    |
@@ -106,18 +111,60 @@ The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. T
 
 ## The settings
 
-| Variable                      | Read by       | What it holds                                                | When it is not set      |
-| ----------------------------- | ------------- | ------------------------------------------------------------ | ----------------------- |
-| `OTEL_SERVICE_NAME`           | Both          | The app's one name                                           | The app does not start  |
-| `OTEL_SERVICE_VERSION`        | Both          | The version that runs, shown in its logs, traces and metrics | It is left out          |
-| `LOG_LEVEL`                   | Both          | `debug`, `info`, `warn` or `error`                           | `info`                  |
-| `PORT`                        | Both          | The port the app listens on                                  | 3000                    |
-| `HOST`                        | The API       | The address it listens on                                    | `0.0.0.0`, every one    |
-| `API_URL`                     | The web       | Where the web app's server reaches the API                   | The app does not start  |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry | Where the telemetry goes. The compose file names the agent   | `http://localhost:4318` |
-| `OTEL_RESOURCE_ATTRIBUTES`    | OpenTelemetry | The environment the app runs in, as `local` or `production`  | It is left out          |
+| Variable                      | Read by          | What it holds                                                                | When it is not set                      |
+| ----------------------------- | ---------------- | ---------------------------------------------------------------------------- | --------------------------------------- |
+| `OTEL_SERVICE_NAME`           | Both             | The app's one name                                                           | The app does not start                  |
+| `OTEL_SERVICE_VERSION`        | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                          |
+| `LOG_LEVEL`                   | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                  |
+| `PORT`                        | Both             | The port the app listens on                                                  | 3000                                    |
+| `HOST`                        | The API          | The address it listens on                                                    | `0.0.0.0`, every one                    |
+| `DATABASE_URL`                | The API, the job | The address of the app's database, as its own role                           | The app does not start                  |
+| `API_KEYS`                    | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401 |
+| `DATABASE_ADMIN_URL`          | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                   |
+| `API_URL`                     | The web          | Where the web app's server reaches the API                                   | The app does not start                  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                 |
+| `OTEL_RESOURCE_ATTRIBUTES`    | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                          |
 
 The compose files set every one of them that a container needs. An app reads nothing but environment variables.
+
+## The notes API
+
+Slice 2 gives the API its first real feature: notes, kept in the product's PostgreSQL.
+
+| Method and path                 | Operation    | Scope         | Answers                              |
+| ------------------------------- | ------------ | ------------- | ------------------------------------ |
+| `GET /api/v1/notes`             | `listNotes`  | `notes:read`  | 200 with a page of notes             |
+| `POST /api/v1/notes`            | `createNote` | `notes:write` | 201 with the note and its `Location` |
+| `GET /api/v1/notes/{noteId}`    | `getNote`    | `notes:read`  | 200 with the note, or 404            |
+| `PATCH /api/v1/notes/{noteId}`  | `updateNote` | `notes:write` | 200 with the changed note, or 404    |
+| `DELETE /api/v1/notes/{noteId}` | `deleteNote` | `notes:write` | 204, or 404                          |
+
+A list filters by `status` and by `q`, a text that the title holds in any case, sorts by `createdAt`, `updatedAt` or `title`, newest first unless asked, and pages with `limit` and `cursor`. Every error is a problem in the platform's format, and the docs page at `/api/v1/docs` shows them all.
+
+A caller signs in with an API key in `Authorization: Bearer <key>`. The API keeps only the SHA-256 of each key, in `API_KEYS`, so the key itself is never in a setting the API reads. To try the notes on this Mac, make a key and start the API with it:
+
+```bash
+KEY=$(openssl rand -hex 16)
+DIGEST=$(printf '%s' "$KEY" | shasum -a 256 | cut -d' ' -f1)
+API_KEYS="[{\"name\":\"me\",\"sha256\":\"$DIGEST\",\"scopes\":[\"notes:read\",\"notes:write\"]}]" pnpm dev api
+```
+
+Then `curl -H "authorization: Bearer $KEY" http://127.0.0.1:3000/api/v1/notes` lists the notes.
+
+### The database
+
+The product's PostgreSQL runs as `template-postgres`, on the network `template`, which only the API and its job join. On the laptop it also answers at `127.0.0.1:5433`, so that `pnpm dev api` reaches it. The API connects as its own role, `template_api`, to its own database, `template_api`.
+
+Before the API starts, the one-shot job `template-api-migrate` runs on the API's own image: it makes the role and the database when they are missing, and applies the migrations in `apps/template-api/drizzle/`. On the laptop the API waits for it. In production the deploy runs it once, before the new version starts, and stops when it fails. The handbook page [Data](../docs/handbook/data.md) explains why.
+
+A change to the tables is a migration, and a change to a route regenerates the OpenAPI file:
+
+```bash
+pnpm --dir apps/template-api run db:generate --name add_notes_pinned
+pnpm --dir apps/template-api run openapi
+```
+
+The first writes the SQL of a schema change into `drizzle/`, which is read and committed as it is. The second writes `openapi.json`, and a test fails while the file and the code differ.
 
 ## How each app starts
 
@@ -200,11 +247,11 @@ zigordev contract: 2 apps keep promises 1 to 6
 
 The pipeline runs the same script on every pull request, in a job named Contract, on an arm64 machine. [The developer setup](../packages/dev/README.md) says what the command does to see each promise.
 
-## What slice 1 leaves for later
+## What is left for later
 
-- **In the API:** the error format, the OpenAPI document, sign-in on every route, and a real resource in place of `hello`. They arrive with `@zigordev/api` and the second slice, in phase 4.
-- **In the web app:** the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until the second slice brings the generated client, the page calls the API with a plain `fetch`.
-- **In the containers:** `pnpm dev`, which runs the one app being edited with hot reload, and the data stores. They arrive with the slices that need them.
+- **The generated client.** Slice 2 commits the OpenAPI file, and a test holds it to the code. The client generated from it waits for a decision: openapi-typescript, the generator the handbook lists, does not run on TypeScript 7.
+- **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
+- **Sign-in for people.** The API knows callers by their API keys. People sign in with the third slice, in phase 6.
 
 ## Known limits
 

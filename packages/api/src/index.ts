@@ -1,3 +1,4 @@
+export type { FastifyPluginAsyncZod as ApiPlugin } from 'fastify-type-provider-zod';
 export type { Api, ApiOptions } from './api.ts';
 export { createApi } from './api.ts';
 export type { Authenticate, Principal } from './auth.ts';

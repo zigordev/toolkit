@@ -1,15 +1,17 @@
 import { createLogger } from '@zigordev/otel';
-import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildApp } from './app.ts';
+import { type App, buildApp } from './app.ts';
 import { readConfig } from './config.ts';
 
-let app: FastifyInstance;
+let app: App;
 let lines: string[];
 
 beforeEach(async () => {
   lines = [];
-  const config = readConfig({ OTEL_SERVICE_NAME: 'template-api' });
+  const config = readConfig({
+    OTEL_SERVICE_NAME: 'template-api',
+    DATABASE_URL: 'postgresql://nobody@127.0.0.1:1/nothing',
+  });
   const logger = createLogger({
     service: config.OTEL_SERVICE_NAME,
     destination: { write: (line: string) => lines.push(line) },
@@ -26,11 +28,15 @@ function events(): unknown[] {
 }
 
 describe('GET /health', () => {
-  it('answers 200 ok with the name of the service', async () => {
+  it('answers 503 error, naming the database, while the database cannot be reached', async () => {
     const response = await app.inject({ method: 'GET', url: '/health' });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'ok', service: 'template-api', components: {} });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      status: 'error',
+      service: 'template-api',
+      components: { db: { status: 'down' } },
+    });
   });
 
   it('writes no log line', async () => {

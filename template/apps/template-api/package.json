@@ -10,23 +10,33 @@
   },
   "files": [
     "src",
+    "drizzle",
     "!src/**/*.test.ts"
   ],
   "scripts": {
     "start": "node --import @zigordev/otel/register src/main.ts",
     "dev": "node --env-file=.env.development --watch --import @zigordev/otel/register src/main.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate",
+    "migrate": "node --env-file=.env.development src/migrate.ts",
+    "openapi": "node src/openapi.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "catalog:",
+    "@zigordev/api": "workspace:*",
     "@zigordev/config": "workspace:*",
     "@zigordev/otel": "workspace:*",
+    "drizzle-orm": "catalog:",
     "fastify": "catalog:",
+    "pg": "catalog:shipped",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "catalog:",
     "@zigordev/dev": "workspace:*",
+    "@zigordev/test": "workspace:*",
+    "drizzle-kit": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

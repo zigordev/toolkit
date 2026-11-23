@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { type AddressInfo, createServer as createTcpServer } from 'node:net';
 import { createLogger, type LoggerOptions } from '@zigordev/otel';
+import { useTestDatabase } from '@zigordev/test/postgres';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type Server, type Signal, start, stopOnSignals } from './start.ts';
 
@@ -14,6 +15,7 @@ vi.mock('@zigordev/otel', async (importOriginal) => {
   return { ...actual, createLogger: vi.fn(actual.createLogger) };
 });
 
+const database = useTestDatabase();
 let lines: string[];
 let running: Server | undefined;
 
@@ -34,6 +36,7 @@ async function startOne(env: Record<string, string> = {}): Promise<Server> {
   running = await start({
     env: {
       OTEL_SERVICE_NAME: 'template-api',
+      DATABASE_URL: database.url,
       PORT: String(await freePort()),
       HOST: '127.0.0.1',
       ...env,
@@ -90,6 +93,7 @@ describe('start', () => {
     running = await start({
       env: {
         OTEL_SERVICE_NAME: 'template-api',
+        DATABASE_URL: database.url,
         OTEL_SERVICE_VERSION: '1f3a9c2',
         LOG_LEVEL: 'debug',
         PORT: String(await freePort()),
