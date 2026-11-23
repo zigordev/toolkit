@@ -10,6 +10,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo                                                                     |
 | `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                  |
 | `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                  |
+| `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, and the harness that builds an app for API tests                                       |
 | `template/`             | The product template. It and its apps are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
 | `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                     |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here                                                                 |
@@ -22,7 +23,8 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 
 - `pnpm install` installs the dependencies and the git hooks.
 - `pnpm check` runs what CI runs: lint, build, type check, and tests with coverage. It prints how long it took.
-- `pnpm check:quick` runs the same without coverage. The push hook runs it.
+- `pnpm check:quick` runs the same without coverage and without the tests that need a container. The push hook runs it.
+- A test that needs a container is named `*.db.test.ts` and belongs to the Vitest project `<name>:db`, from the `vitest.db.config.ts` beside the package's or the app's `vitest.config.ts`. Docker has to run for it.
 - `pnpm format` fixes the formatting, the import order and the Markdown problems that have a safe fix.
 - `pnpm exec vitest run <path>` runs one test file.
 - `pnpm --dir template run local:up` starts the shared services from `@zigordev/stack` and the template in containers. `local:down` stops the template only.

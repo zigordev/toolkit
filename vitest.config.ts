@@ -6,8 +6,10 @@ export default defineConfig({
   test: {
     projects: [
       'packages/*/vitest.config.ts',
+      'packages/*/vitest.db.config.ts',
       'template/vitest.config.ts',
       'template/apps/*/vitest.config.ts',
+      'template/apps/*/vitest.db.config.ts',
     ],
     coverage: {
       provider: 'v8',
