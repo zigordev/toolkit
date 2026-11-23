@@ -1,5 +1,4 @@
 import type { IncomingMessage } from 'node:http';
-import { hostname } from 'node:os';
 import { type Attributes, diag, SpanKind } from '@opentelemetry/api';
 import { diagLogLevelFromString, setGlobalErrorHandler } from '@opentelemetry/core';
 import { OTLPTraceExporter as JsonTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -10,7 +9,6 @@ import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runti
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import {
   osDetector,
-  processDetector,
   type ResourceDetector,
   serviceInstanceIdDetector,
   serviceNameEnvDetector,
@@ -65,16 +63,22 @@ const skipProbes: Sampler = {
 
 export const probeAwareSampler: Sampler = new ParentBasedSampler({ root: skipProbes });
 
-export const hostNameDetector: ResourceDetector = {
-  detect: () => ({ attributes: { 'host.name': hostname() } }),
+export const runtimeDetector: ResourceDetector = {
+  detect: () => ({
+    attributes: {
+      'process.pid': process.pid,
+      'process.runtime.name': 'nodejs',
+      'process.runtime.version': process.versions.node,
+      'process.runtime.description': 'Node.js',
+    },
+  }),
 };
 
 const resourceDetectors: ResourceDetector[] = [
   serviceInstanceIdDetector,
   serviceNameEnvDetector,
-  processDetector,
+  runtimeDetector,
   osDetector,
-  hostNameDetector,
 ];
 
 function serviceVersion(): Record<string, string> {

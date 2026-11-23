@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { createRequire } from 'node:module';
 import type { AddressInfo } from 'node:net';
-import { hostname, tmpdir } from 'node:os';
+import { homedir, hostname, tmpdir, userInfo } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -269,13 +269,26 @@ describe('telemetry in a real process', () => {
     const resource = resourceSpans()[0]?.resource.attributes ?? [];
     expect(attribute(resource, 'service.name')).toBe('toolkit-e2e');
     expect(attribute(resource, 'service.version')).toBe('9.9.9');
-    expect(attribute(resource, 'host.name')).toBe(hostname());
     expect(attribute(resource, 'process.runtime.name')).toBe('nodejs');
     const facts = resource.map((entry) => entry.key);
     expect(facts).toEqual(
       expect.arrayContaining(['service.instance.id', 'process.pid', 'os.type'])
     );
-    expect(facts).not.toContain('host.id');
+    for (const key of [
+      'host.id',
+      'host.name',
+      'process.owner',
+      'process.command',
+      'process.command_args',
+      'process.executable.name',
+      'process.executable.path',
+    ]) {
+      expect(facts).not.toContain(key);
+    }
+    const said = JSON.stringify(resource);
+    for (const personal of [hostname(), homedir(), userInfo().username]) {
+      expect(said).not.toContain(personal);
+    }
     const paths = spans()
       .filter((span) => span.kind === serverKind)
       .map(pathOf);
