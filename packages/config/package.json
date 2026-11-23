@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/config",
   "version": "0.0.0",
-  "private": true,
   "description": "Configuration for zigordev apps: the environment, read once through a Zod schema, and a start that fails when a value is missing or wrong",
   "license": "UNLICENSED",
   "type": "module",
