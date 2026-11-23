@@ -11,7 +11,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile --ignore-scripts \
     && pnpm --filter "template-web^..." --if-present run build \
     && pnpm --filter template-web deploy /build \
-    && pnpm --dir /build run build \
+    && (cd /build && node --run build) \
     && rm -rf /build/.next/cache \
     && pnpm --filter template-web deploy --prod /out
 

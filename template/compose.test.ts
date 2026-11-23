@@ -78,6 +78,20 @@ describe('the scripts', () => {
   });
 });
 
+describe('the web image', () => {
+  const dockerfile = readFileSync(`${folder}apps/template-web/Dockerfile`, 'utf8');
+
+  it('builds the app inside a deployed copy of it, where the links of Next.js stay true', () => {
+    expect(dockerfile).toContain('pnpm --filter template-web deploy /build');
+    expect(dockerfile).toContain('COPY --from=build /build/.next ./.next');
+  });
+
+  it('runs the build script there with Node.js itself, so that pnpm installs the copy only once', () => {
+    expect(dockerfile).toContain('    && (cd /build && node --run build) \\\n');
+    expect(dockerfile).not.toMatch(/pnpm[^\n]*--dir \/build/);
+  });
+});
+
 describe('the product', () => {
   it('is one Compose project named after the product, with one service per app', () => {
     expect(everywhere.name).toBe('template');
