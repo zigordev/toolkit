@@ -1,11 +1,20 @@
 import type { IncomingMessage } from 'node:http';
+import { hostname } from 'node:os';
 import { type Attributes, diag, SpanKind } from '@opentelemetry/api';
+import { diagLogLevelFromString, setGlobalErrorHandler } from '@opentelemetry/core';
 import { OTLPTraceExporter as JsonTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as ProtobufTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
+import {
+  osDetector,
+  processDetector,
+  type ResourceDetector,
+  serviceInstanceIdDetector,
+  serviceNameEnvDetector,
+} from '@opentelemetry/resources';
 import { startNodeSdk } from '@opentelemetry/sdk-node';
 import {
   BatchSpanProcessor,
@@ -14,7 +23,9 @@ import {
   SamplingDecision,
   type SpanExporter,
 } from '@opentelemetry/sdk-trace';
+import { createDiagnostics } from './diagnostics.ts';
 import { installLoaderHooks } from './loader-hooks.ts';
+import { createProcessLogger } from './logger.ts';
 import { privacySpanProcessor } from './privacy.ts';
 
 type SdkOptions = NonNullable<Parameters<typeof startNodeSdk>[0]>;
@@ -54,6 +65,18 @@ const skipProbes: Sampler = {
 
 export const probeAwareSampler: Sampler = new ParentBasedSampler({ root: skipProbes });
 
+export const hostNameDetector: ResourceDetector = {
+  detect: () => ({ attributes: { 'host.name': hostname() } }),
+};
+
+const resourceDetectors: ResourceDetector[] = [
+  serviceInstanceIdDetector,
+  serviceNameEnvDetector,
+  processDetector,
+  osDetector,
+  hostNameDetector,
+];
+
 function serviceVersion(): Record<string, string> {
   const version = process.env.OTEL_SERVICE_VERSION;
   return version ? { 'service.version': version } : {};
@@ -72,9 +95,11 @@ export function startTelemetry(options: TelemetryOptions = {}): Telemetry {
     return existing;
   }
   installLoaderHooks();
+  const logLevel = process.env.OTEL_LOG_LEVEL || 'warn';
   const sdk = startNodeSdk({
-    ...(process.env.OTEL_LOG_LEVEL ? {} : { logLevel: 'warn' }),
+    logLevel,
     resourceAttributes: serviceVersion(),
+    resourceDetectors,
     sampler: probeAwareSampler,
     spanProcessors: [privacySpanProcessor, new BatchSpanProcessor({ exporter: traceExporter() })],
     logRecordProcessors: [],
@@ -89,6 +114,12 @@ export function startTelemetry(options: TelemetryOptions = {}): Telemetry {
       ...(options.instrumentations ?? []),
     ],
   });
+  const diagnostics = createDiagnostics(createProcessLogger());
+  diag.setLogger(diagnostics.logger, {
+    logLevel: diagLogLevelFromString(logLevel),
+    suppressOverrideMessage: true,
+  });
+  setGlobalErrorHandler(diagnostics.onError);
   const telemetry: Telemetry = {
     shutdown: async () => {
       delete holder[handleKey];

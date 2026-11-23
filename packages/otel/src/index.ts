@@ -10,6 +10,8 @@ export { checkHealth } from './health.ts';
 export type { Logger, LoggerOptions, LogLevel } from './logger.ts';
 export { createLogger } from './logger.ts';
 export { createCounterAtZero } from './metrics.ts';
+export type { RestoreOutput } from './output.ts';
+export { captureOutput } from './output.ts';
 export { logProcessCrashes, logStarted, logStopping } from './process-events.ts';
 export { nameRoute } from './route.ts';
 export type { Telemetry, TelemetryOptions } from './telemetry.ts';

@@ -64,3 +64,11 @@ export function createLogger(options: LoggerOptions): Logger {
     options.destination ?? destination({ fd: 1, sync: true })
   );
 }
+
+export function createProcessLogger(): Logger {
+  return createLogger({
+    service: process.env.OTEL_SERVICE_NAME || 'unknown_service',
+    release: process.env.OTEL_SERVICE_VERSION || undefined,
+    level: 'debug',
+  });
+}

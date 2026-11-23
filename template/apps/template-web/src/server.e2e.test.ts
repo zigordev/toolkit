@@ -221,6 +221,25 @@ describe('the web app as a process', () => {
     );
   }, 60_000);
 
+  it('prints nothing but JSON lines, the lines of Next.js included', async () => {
+    const server = await start({ OTEL_SERVICE_NAME: 'template-web' });
+    await ready(server);
+    await (await fetch(`${server.base}/`)).text();
+
+    const printed = server
+      .output()
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(server.errors()).toBe('');
+    for (const line of printed) {
+      expect(line).toMatchObject({ service: 'template-web', level: 'info' });
+    }
+    expect(printed.filter((line) => line.source === 'console').map((line) => line.message)).toEqual(
+      expect.arrayContaining([expect.stringContaining('Next.js')])
+    );
+  }, 60_000);
+
   it('stops within seconds of a SIGTERM', async () => {
     const server = await start({ OTEL_SERVICE_NAME: 'template-web' });
     await ready(server);
