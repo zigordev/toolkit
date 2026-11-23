@@ -147,6 +147,8 @@ Each `Dockerfile` has two stages on the same Node.js image.
 
 The web app's build stage has one more step. Next.js keeps a few modules outside its bundle, such as the logger, and links to them from `.next/node_modules` by a path relative to where it was built. So the web app is built inside a deployed copy of itself, where those paths are the ones the image has.
 
+Inside that copy the build script runs through Node.js itself, with `node --run build`, and not through pnpm. pnpm installs a folder once more before it runs a script there, and the copy does not carry this repo's settings. In a product, where our own packages come from npm, that second install failed for a day after each of our releases: the copy did not know that `@zigordev/*` is exempt from pnpm's one-day wait. `pnpm deploy` has already installed the copy, under the settings of the repo, so nothing is skipped.
+
 | Image          | Size as stored and sent | Built for |
 | -------------- | ----------------------- | --------- |
 | `template-api` | 79 MB                   | arm64     |
