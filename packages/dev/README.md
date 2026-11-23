@@ -6,18 +6,18 @@ The developer setup that every zigordev repo shares: the `zigordev` command, one
 
 One command and a handful of files that a repo refers to instead of writing its own.
 
-| Part                    | What it holds                                                                    | A repo refers to it as                    |
-| ----------------------- | -------------------------------------------------------------------------------- | ----------------------------------------- |
-| `zigordev`              | The command that checks a repo against the standards and copies the shared files | `pnpm exec zigordev`                      |
-| `shared/`               | The files that are the same in every repo                                        | Copied into the repo by `zigordev sync`   |
-| `biome.json`            | The lint and format rules                                                        | `@zigordev/dev/biome`                     |
-| `tsconfig/base.json`    | The strict TypeScript options                                                    | `@zigordev/dev/tsconfig/base.json`        |
-| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                  | `@zigordev/dev/tsconfig/node.json`        |
-| `tsconfig/library.json` | The same, for a package that is compiled before it ships                         | `@zigordev/dev/tsconfig/library.json`     |
-| `tsconfig/next.json`    | The base, for a Next.js app                                                      | `@zigordev/dev/tsconfig/next.json`        |
-| `lefthook.yml`          | The git hooks                                                                    | `node_modules/@zigordev/dev/lefthook.yml` |
-| `commitlint.js`         | The commit rules                                                                 | `@zigordev/dev/commitlint`                |
-| `semantic-release.js`   | The release settings, for a repo that publishes packages                         | `@zigordev/dev/semantic-release`          |
+| Part                    | What it holds                                                                                                                        | A repo refers to it as                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| `zigordev`              | The command that checks a repo against the standards, copies the shared files, and holds a product's images to the platform contract | `pnpm exec zigordev`                      |
+| `shared/`               | The files that are the same in every repo                                                                                            | Copied into the repo by `zigordev sync`   |
+| `biome.json`            | The lint and format rules                                                                                                            | `@zigordev/dev/biome`                     |
+| `tsconfig/base.json`    | The strict TypeScript options                                                                                                        | `@zigordev/dev/tsconfig/base.json`        |
+| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                                                                      | `@zigordev/dev/tsconfig/node.json`        |
+| `tsconfig/library.json` | The same, for a package that is compiled before it ships                                                                             | `@zigordev/dev/tsconfig/library.json`     |
+| `tsconfig/next.json`    | The base, for a Next.js app                                                                                                          | `@zigordev/dev/tsconfig/next.json`        |
+| `lefthook.yml`          | The git hooks                                                                                                                        | `node_modules/@zigordev/dev/lefthook.yml` |
+| `commitlint.js`         | The commit rules                                                                                                                     | `@zigordev/dev/commitlint`                |
+| `semantic-release.js`   | The release settings, for a repo that publishes packages                                                                             | `@zigordev/dev/semantic-release`          |
 
 ## Why we have it
 
@@ -69,6 +69,40 @@ npm needs a few minutes to show a version after it has taken it. With `--settle 
 `zigordev first-publish <package...>` is for the owner of the npm account, once for each new package. npm lets a pipeline publish a package only when the package exists and its name is tied to the repo, and a new tie expires unless the pipeline publishes through it within 2 days. The command does both steps: it publishes an empty version 0.0.0 from a throwaway folder, and it ties the name to this repo, to its `ci.yml` and to the environment named `release`. It works through the owner's own sign-in and second factor, so it refuses to run without a person at a terminal. With `--dry-run` it only says what it would do.
 
 A repo's own `release.config.js` passes these settings on in one line. semantic-release then finds its own plugins, which it cannot do when the settings arrive through its `extends` option under pnpm.
+
+### The contract command
+
+Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves.
+
+It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already.
+
+The command starts the product once more, under the name `<product>-contract` and on a network of its own. Nothing of it touches a product that already runs on the laptop, or the shared services. In place of the telemetry agent it starts a stand-in: one small script in a Node.js container, under the name and the port that `compose.yaml` gives the apps. The stand-in records what the apps send. Every request to an app is also made from there, so no port is published.
+
+| #   | The promise                                          | What the command does to see it                                                                                                                                                          |
+| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | An arm64 image that runs as a non-root user          | It reads the architecture of the image and the user of the running container                                                                                                             |
+| 2   | Settings from the environment, checked at start      | It starts the image with no settings and no network. The app must stop within 15 seconds, with a code that is not 0                                                                      |
+| 3   | Listens on `PORT`, and answers `GET /health`         | It asks `/health` on the port that `compose.yaml` names. Then it starts a second copy with another `PORT`, and asks there. Both must answer 200 with a status of `ok` or `degraded`      |
+| 4   | JSON lines on standard output, with no personal data | It visits the app twice as a visitor would, with an address, a user agent, an email and a code. Every line the container printed must then be a JSON object, with none of the four in it |
+| 5   | Traces and metrics over OTLP, under its own name     | Both must reach the stand-in within 20 seconds, under the name of the compose service, and with none of the four in them                                                                 |
+| 6   | A clean stop within 30 seconds of a SIGTERM          | It begins a request to `/health` and holds it half sent. Then it stops the container. The app must still answer that request, and end by itself with code 0 or 143                       |
+
+For promise 4, nothing may be on the error output either. For the run, the command sets `OTEL_METRIC_EXPORT_INTERVAL` to one second and `OTEL_BSP_SCHEDULE_DELAY` to half a second, so that the telemetry arrives while it waits. Both are standard variables of OpenTelemetry. Code 143 is how a process says that a SIGTERM ended it, and Next.js ends that way after it has finished its requests.
+
+It prints one line for each promise of each app, with what it saw:
+
+```text
+template-api
+  kept    1  an arm64 image that runs as the user 1000:1000
+  kept    2  without its settings it stops at once, with code 1
+  kept    3  it listens on the port in PORT, and answers GET /health with 200
+  kept    4  6 lines, all JSON, with nothing a visitor sent
+  kept    5  traces and metrics reached the agent under the name template-api
+  kept    6  it stopped 1.3 s after a SIGTERM with code 0, and answered the request it had begun
+zigordev contract: 1 app keeps promises 1 to 6
+```
+
+It ends with code 0 when every promise is kept and with code 1 when one is broken. Either way it removes everything it started. Two apps that keep the contract take about 25 seconds. An app that breaks it takes longer, up to a minute more, because the command waits before it gives up.
 
 ### The session rules
 
@@ -191,29 +225,32 @@ pnpm exec zigordev check comments src/app.ts
 pnpm exec zigordev sync
 pnpm exec zigordev release plan
 pnpm exec zigordev first-publish --dry-run @zigordev/dev
+pnpm exec zigordev contract
 ```
 
-The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing. The sixth says what the first publish of a package would do, and changes nothing either.
+The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing. The sixth says what the first publish of a package would do, and changes nothing either. The seventh holds the product of the folder to the contract. It needs Docker running, and the product's images built.
 
 ## How to check that it works
 
-| Try this                                                                | What must happen                                                                       |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Stage a badly formatted `.ts` file and commit                           | The commit goes through with the file formatted                                        |
-| Stage a Markdown file with two top-level headings                       | The commit is refused, and markdownlint names the rule                                 |
-| Stage a file that holds something shaped like a secret                  | The commit is refused, and gitleaks reports one leak                                   |
-| Stage a file that holds a comment                                       | The commit is refused, and `zigordev` names the file and the line                      |
-| Commit with the message `added things`                                  | The commit is refused, because the title has no type                                   |
-| Link to a file that does not exist, then run `pnpm check`               | The check fails, and `zigordev` names the link                                         |
-| Change a line in `lefthook.yml`, then run `pnpm check`                  | The check fails and asks for `zigordev sync`, which puts the file back                 |
-| Push a branch                                                           | `pnpm check:quick` runs first, and the push waits for it                               |
-| Push a commit to `main`                                                 | The push is refused before it leaves the laptop                                        |
-| Push a branch and open a pull request for it on GitHub's site           | The description starts with the six sections, from What to Follow-ups                  |
-| Run `pnpm exec zigordev release plan` in a repo with no version tag     | It says how many packages are public, and that no version is tagged yet                |
-| Run `pnpm exec zigordev first-publish --dry-run` with a package's name  | It says whether the name is new on npm, and prints the command that would tie it       |
-| In a session, commit while the repo is set up to commit as someone else | The commit is refused before git runs, and the session is told how to set the identity |
-| In a session, write a file that holds a comment                         | The file is written, and the session is told to remove the comment                     |
-| In a session, read a migration, then run `/context`                     | `data.md` is among the loaded rules. Before that, it is not                            |
+| Try this                                                                 | What must happen                                                                       |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Stage a badly formatted `.ts` file and commit                            | The commit goes through with the file formatted                                        |
+| Stage a Markdown file with two top-level headings                        | The commit is refused, and markdownlint names the rule                                 |
+| Stage a file that holds something shaped like a secret                   | The commit is refused, and gitleaks reports one leak                                   |
+| Stage a file that holds a comment                                        | The commit is refused, and `zigordev` names the file and the line                      |
+| Commit with the message `added things`                                   | The commit is refused, because the title has no type                                   |
+| Link to a file that does not exist, then run `pnpm check`                | The check fails, and `zigordev` names the link                                         |
+| Change a line in `lefthook.yml`, then run `pnpm check`                   | The check fails and asks for `zigordev sync`, which puts the file back                 |
+| Push a branch                                                            | `pnpm check:quick` runs first, and the push waits for it                               |
+| Push a commit to `main`                                                  | The push is refused before it leaves the laptop                                        |
+| Push a branch and open a pull request for it on GitHub's site            | The description starts with the six sections, from What to Follow-ups                  |
+| Run `pnpm exec zigordev release plan` in a repo with no version tag      | It says how many packages are public, and that no version is tagged yet                |
+| Run `pnpm exec zigordev first-publish --dry-run` with a package's name   | It says whether the name is new on npm, and prints the command that would tie it       |
+| Run `pnpm exec zigordev contract` in the template, with its images built | It prints six lines for each app, and ends with code 0 when each says `kept`           |
+| Make an app print a line of plain text, build it, and run it again       | Promise 4 of that app says `broken`, and quotes the line                               |
+| In a session, commit while the repo is set up to commit as someone else  | The commit is refused before git runs, and the session is told how to set the identity |
+| In a session, write a file that holds a comment                          | The file is written, and the session is told to remove the comment                     |
+| In a session, read a migration, then run `/context`                      | `data.md` is among the loaded rules. Before that, it is not                            |
 
 When a session reports that a hook failed and blocked a git command, Node.js is missing from its path or `.claude/hooks/` is incomplete: run `mise install`, then `pnpm exec zigordev sync`.
 

@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, statSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
+import { contract } from './contract/run.ts';
 import { repoFiles } from './files.ts';
 import { firstPublish, type Interact } from './first-publish.ts';
 import { pack, plan, type Run } from './release.ts';
@@ -15,6 +16,10 @@ export interface Io {
   readonly interact: Interact;
   readonly atTerminal: boolean;
   readonly write: (text: string) => void;
+  readonly sleep: (milliseconds: number) => void;
+  readonly now: () => number;
+  readonly agentScript: string;
+  readonly node: string;
 }
 
 function usage(rules: readonly Rule[]): string {
@@ -24,6 +29,7 @@ function usage(rules: readonly Rule[]): string {
     '       zigordev release plan [--settle <seconds>]',
     '       zigordev release pack <folder> <version>',
     '       zigordev first-publish [--dry-run] <package...>',
+    '       zigordev contract',
     '',
     'check          With no rule, every rule runs. With files, the rules that read files read only those.',
     'sync           Copies the shared files of @zigordev/dev into this repo.',
@@ -32,6 +38,8 @@ function usage(rules: readonly Rule[]): string {
     '               pack writes the tarballs of the missing ones into a folder, at the version given.',
     'first-publish  Puts an empty first version of a new package on npm and ties its name to this repo.',
     '               Only the owner of the npm account runs it. With --dry-run it changes nothing.',
+    'contract       Starts the product of this folder from its built images, beside a stand-in for the',
+    '               telemetry agent, and holds each app to promises 1 to 6 of the platform contract.',
     '',
     'Rules:',
     ...rules.map((rule) => `  ${rule.name.padEnd(13)}${rule.summary}`),
@@ -214,6 +222,9 @@ export function main(argv: readonly string[], io: Io): number {
     if (code !== undefined) {
       return code;
     }
+  }
+  if (command === 'contract' && rest.length === 0) {
+    return contract(io);
   }
   io.write(usage(rules));
   return command === undefined || command === 'help' || command === '--help' ? 0 : 2;

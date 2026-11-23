@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { idle } from '../test/idle.ts';
 import { type Sandbox, sandbox } from '../test/sandbox.ts';
 import { main } from './cli.ts';
 import { firstPublish, manifest, repository, type Tools } from './first-publish.ts';
@@ -280,6 +281,7 @@ describe('the first-publish command', () => {
       interact: tools.interact,
       atTerminal: tools.atTerminal,
       write: tools.write,
+      ...idle,
     });
   }
 

@@ -96,7 +96,7 @@ Any app runs on the platform if it keeps twelve promises, whatever language it i
 | 11  | Use one name everywhere: `<product>-<part>`                                                  | Logs, dashboards and alerts line up without a mapping                             |
 | 12  | Explain itself in a README and the four standard docs                                        | A reader learns what it is and how to run it                                      |
 
-A contract test starts the built image in CI and checks promises 1 to 6.
+The command `zigordev contract` is the contract test: it starts a product's built images and checks promises 1 to 6 on each app. [The developer setup](../../packages/dev/README.md) says what it does for each promise.
 
 ### The laptop and production, side by side
 

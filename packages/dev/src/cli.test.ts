@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
+import { idle } from '../test/idle.ts';
 import { type Sandbox, sandbox } from '../test/sandbox.ts';
 import { main } from './cli.ts';
 
@@ -26,6 +27,7 @@ function run(
     write: (text) => {
       output += text;
     },
+    ...idle,
   });
 }
 
@@ -44,6 +46,21 @@ describe('the zigordev command', () => {
   it('explains itself and fails on a command it does not know', () => {
     expect(run(['deploy'])).toBe(2);
     expect(output).toContain('Usage: zigordev check');
+  });
+
+  it('holds the product of the folder to the contract, through Docker', () => {
+    expect(run(['contract'])).toBe(1);
+    expect(output).toBe(
+      'zigordev contract: compose.yaml cannot be read in this folder:\nno command runs in this test\n'
+    );
+  });
+
+  it('explains itself when the contract command gets an argument', () => {
+    expect(run(['contract', 'gpool'])).toBe(2);
+    expect(output).toContain('       zigordev contract\n');
+    expect(output).toContain(
+      'contract       Starts the product of this folder from its built images'
+    );
   });
 
   it('passes and names the rules it ran', () => {
