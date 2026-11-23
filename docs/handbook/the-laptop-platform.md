@@ -75,7 +75,7 @@ A product describes itself in three files, and nowhere else. This is promise 7 o
 | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | `compose.yaml`            | The whole product as it runs everywhere: each service with its image, limits, health check and route labels |
 | `compose.local.yaml`      | What differs on the laptop: how the images are built, and the address `<product>.localhost`                 |
-| `compose.production.yaml` | What differs in production: the address                                                                     |
+| `compose.production.yaml` | What differs in production: the address, and that the deploy runs the jobs itself                           |
 
 Each app says four things in `compose.yaml`, and gets four things back:
 
@@ -89,6 +89,15 @@ Each app says four things in `compose.yaml`, and gets four things back:
 The web app gets the product's whole address, and the API gets the same address under `/api`, so a browser talks to one origin. An app publishes no port. The only way in is the ingress.
 
 Each app's container is boxed in the same way: a user that is not root, a read-only file system, no capability, no new privilege, an init process, 30 seconds to stop, and a memory and a CPU limit. In the template, the test `compose.test.ts` holds the files to these rules, and `zigordev contract` holds the running images to the first six promises of the contract.
+
+A service that is not an app says what it is with a label of the platform, and the platform does the rest. [Record 0035](../adr/0035-labels-tell-the-platform-what-a-service-is.md), accepted on 2026-11-23, sets both labels. The template gets one of each with its notes API:
+
+| Label                           | On                                                     | What the platform does with it                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `com.zigordev.job: migrate`     | `<app>-migrate`, a one-shot job on the app's own image | On the laptop, the app waits for it with `depends_on`, so `pnpm local:up` migrates before the app starts. In production the deploy runs it once, before the new version, and stops if it fails |
+| `com.zigordev.backup: postgres` | The product's PostgreSQL                               | The hourly backup on the host dumps every database in it, from inside the container                                                                                                            |
+
+The dump runs inside the PostgreSQL container, so the container's memory limit is set higher than the database needs at rest, to leave room for it. `compose.production.yaml` resets the app's `depends_on` on the job with `depends_on: !reset []`, because there the deploy runs the job itself, once per version.
 
 ### Two ways to run a product
 
