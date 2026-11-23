@@ -59,6 +59,16 @@
           },
           {
             "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "in": "query",
+            "name": "q",
+            "required": false
+          },
+          {
+            "schema": {
               "default": "-createdAt",
               "type": "string",
               "enum": ["createdAt", "-createdAt", "updatedAt", "-updatedAt", "title", "-title"]

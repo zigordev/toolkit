@@ -1,5 +1,5 @@
 import { afterCursor, type CursorValue, keysetOrder, type SortDirection } from '@zigordev/api';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, ilike, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { notes } from '../../db/schema.ts';
 import type { CreateNote, UpdateNote } from './schemas.ts';
@@ -9,10 +9,15 @@ export type Database = NodePgDatabase<{ notes: typeof notes }>;
 
 export interface NoteListing {
   readonly status: NoteRow['status'] | undefined;
+  readonly q: string | undefined;
   readonly field: 'createdAt' | 'updatedAt' | 'title';
   readonly direction: SortDirection;
   readonly after: readonly CursorValue[] | undefined;
   readonly limit: number;
+}
+
+function literal(text: string): string {
+  return text.replaceAll(/[\\%_]/g, (character) => `\\${character}`);
 }
 
 export function notesRepository(db: Database) {
@@ -25,6 +30,7 @@ export function notesRepository(db: Database) {
         .where(
           and(
             listing.status === undefined ? undefined : eq(notes.status, listing.status),
+            listing.q === undefined ? undefined : ilike(notes.title, `%${literal(listing.q)}%`),
             afterCursor(columns, listing.direction, listing.after)
           )
         )

@@ -10,6 +10,7 @@ import { hashKey } from '../../plugins/api-keys.ts';
 
 const writer = randomUUID();
 const reader = randomUUID();
+const stranger = randomUUID();
 const database = useTestDatabase();
 const logs = captureLogs();
 const server = useApp(() =>
@@ -20,6 +21,7 @@ const server = useApp(() =>
       API_KEYS: JSON.stringify([
         { name: 'writer', sha256: hashKey(writer), scopes: ['notes:read', 'notes:write'] },
         { name: 'reader', sha256: hashKey(reader), scopes: ['notes:read'] },
+        { name: 'stranger', sha256: hashKey(stranger), scopes: [] },
       ]),
     }),
     logger: createLogger({ service: 'template-api', destination: logs }),
@@ -298,11 +300,37 @@ describe('GET /api/v1/notes', () => {
     }
   });
 
-  it('answers 401 without a key, and lets a reader list', async () => {
+  it('answers 401 without a key, 403 to a key without the scope, and lets a reader list', async () => {
     const anonymous = await server.app.inject({ method: 'GET', url: '/api/v1/notes' });
 
     expectProblem(anonymous, { status: 401, code: 'auth.unauthenticated' });
+    const problem = expectProblem(await list('', stranger), {
+      status: 403,
+      code: 'auth.forbidden',
+    });
+    expect(problem.params).toEqual({ scope: 'notes:read' });
     expect((await list('')).statusCode).toBe(200);
+  });
+
+  it('keeps the notes whose title holds the text of q, in any case, and reads % and _ as text', async () => {
+    await create({ title: 'Buy MILK' });
+    await create({ title: 'milkshake' });
+    await create({ title: 'Bread' });
+    await create({ title: '100% done' });
+    await create({ title: '1000 done' });
+
+    const milk = (await list('?q=milk&sort=title')).json() as { items: Note[] };
+    const percent = (await list('?q=0%25&sort=title')).json() as { items: Note[] };
+
+    expect(milk.items.map((note) => note.title)).toEqual(['Buy MILK', 'milkshake']);
+    expect(percent.items.map((note) => note.title)).toEqual(['100% done']);
+  });
+
+  it('answers 400 to an empty q, and to a q over 100 characters', async () => {
+    for (const query of ['?q=', `?q=${'a'.repeat(101)}`]) {
+      const problem = expectProblem(await list(query), { status: 400, code: 'request.invalid' });
+      expect(problem.params.errors).toEqual([expect.objectContaining({ pointer: '/q' })]);
+    }
   });
 });
 

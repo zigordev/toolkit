@@ -23,6 +23,7 @@ export function notesService(repository: NotesRepository) {
       const { field, direction } = parseSort(query.sort);
       const rows = await repository.list({
         status: query.status,
+        q: query.q,
         field,
         direction,
         after: query.cursor === undefined ? undefined : decodeCursor(query.cursor, query.sort, 2),

@@ -32,7 +32,7 @@ export const updateNoteBody = z
   });
 
 export const listNotesQuery = listQuery({
-  filters: { status: status.optional() },
+  filters: { status: status.optional(), q: z.string().trim().min(1).max(100).optional() },
   sort: ['createdAt', 'updatedAt', 'title'],
   defaultSort: '-createdAt',
 });
