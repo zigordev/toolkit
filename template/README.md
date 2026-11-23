@@ -70,6 +70,8 @@ docker compose --file compose.yaml --file compose.local.yaml up --build --detach
 
 `pnpm local:down` stops and removes the two containers, and leaves the shared services running, because other products use them. `pnpm local:reset` does the same, removes the product's volumes, and starts it again.
 
+[The laptop platform](../docs/handbook/the-laptop-platform.md) explains the shared services and what an app does to be served. [Telemetry](../docs/handbook/telemetry.md) follows one request of this template through Grafana, as a trace, a log line and a metric.
+
 ### As two plain processes
 
 From the root of `toolkit`, after `pnpm install`:
