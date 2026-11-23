@@ -79,6 +79,8 @@ overrides:
   archiver-utils>glob: 14.0.6
 ```
 
+The line goes when a release of Testcontainers drops `archiver`, which [testcontainers-node#1652](https://github.com/testcontainers/testcontainers-node/pull/1652) does. `glob` 14 is a new major version, first released on 2026-10-27, so the one-month rule would have kept the line out until 2026-11-27. The owner allowed it on 2026-11-23 as an exception, in their words "Merge it now". The risk is low: Testcontainers uses `glob` only to copy files into a container, which these helpers never do, and every test passes with it.
+
 An app keeps its database tests in a second Vitest project, `vitest.db.config.ts` beside its `vitest.config.ts`:
 
 ```ts

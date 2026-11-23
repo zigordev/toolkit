@@ -53,6 +53,15 @@ The catalog named `shipped` is there because of how Renovate reads a catalog. A 
 
 Renovate also keeps one issue open in each repo, the Dependency Dashboard. It lists every update: the open ones, the ones still waiting for their day or their month, and the ones that failed.
 
+### The overrides in force
+
+An override replaces a flawed dependency of a dependency with a fixed version, under `overrides` in `pnpm-workspace.yaml`. [Record 0033](../adr/0033-a-flawed-dependency-of-a-dependency-is-replaced-by-an-override.md) says when one is allowed. Renovate never removes one, so this table says when each goes.
+
+| Line                          | Brought in by                                                    | Flaw                                                                     | It goes when                                                                                                                                                                                                                                                                |
+| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `katex: 0.19.1`               | markdownlint, through `micromark-extension-math` 3.1.0           | [GHSA-238p-pmpm-9mq7](https://github.com/advisories/GHSA-238p-pmpm-9mq7) | A release of `micromark-extension-math` asks for katex 0.18.2 or later                                                                                                                                                                                                      |
+| `archiver-utils>glob: 14.0.6` | Testcontainers 12.2.2, through `archiver` 7 and `archiver-utils` | [GHSA-3g3m-2fjr-6pw4](https://github.com/advisories/GHSA-3g3m-2fjr-6pw4) | A release of Testcontainers drops `archiver`, as [testcontainers-node#1652](https://github.com/testcontainers/testcontainers-node/pull/1652) does. Until 2026-11-27 it is an exception to the one-month rule for a new major version, which the owner allowed on 2026-11-23 |
+
 ## How to use it, with one worked example
 
 A repo needs one file, which `zigordev sync` writes: `renovate.json`.
