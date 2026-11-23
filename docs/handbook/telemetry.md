@@ -57,7 +57,7 @@ Without it on the laptop, a dashboard or an alert rule could only be tried in pr
 
 Log lines never travel over OTLP. An app only writes them, and the agent does the rest. That is why a crash before telemetry starts still leaves its lines.
 
-An app run with `pnpm dev` on the laptop itself writes its log lines to the terminal, where the agent does not read them. The API's dev process sends its traces and metrics to the agent's port on the laptop, `127.0.0.1:4318`, as version `dev`. The web app's dev server sends none. [The template's README](../../template/README.md) says why, and when the shared services publish that port.
+An app run with `pnpm dev` on the laptop itself writes its log lines to the terminal, where the agent does not read them. The API's dev process sends its traces and metrics to the agent's port on the laptop, `127.0.0.1:4318`, as version `dev`. The web app's dev server sends none. The shared services publish that port on the laptop only, from `@zigordev/stack` 1.1.0 on. [The template's README](../../template/README.md) says why the web app's dev server sends nothing.
 
 The agent labels each line with the name of its compose service, as `service_name`, with its `compose_project` and with its `container`. When a line carries a `traceId`, the agent keeps that id beside the line.
 
