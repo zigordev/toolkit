@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Evidence, judge, visitor } from './judge.ts';
+import { type Evidence, type JobEvidence, judge, judgeJob, visitor } from './judge.ts';
 
 const line = (fields: Record<string, unknown>): string =>
   JSON.stringify({ level: 'info', service: 'gpool-api', ...fields });
@@ -214,5 +214,70 @@ describe('judge', () => {
     expect(verdict(6, { stop: { ...sound.stop, held } })?.detail).toBe(
       `it cut off a request that had begun before the SIGTERM: ${reason}`
     );
+  });
+});
+
+const job: JobEvidence = {
+  service: 'gpool-api-migrate',
+  waitedForBy: ['gpool-api'],
+  status: 'exited',
+  code: 0,
+  stdout: `${line({ event: 'migration.started' })}\n${line({ event: 'migration.finished' })}\n`,
+  stderr: '',
+};
+
+describe('judgeJob', () => {
+  it('finds both promises kept by a job that ended with code 0 and printed JSON only', () => {
+    expect(judgeJob(job)).toEqual([
+      { promise: 1, kept: true, detail: 'it ended with code 0 before gpool-api started' },
+      { promise: 2, kept: true, detail: '2 lines, all JSON' },
+    ]);
+  });
+
+  it('1: refuses a job that ended with another code', () => {
+    expect(judgeJob({ ...job, code: 1 })[0]).toEqual({
+      promise: 1,
+      kept: false,
+      detail: 'it ended with code 1',
+    });
+  });
+
+  it('1: refuses a job that is still running once the product has started', () => {
+    expect(judgeJob({ ...job, status: 'running' })[0]?.detail).toBe(
+      'it is still running after the product started'
+    );
+    expect(judgeJob({ ...job, status: '' })[0]?.detail).toBe(
+      'it is still missing after the product started'
+    );
+  });
+
+  it('1: refuses a job that no service waits for', () => {
+    expect(judgeJob({ ...job, waitedForBy: [] })[0]).toEqual({
+      promise: 1,
+      kept: false,
+      detail:
+        'no service waits for it with depends_on and the condition service_completed_successfully',
+    });
+  });
+
+  it('1: names every service that waits for it', () => {
+    expect(judgeJob({ ...job, waitedForBy: ['gpool-api', 'gpool-worker'] })[0]?.detail).toBe(
+      'it ended with code 0 before gpool-api and gpool-worker started'
+    );
+  });
+
+  it('2: refuses a line that is not JSON, on either output', () => {
+    expect(judgeJob({ ...job, stderr: 'Error: relation "notes" already exists\n' })[1]).toEqual({
+      promise: 2,
+      kept: false,
+      detail: 'a line it printed is not JSON: "Error: relation "notes" already exists"',
+    });
+  });
+
+  it('2: counts one line as one line, and takes a job that printed nothing', () => {
+    expect(
+      judgeJob({ ...job, stdout: `${line({ event: 'migration.finished' })}\n` })[1]?.detail
+    ).toBe('1 line, all JSON');
+    expect(judgeJob({ ...job, stdout: '' })[1]?.detail).toBe('0 lines, all JSON');
   });
 });

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 import type { Outcome, Run } from '../release.ts';
 import type { Answer, Held, Received } from './agent.ts';
-import { type Evidence, judge, marks, visitor } from './judge.ts';
+import { type Evidence, type JobEvidence, judge, judgeJob, marks, visitor } from './judge.ts';
 import {
   type App,
   agentAddress,
@@ -132,6 +132,26 @@ export function contract(io: ContractIo): number {
     }
     const containerOf = (service: string): string =>
       compose('ps', '--all', '--quiet', service).stdout.trim().split('\n')[0] ?? '';
+    const jobs: JobEvidence[] = product.jobs.map((job) => {
+      const container = containerOf(job.service);
+      const [status = '', code = ''] = docker(
+        'inspect',
+        '--format',
+        '{{.State.Status}} {{.State.ExitCode}}',
+        container
+      )
+        .stdout.trim()
+        .split(' ');
+      const printed = docker('logs', container);
+      return {
+        service: job.service,
+        waitedForBy: job.waitedForBy,
+        status,
+        code: Number(code),
+        stdout: printed.stdout,
+        stderr: printed.stderr,
+      };
+    });
     const agent = containerOf(agentService);
     const inAgent = (...args: string[]): Outcome => docker('exec', agent, 'node', target, ...args);
     const ask = (url: string, ...who: string[]): Answer =>
@@ -259,10 +279,22 @@ export function contract(io: ContractIo): number {
         );
       }
     }
+    for (const entry of jobs) {
+      io.write(`${entry.service}, a job\n`);
+      for (const verdict of judgeJob(entry)) {
+        brokenCount += verdict.kept ? 0 : 1;
+        io.write(
+          `  ${verdict.kept ? 'kept  ' : 'broken'}  ${verdict.promise}  ${verdict.detail}\n`
+        );
+      }
+    }
     if (brokenCount === 0) {
-      io.write(
-        `zigordev contract: ${product.apps.length === 1 ? '1 app keeps' : `${product.apps.length} apps keep`} promises 1 to 6\n`
-      );
+      const apps = product.apps.length === 1 ? '1 app keeps' : `${product.apps.length} apps keep`;
+      const jobsKeep =
+        jobs.length === 0
+          ? ''
+          : `, and ${jobs.length === 1 ? '1 job keeps' : `${jobs.length} jobs keep`} promises 1 and 2`;
+      io.write(`zigordev contract: ${apps} promises 1 to 6${jobsKeep}\n`);
       return 0;
     }
     io.write(
