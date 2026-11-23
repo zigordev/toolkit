@@ -73,6 +73,28 @@ describe('the Renovate preset', () => {
     expect(ruleFor('major')?.automerge).toBe(false);
   });
 
+  it('titles a new image in the shared services as a fix, so that the bundle is released with it', () => {
+    const fixes = rules.filter((rule) => rule.semanticCommitType === 'fix');
+
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0]).toMatchObject({
+      matchManagers: ['docker-compose'],
+      matchFileNames: ['stack/**'],
+    });
+    expect(Object.keys(fixes[0] ?? {}).sort()).toEqual([
+      'description',
+      'matchFileNames',
+      'matchManagers',
+      'semanticCommitType',
+    ]);
+  });
+
+  it("leaves every other title to Renovate's recommended preset, which says chore", () => {
+    expect(preset.extends).toContain('config:recommended');
+    expect(preset.semanticCommitType).toBeUndefined();
+    expect(rules.filter((rule) => 'semanticCommitType' in rule)).toHaveLength(1);
+  });
+
   it('pins every action to a commit, with its exact version beside it', () => {
     expect(preset.extends).toContain('helpers:pinGitHubActionDigestsToSemver');
   });
