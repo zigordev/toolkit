@@ -9,7 +9,7 @@
 | The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                                                                        |
 | Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                                                              |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                                                              |
-| The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are in the repo, and not on npm yet. The others arrive from phase 4 on                                                                   |
+| The shared packages for apps | `packages/`                       | `@zigordev/config` and `@zigordev/otel` are on npm since 2026-11-23. The others arrive from phase 4 on                                                                           |
 | A product to start from      | `template/`                       | Its first slice is complete since 2026-11-23: an API, a web app, their images, the compose files, and the contract test in the pipeline. The other slices follow from phase 4 on |
 
 ## The developer setup
@@ -34,10 +34,10 @@ Another repo adds `@zigordev/dev` as a dev dependency from npm. This repo uses i
 
 An app takes its shared code from npm as packages, all under one version.
 
-| Package            | What it gives an app                                                                                                        | On npm                                  |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `@zigordev/config` | Its settings, read from the environment once through a Zod schema, and a start that fails when one is missing or wrong      | Not yet. It waits for its first publish |
-| `@zigordev/otel`   | Its telemetry: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route | Not yet. It waits for its first publish |
+| Package            | What it gives an app                                                                                                        | On npm                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `@zigordev/config` | Its settings, read from the environment once through a Zod schema, and a start that fails when one is missing or wrong      | Yes, since version 1.8.0 of 2026-11-23 |
+| `@zigordev/otel`   | Its telemetry: traces and metrics through OpenTelemetry, log lines that carry the trace, and the answer of the health route | Yes, since version 1.8.0 of 2026-11-23 |
 
 Each package's README says how an app uses it: [`@zigordev/config`](../packages/config/README.md) and [`@zigordev/otel`](../packages/otel/README.md). A package is in this repo before it is on npm, and [Packages](handbook/packages.md) says how it gets there.
 

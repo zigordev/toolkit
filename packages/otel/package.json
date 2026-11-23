@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/otel",
   "version": "0.0.0",
-  "private": true,
   "description": "Telemetry for zigordev services: traces and metrics over OpenTelemetry, structured logs with the trace in them, and the answer of the health route",
   "license": "UNLICENSED",
   "type": "module",
