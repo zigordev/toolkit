@@ -82,7 +82,8 @@ function run(made: Sandbox, env: Record<string, string> = {}) {
       env,
     })
     .map(
-      (finding) => `${finding.level ?? 'error'} ${finding.path}:${finding.line} ${finding.message}`
+      (finding) =>
+        `${finding.level ?? 'error'} ${finding.path}${finding.line === undefined ? '' : `:${finding.line}`} ${finding.message}`
     );
 }
 
@@ -172,13 +173,15 @@ describe('the migrations rule in a pull request', () => {
     expect(run(made, pullRequest(made, []))).toEqual([]);
   });
 
-  it('reads nothing when the checkout is not the merge of a pull request', () => {
+  it('fails, and says why, when a pull request is not checked out as its merge with its history', () => {
     const made = start();
     made.write('apps/notes-api/drizzle/0001_drop_body.sql', loses);
     made.git('add', '.');
     made.commit('feat: drop the body');
 
-    expect(run(made, pullRequest(made, []))).toEqual([]);
+    expect(run(made, pullRequest(made, ['destructive-migration']))).toEqual([
+      'error .git in a pull request this rule needs the merge commit with its two parents and the whole history: check out the merge of the pull request with fetch-depth 0',
+    ]);
   });
 
   it('counts the label as missing when the event cannot be read', () => {

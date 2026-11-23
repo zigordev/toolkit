@@ -25,6 +25,8 @@ A rule of `zigordev check`, named `migrations`, holds every new migration:
 - A migration that deletes data cannot merge by itself, in any repo that takes this version of `@zigordev/dev` and listens to label changes.
 - A label added or removed runs the whole pipeline again.
 - The rule reads statements, not intent. Data moved into a new column first, then dropped, still needs the label for the drop.
+- It does not read inside a body in dollar quotes, such as `DO $$ ... $$` or a function. drizzle-kit writes no such body that deletes data, so a hand-written one is a matter for review.
+- In a pull request it needs the merge commit with both of its parents and the whole history. A checkout without them fails the rule, rather than letting it pass in silence.
 - `platform` creates the label in every repo, as code, in step 3.3 of the build plan.
 
 ## Alternatives considered

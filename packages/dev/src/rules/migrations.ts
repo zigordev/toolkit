@@ -78,10 +78,10 @@ export function deletions(sql: string): Deletion[] {
   return found;
 }
 
-function added(root: string, files: readonly string[], pullRequest: boolean): string[] {
+function added(root: string, files: readonly string[], pullRequest: boolean): string[] | undefined {
   if (pullRequest) {
-    if (!exists(root, 'HEAD^2')) {
-      return [];
+    if (!exists(root, 'HEAD^1') || !exists(root, 'HEAD^2')) {
+      return undefined;
     }
     const listed = git(root, ['diff', '--name-only', '--diff-filter=A', 'HEAD^1', 'HEAD']) ?? '';
     return listed.split('\n').filter((path) => migration.test(path));
@@ -121,7 +121,18 @@ export const migrations: Rule = {
   run({ root, files, env }) {
     const pullRequest = env.GITHUB_EVENT_NAME === 'pull_request';
     const approved = pullRequest && labels(env.GITHUB_EVENT_PATH).includes(approval);
-    return added(root, files, pullRequest).flatMap((path) =>
+    const paths = added(root, files, pullRequest);
+    if (paths === undefined) {
+      return [
+        {
+          rule: 'migrations',
+          path: '.git',
+          message:
+            'in a pull request this rule needs the merge commit with its two parents and the whole history: check out the merge of the pull request with fetch-depth 0',
+        },
+      ];
+    }
+    return paths.flatMap((path) =>
       deletions(readFileSync(join(root, path), 'utf8')).map(
         (deletion): Finding => ({
           rule: 'migrations',
