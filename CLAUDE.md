@@ -4,21 +4,21 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 
 ## Where things live
 
-| Path                    | What it holds                                                                                                                                                               |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                                                                                            |
-| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo                                                                     |
-| `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                  |
-| `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                  |
-| `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, and the harness that builds an app for API tests                                       |
-| `packages/api`          | `@zigordev/api`: the Fastify base of every API: the error format, paging, sign-in checks, the OpenAPI pages, the health route and a clean stop                              |
-| `template/`             | The product template. It and its apps are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
-| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                     |
-| `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here                                                                 |
-| `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values                                                                   |
-| `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`                                                                                |
-| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                                   |
-| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                         |
+| Path                    | What it holds                                                                                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                                                                                                          |
+| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo                                                                                   |
+| `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                                |
+| `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                                |
+| `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, and the harness that builds an app for API tests                                                     |
+| `packages/api`          | `@zigordev/api`: the Fastify base of every API: the error format, paging, sign-in checks, the OpenAPI pages, the health route and a clean stop                                            |
+| `template/`             | The product template. It, its apps and its packages are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
+| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                                   |
+| `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, and `ci.yml` runs both here                                                                               |
+| `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values                                                                                 |
+| `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`                                                                                              |
+| `mise.toml`             | The pinned versions of Node.js, pnpm, gitleaks and zizmor                                                                                                                                 |
+| `pnpm-workspace.yaml`   | The workspace, the single version of each dependency, and the supply-chain settings                                                                                                       |
 
 ## Commands
 
@@ -31,6 +31,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm --dir template run local:up` starts the shared services from `@zigordev/stack` and the template in containers. `local:down` stops the template only.
 - `pnpm --dir template dev web` or `pnpm --dir template dev api` runs that one app on this Mac with hot reload, beside the containers. Its settings are in the app's `.env.development`.
 - `pnpm --dir template/apps/template-api run db:generate --name <change>` writes the SQL of a change to the API's schema into its `drizzle/` folder. `run openapi` rewrites its `openapi.json`, and a test fails while the file and the code differ.
+- `pnpm --dir template/packages/template-api-client run generate` writes the client's types from the API's `openapi.json`. A test fails while they differ. The generator alone runs on TypeScript 5.9.3, as record 0036 says.
 - `pnpm --dir template run check:contract` builds the template's images and holds both apps to the platform contract. It needs Docker running, and the pipeline's Contract job runs the same.
 - `pnpm exec zigordev check [rule...] [file...]` runs the rules a machine can check, all of them or the ones named.
 - `pnpm exec zigordev sync` copies the shared files from `packages/dev/shared` to the root of this repo.

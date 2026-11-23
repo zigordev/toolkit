@@ -6,16 +6,18 @@ A minimal product, kept inside `toolkit`. It is being built in slices, and this 
 
 A product on the platform is an API and a web app that is one of its clients. The template is the smallest product of that shape, wired with the shared packages of this repo.
 
-| Path                      | What it holds                                                                                                                                      |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/template-api`       | The API: a Fastify service on `@zigordev/api` with a greeting and the notes, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
-| `apps/template-web`       | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                      |
-| `compose.yaml`            | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check      |
-| `compose.local.yaml`      | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                     |
-| `compose.production.yaml` | What differs in production: the address, and that the deploy runs the migrate job itself                                                           |
-| `compose.test.ts`         | The test that holds the three compose files and the two Dockerfiles to the container rules                                                         |
-| `package.json`            | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                           |
-| `.env.production.example` | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                             |
+| Path                                 | What it holds                                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting and the notes, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
+| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                      |
+| `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                    |
+| `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                       |
+| `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check      |
+| `compose.local.yaml`                 | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                     |
+| `compose.production.yaml`            | What differs in production: the address, and that the deploy runs the migrate job itself                                                           |
+| `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                         |
+| `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                           |
+| `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                             |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -166,6 +168,19 @@ pnpm --dir apps/template-api run openapi
 
 The first writes the SQL of a schema change into `drizzle/`, which is read and committed as it is. The second writes `openapi.json`, and a test fails while the file and the code differ.
 
+### The client
+
+`packages/template-api-client` is the typed client of the API. Its types are written from `openapi.json`, so a changed endpoint breaks the code that calls it when it compiles, not in production:
+
+```ts
+import { createTemplateApiClient } from 'template-api-client';
+
+const api = createTemplateApiClient({ baseUrl: 'http://template-api:3000', key });
+const { data, error } = await api.GET('/api/v1/notes', { params: { query: { status: 'open' } } });
+```
+
+After a change to `openapi.json`, write the types again with `pnpm --dir packages/template-api-client run generate`. A test fails while they differ from the file. The generator runs on TypeScript 5.9.3, because openapi-typescript does not run on TypeScript 7. [Record 0036](../docs/adr/0036-the-client-generator-runs-on-its-own-typescript-5.md) says why, and when that ends.
+
 ## How each app starts
 
 Both start the same way: Node.js loads `@zigordev/otel/register` with `--import`, before any code of the app. Telemetry is then in place when the web server is created, so each request gets a span and a duration, in the web app too. The last line of each `Dockerfile` is that same command.
@@ -249,7 +264,6 @@ The pipeline runs the same script on every pull request, in a job named Contract
 
 ## What is left for later
 
-- **The generated client.** Slice 2 commits the OpenAPI file, and a test holds it to the code. The client generated from it waits for a decision: openapi-typescript, the generator the handbook lists, does not run on TypeScript 7.
 - **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
 - **Sign-in for people.** The API knows callers by their API keys. People sign in with the third slice, in phase 6.
 

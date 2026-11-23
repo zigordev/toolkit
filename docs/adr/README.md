@@ -43,3 +43,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0033](0033-a-flawed-dependency-of-a-dependency-is-replaced-by-an-override.md) | A flawed dependency of a dependency is replaced by an override         | 2026-11-22 | accepted           |
 | [0034](0034-the-pipeline-and-the-host-run-one-named-ubuntu-lts.md)             | The pipeline and the host run one named Ubuntu LTS                     | 2026-11-23 | accepted           |
 | [0035](0035-labels-tell-the-platform-what-a-service-is.md)                     | Labels tell the platform what a service is                             | 2026-11-23 | accepted           |
+| [0036](0036-the-client-generator-runs-on-its-own-typescript-5.md)              | The client generator runs on its own TypeScript 5                      | 2026-11-23 | accepted           |

@@ -194,7 +194,7 @@ markdownlint leaves the file out. A description starts with a second-level headi
 
 ### The configs
 
-Biome reads the YAML block at the top of a Markdown file as front matter, because every rule and skill file starts with one. The Biome rules are Biome's recommended set plus three: no `console`, type-only imports written as `import type`, and Node.js built-ins imported with the `node:` prefix. Code is formatted with two spaces, single quotes, semicolons and lines of up to 100 characters.
+Biome reads the YAML block at the top of a Markdown file as front matter, because every rule and skill file starts with one. The Biome rules are Biome's recommended set plus three: no `console`, type-only imports written as `import type`, and Node.js built-ins imported with the `node:` prefix. Code is formatted with two spaces, single quotes, semicolons and lines of up to 100 characters. Biome leaves alone what a tool generates into a folder named `src/generated`, so that the generated file stays exactly as its generator wrote it.
 
 The TypeScript base turns on strict mode and three checks beyond it: a value read by index may be `undefined`, an override must be marked, and a `switch` case may not fall through. It also accepts only the syntax that Node.js can strip, because Node.js runs the `.ts` files directly.
 

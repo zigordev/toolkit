@@ -106,6 +106,24 @@ describe('the Renovate preset', () => {
     expect(rules.indexOf(shipped[0] ?? {})).toBeLessThan(rules.length - 1);
   });
 
+  it('keeps TypeScript below 6 in the catalog of the client generator, as record 0036 says', () => {
+    const generator = rules.filter(
+      (rule) =>
+        Array.isArray(rule.matchDepTypes) &&
+        rule.matchDepTypes.includes('pnpm.catalog.openapi-typescript')
+    );
+
+    expect(generator).toEqual([
+      {
+        description: expect.stringContaining('0036'),
+        matchDepTypes: ['pnpm.catalog.openapi-typescript'],
+        matchPackageNames: ['typescript'],
+        allowedVersions: '<6',
+      },
+    ]);
+    expect(rules.indexOf(generator[0] ?? {})).toBeLessThan(rules.length - 1);
+  });
+
   it("leaves every other title to Renovate's recommended preset, which says chore", () => {
     expect(preset.extends).toContain('config:recommended');
     expect(preset.semanticCommitType).toBeUndefined();

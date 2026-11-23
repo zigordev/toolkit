@@ -51,6 +51,12 @@
       "semanticCommitType": "fix"
     },
     {
+      "description": "openapi-typescript does not run on TypeScript 7, so the catalog named openapi-typescript keeps TypeScript 5 for the one package that generates the clients. Record 0036 says when that exception goes, and until then Renovate keeps the version below 6.",
+      "matchDepTypes": ["pnpm.catalog.openapi-typescript"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6"
+    },
+    {
       "description": "Our own packages and the pipeline a repo calls arrive at once, in one pull request. This rule stays last, so it also lifts the month a major version waits.",
       "matchDepNames": ["@zigordev/**", "zigordev/toolkit"],
       "groupName": "zigordev",
