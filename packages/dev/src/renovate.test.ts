@@ -74,7 +74,9 @@ describe('the Renovate preset', () => {
   });
 
   it('titles a new image in the shared services as a fix, so that the bundle is released with it', () => {
-    const fixes = rules.filter((rule) => rule.semanticCommitType === 'fix');
+    const fixes = rules.filter(
+      (rule) => rule.semanticCommitType === 'fix' && rule.matchManagers !== undefined
+    );
 
     expect(fixes).toHaveLength(1);
     expect(fixes[0]).toMatchObject({
@@ -89,10 +91,25 @@ describe('the Renovate preset', () => {
     ]);
   });
 
+  it('titles an update of what a published package ships as a fix, so that the package is released with it', () => {
+    const shipped = rules.filter(
+      (rule) => rule.semanticCommitType === 'fix' && rule.matchDepTypes !== undefined
+    );
+
+    expect(shipped).toEqual([
+      {
+        description: expect.stringContaining('shipped'),
+        matchDepTypes: ['pnpm.catalog.shipped'],
+        semanticCommitType: 'fix',
+      },
+    ]);
+    expect(rules.indexOf(shipped[0] ?? {})).toBeLessThan(rules.length - 1);
+  });
+
   it("leaves every other title to Renovate's recommended preset, which says chore", () => {
     expect(preset.extends).toContain('config:recommended');
     expect(preset.semanticCommitType).toBeUndefined();
-    expect(rules.filter((rule) => 'semanticCommitType' in rule)).toHaveLength(1);
+    expect(rules.filter((rule) => 'semanticCommitType' in rule)).toHaveLength(2);
   });
 
   it('pins every action to a commit, with its exact version beside it', () => {
