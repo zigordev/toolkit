@@ -1,0 +1,50 @@
+{
+  "name": "@zigordev/test",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Test helpers for zigordev services: a real PostgreSQL with one migrated copy per test file, and the harness that builds an app for API tests",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./postgres": {
+      "types": "./dist/postgres.d.ts",
+      "default": "./dist/postgres.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@testcontainers/postgresql": "catalog:shipped",
+    "pg": "catalog:shipped"
+  },
+  "peerDependencies": {
+    "vitest": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/test"
+  }
+}

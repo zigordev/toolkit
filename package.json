@@ -14,7 +14,7 @@
     "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present run typecheck",
     "build": "pnpm -r --if-present run build",
     "test": "vitest run --coverage",
-    "check:quick": "pnpm run lint && pnpm run build && pnpm run typecheck && vitest run",
+    "check:quick": "pnpm run lint && pnpm run build && pnpm run typecheck && vitest run --project '!*:db'",
     "check": "start=$(date +%s); pnpm run lint && pnpm run build && pnpm run typecheck && pnpm run test; code=$?; echo \"check took $(( $(date +%s) - start )) s\"; exit $code"
   },
   "devDependencies": {
