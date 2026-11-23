@@ -40,4 +40,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0030](0030-no-console-for-feature-flags-for-now.md)                           | No console for feature flags for now                                   | 2026-11-22 | accepted           |
 | [0031](0031-the-pipeline-allows-only-agreed-licences.md)                       | The pipeline allows only agreed licences                               | 2026-11-22 | superseded by 0032 |
 | [0032](0032-no-licence-gate-for-now.md)                                        | No licence gate for now                                                | 2026-11-22 | accepted           |
-| [0033](0033-a-flawed-dependency-of-a-dependency-is-replaced-by-an-override.md) | A flawed dependency of a dependency is replaced by an override         | 2026-11-22 | proposed           |
+| [0033](0033-a-flawed-dependency-of-a-dependency-is-replaced-by-an-override.md) | A flawed dependency of a dependency is replaced by an override         | 2026-11-22 | accepted           |
