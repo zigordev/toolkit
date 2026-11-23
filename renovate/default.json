@@ -46,6 +46,11 @@
       "semanticCommitType": "fix"
     },
     {
+      "description": "The catalog named shipped holds the versions that a published package lists under dependencies, so every product that installs the package gets them. An update there is titled as a fix, so that the package is released with it.",
+      "matchDepTypes": ["pnpm.catalog.shipped"],
+      "semanticCommitType": "fix"
+    },
+    {
       "description": "Our own packages and the pipeline a repo calls arrive at once, in one pull request. This rule stays last, so it also lifts the month a major version waits.",
       "matchDepNames": ["@zigordev/**", "zigordev/toolkit"],
       "groupName": "zigordev",

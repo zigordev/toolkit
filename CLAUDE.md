@@ -35,7 +35,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 
 - A shared file is edited in `packages/dev/shared`, never at the root. Run `pnpm exec zigordev sync` afterwards and commit both copies, or `pnpm check` fails.
 - A change under `packages/dev/shared/.claude` changes how every session works in every repo. Its pull request says which behaviour changes, and it stays a draft until the owner has read it.
-- A version lives once, in the `catalog` of `pnpm-workspace.yaml`, as an exact version. A package refers to it with `catalog:`.
+- A version lives once, as an exact version, in one of the two catalogs of `pnpm-workspace.yaml`. What a package under `packages/` lists under `dependencies` lives in the catalog named `shipped`, referred to as `catalog:shipped`. Everything else lives in the default catalog, referred to as `catalog:`. `packages/dev/src/workspace.test.ts` holds both.
 - A new rule of `zigordev check` comes with a test that breaks it, and with a line in `packages/dev/README.md` and in the table of the core rules.
 - The job named `check` is the required check in every repo. Renaming it, or a job inside `check.yml`, breaks merging everywhere, so say it in the pull request.
 - Coverage counts every package's `src`, its root `.js` files, the hook scripts and the `src` of the template's apps, with a floor of 90%.
