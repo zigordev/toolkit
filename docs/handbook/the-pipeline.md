@@ -75,6 +75,14 @@ On `main`, the caller starts on every push, which is every merge. A run in progr
 
 `check.yml` starts with no permission at all, and each job asks for the least it needs. A reusable workflow can never get more than the job that calls it gives, so the caller grants two: `contents: read`, to read the repo, and `security-events: write`, so the code scan can store what it finds. Every action is pinned to a commit, and no value of a pull request is ever placed inside a shell command.
 
+### The machines it runs on
+
+Every job names the machine it runs on exactly: `ubuntu-26.04`, and `ubuntu-26.04-arm` for the Contract job, because an app's image is built for arm64. No job names `ubuntu-latest`.
+
+GitHub moves `ubuntu-latest` by itself, with no pull request. On 2026-11-23 the jobs on it already ran on Ubuntu 26.04, while GitHub's own list still gave the label as 24.04. A named version moves only through Renovate's pull request, and as a major version that waits a month and for a person. The host of phase 3 runs the same version, so a build and the machine that runs it share one system. [Record 0034](../adr/0034-the-pipeline-and-the-host-run-one-named-ubuntu-lts.md) holds the decision, and `packages/dev/src/pipeline.test.ts` holds every job of `toolkit` to its label.
+
+A repo's own jobs, such as the gate in its caller, name their machine the same way.
+
 ### What a repo has to bring
 
 | The job      | Needs from the repo                                                                                                               |
@@ -87,7 +95,7 @@ On `main`, the caller starts on every push, which is every merge. A run in progr
 
 ## How to use it, with one worked example
 
-The worked example is the whole `.github/workflows/ci.yml` of `platform`, as it was on 2026-11-22. It is the model for every repo but `toolkit`:
+The worked example is the whole `.github/workflows/ci.yml` of a repo that calls the pipeline, in the shape that `platform` has. It is the model for every repo but `toolkit`:
 
 ```yaml
 name: CI
@@ -116,7 +124,7 @@ jobs:
     name: check
     needs: [pipeline]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions: {}
     steps:

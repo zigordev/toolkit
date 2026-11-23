@@ -8,7 +8,7 @@ permissions: {}
 jobs:
   version:
     name: Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: write
@@ -46,7 +46,7 @@ jobs:
     name: Pack
     needs: [version]
     if: needs.version.outputs.publish == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -80,7 +80,7 @@ jobs:
   publish:
     name: Publish
     needs: [pack]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     environment: release
     permissions:
