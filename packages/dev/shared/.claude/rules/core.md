@@ -17,7 +17,7 @@ These rules hold in every zigordev repo and in every session. `toolkit` owns thi
 Ask in the conversation and wait for a clear yes before any of these. A yes covers one action, not the next one.
 
 - An infrastructure change. The plan shows in the pull request, and the apply waits for the owner's approval in GitHub. Nothing in AWS, Cloudflare, GitHub or Grafana is changed by hand.
-- A migration that deletes data.
+- A migration that deletes data. The owner lets it through by adding the label `destructive-migration` to its pull request. A session never adds that label.
 - A tool, library or service the handbook does not list yet. Propose it with the reason, the alternatives, the licence and the price.
 - A new major version of a dependency.
 - A repo's settings and rulesets, and creating or deleting a repo.
@@ -28,17 +28,17 @@ Two things a session never does, even with a yes: it never sets, rotates or dele
 
 ## What enforces each rule
 
-| Rule                             | Enforced by                                                                                                                                                                                                                              |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity                         | The guard hook, before a commit, a push and a change made with `gh`. The `identity` rule of `zigordev check`, in the commit hook and in CI on the pull request's commits                                                                 |
-| No attribution                   | The guard hook, on commit messages and on text sent with `gh`. commitlint, on every commit message and on the pull request title. The `attribution` rule of `zigordev check`, in CI on the pull request's title, description and commits |
-| No comments                      | The `comments` rule of `zigordev check`: after a file is written, in the commit hook and in CI                                                                                                                                           |
-| Protected history                | GitHub's ruleset on `main`, the push hook and the guard hook                                                                                                                                                                             |
-| One format                       | commitlint in the commit hook, and the `Title` job in CI                                                                                                                                                                                 |
-| Done means checked               | The push hook runs `pnpm check:quick`, and `check` is the one required check on `main`                                                                                                                                                   |
-| Infrastructure waits             | From phase 3, the apply job waits for the owner's approval in GitHub. The guard hook already refuses to give an approval, and the permission rules ask before an apply                                                                   |
-| A destructive migration waits    | From phase 4, a CI check fails until the owner labels the pull request. The guard hook already asks before a label changes                                                                                                               |
-| Settings, secrets and repos wait | The permission rules in `.claude/settings.json` ask before a repo, a release or a workflow run is created or changed, and refuse to set a secret. The guard hook asks before any change made through GitHub's API                        |
+| Rule                             | Enforced by                                                                                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity                         | The guard hook, before a commit, a push and a change made with `gh`. The `identity` rule of `zigordev check`, in the commit hook and in CI on the pull request's commits                                                                                            |
+| No attribution                   | The guard hook, on commit messages and on text sent with `gh`. commitlint, on every commit message and on the pull request title. The `attribution` rule of `zigordev check`, in CI on the pull request's title, description and commits                            |
+| No comments                      | The `comments` rule of `zigordev check`: after a file is written, in the commit hook and in CI                                                                                                                                                                      |
+| Protected history                | GitHub's ruleset on `main`, the push hook and the guard hook                                                                                                                                                                                                        |
+| One format                       | commitlint in the commit hook, and the `Title` job in CI                                                                                                                                                                                                            |
+| Done means checked               | The push hook runs `pnpm check:quick`, and `check` is the one required check on `main`                                                                                                                                                                              |
+| Infrastructure waits             | From phase 3, the apply job waits for the owner's approval in GitHub. The guard hook already refuses to give an approval, and the permission rules ask before an apply                                                                                              |
+| A destructive migration waits    | The `migrations` rule of `zigordev check`. In CI it fails on a migration that the pull request adds and that deletes data, until the pull request has the owner's label `destructive-migration`. On the laptop it warns. The guard hook asks before a label changes |
+| Settings, secrets and repos wait | The permission rules in `.claude/settings.json` ask before a repo, a release or a workflow run is created or changed, and refuse to set a secret. The guard hook asks before any change made through GitHub's API                                                   |
 
 ## How work flows
 

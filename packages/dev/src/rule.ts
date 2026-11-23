@@ -3,6 +3,7 @@ export interface Finding {
   readonly path: string;
   readonly line?: number;
   readonly message: string;
+  readonly level?: 'warning';
 }
 
 export interface RuleContext {
