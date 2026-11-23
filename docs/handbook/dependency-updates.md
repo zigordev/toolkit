@@ -32,6 +32,22 @@ Renovate runs on GitHub only. Nothing of it runs on the laptop or on the host.
 
 Renovate does the merging itself. GitHub's own auto-merge would merge the moment the check is green, at any hour, so the preset switches it off for Renovate. The price is time: Renovate merges on its next run after the check passed, and one pull request per run.
 
+### Which title an update gets, and why it matters
+
+Renovate titles a pull request as a Conventional Commit, and the title decides what the merge does next. A repo that publishes packages releases on a title that starts with `fix` or `feat`, and on no other. So the title is what carries an update on to the products, or leaves it in the repo.
+
+| The update changes                                              | Its title starts with | What follows the merge                                                          |
+| --------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------- |
+| A tool, a test library, an action, or anything else             | `chore(deps)`         | Nothing is released, because nothing that a package ships has changed           |
+| An image in a compose file under `stack/`                       | `fix(deps)`           | `platform` publishes `@zigordev/stack`, whose compose files those are           |
+| A `dependencies` entry that holds its version in `package.json` | `fix(deps)`           | The repo releases. This is Renovate's own rule for what code needs when it runs |
+
+The first and the last row come from `config:recommended`, the preset of Renovate that ours builds on. The middle row is a rule of our own. When one pull request holds several updates, Renovate gives it the strongest of their titles, so a group with one `fix` in it is a `fix`.
+
+It is safe to release such an update with no person looking, because the check that it passed is a real one. `platform` starts the shared services on every pull request, and `toolkit` runs the tests of every package.
+
+One case is not covered on 2026-11-23. A package that `toolkit` publishes ships the exact versions of what it needs to run, such as pino in `@zigordev/otel`, and those versions live in the catalog of `pnpm-workspace.yaml`. Renovate reads every entry of a catalog as the same kind of thing, whatever refers to it. It cannot tell pino from Vitest there, and titles both `chore(deps)`. An update of pino therefore merges and is not released by itself. It reaches a product with the next release that something else causes.
+
 Renovate also keeps one issue open in each repo, the Dependency Dashboard. It lists every update: the open ones, the ones still waiting for their day or their month, and the ones that failed.
 
 ## How to use it, with one worked example
@@ -64,4 +80,6 @@ To change how updates behave, change `renovate/default.json` in `toolkit`. Every
 | A pull request from Renovate with a note that the lockfile could not be updated | pnpm refused the new version: it is too new, or its publisher became less trusted | Wait for the next release, or look at why the publisher changed                                                   |
 | No pull request for a release you know of                                       | It is still inside its day or its month                                           | The Dependency Dashboard lists it as pending                                                                      |
 | The pull request for our own packages says the lockfile could not be updated    | pnpm in that repo still makes our own packages wait a day                         | Add `@zigordev/*` under `minimumReleaseAgeExclude` in the repo's `pnpm-workspace.yaml`                            |
+| A new image under `stack/` arrives titled `chore(deps)`                         | The rule of the preset did not match it                                           | Read the file's path in the pull request. The rule matches the Docker Compose files under `stack/`, and no other  |
+| A package that a product uses has a newer dependency than the product gets      | The update merged as a `chore`, so no version was published with it               | It ships with the next release. To ship it now, merge a change of the package with a title that starts with `fix` |
 | A pull request from Renovate whose table has badge columns                      | The switch in `renovate.json` no longer names the preset that adds them           | Read which badge preset the Renovate app applies, and name it under `ignorePresets` in the shared `renovate.json` |

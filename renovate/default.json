@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "The zigordev defaults: a one-day wait, patch and minor updates that merge by themselves on weekdays between 08:00 and 18:00, a major version that waits a month and for a person, and our own packages with no wait.",
+  "description": "The zigordev defaults: a one-day wait, patch and minor updates that merge by themselves on weekdays between 08:00 and 18:00, a major version that waits a month and for a person, our own packages with no wait, and the title fix for an update that changes what a published package ships.",
   "extends": ["config:recommended", "helpers:pinGitHubActionDigestsToSemver", ":semanticCommits"],
   "timezone": "Europe/Madrid",
   "minimumReleaseAge": "1 day",
@@ -38,6 +38,12 @@
       "description": "pnpm is pinned in mise.toml and in package.json, and both move in one pull request.",
       "matchPackageNames": ["pnpm"],
       "groupName": "pnpm"
+    },
+    {
+      "description": "The compose files under stack/ are what the package @zigordev/stack ships, so a new image there is titled as a fix. A release is made for a fix or a feature only, and only a release carries the image to a product.",
+      "matchManagers": ["docker-compose"],
+      "matchFileNames": ["stack/**"],
+      "semanticCommitType": "fix"
     },
     {
       "description": "Our own packages and the pipeline a repo calls arrive at once, in one pull request. This rule stays last, so it also lifts the month a major version waits.",
