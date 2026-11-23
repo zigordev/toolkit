@@ -207,8 +207,8 @@ catalogs:
       specifier: 5.1.1
       version: 5.1.1
     '@zigordev/stack':
-      specifier: 1.0.0
-      version: 1.0.0
+      specifier: 1.1.0
+      version: 1.1.0
     fastify:
       specifier: 5.12.8
       version: 5.12.8
@@ -447,7 +447,7 @@ importers:
         version: link:../packages/dev
       '@zigordev/stack':
         specifier: 'catalog:'
-        version: 1.0.0
+        version: 1.1.0
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -1651,8 +1651,8 @@ packages:
   '@vitest/spy@5.1.1':
     resolution: {integrity: sha512-6K8C6alQG1/Yc8/ZI22iJS7JEsxPdVzqtqDq+/xM4Z0mGVykemMVjLhqMy/q6/IHYG3kKD8hKSwRen/ZdyI9vQ==}
 
-  '@zigordev/stack@1.0.0':
-    resolution: {integrity: sha512-hhBwIkwGCGTu4oFlbpRpHX7t1GTY7H86ZvDgqskWgErfU1n4e6NVfS/WcY5RGsXhxSgipzf584LmgA1ZryebRA==}
+  '@zigordev/stack@1.1.0':
+    resolution: {integrity: sha512-dGB4i1dK+AzCnXtoqCxbM/ya4KPj6wUFmFC6FOoMEDP1M0sOSi9Ja1R4PGFd2Sjg2yDKj3FamWv6qehnwadDnQ==}
     engines: {node: '>=26'}
     hasBin: true
 
@@ -4617,7 +4617,7 @@ snapshots:
 
   '@vitest/spy@5.1.1': {}
 
-  '@zigordev/stack@1.0.0': {}
+  '@zigordev/stack@1.1.0': {}
 
   abstract-logging@2.0.1: {}
 
