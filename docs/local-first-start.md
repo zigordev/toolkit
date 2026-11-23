@@ -12,7 +12,7 @@ This page takes a laptop with nothing on it to a passing `pnpm check`. It takes 
 
 Nothing else is installed by hand. Node.js and pnpm come from mise, and every other tool comes from `pnpm install`.
 
-Running the product template in containers is a separate step, and it needs Docker running and the shared services of `platform`. [The template's README](../template/README.md) describes it.
+Running the product template in containers is a separate step, and it needs Docker running. One command does it, `pnpm --dir template run local:up`: it starts the shared services, which arrive from npm as the package `@zigordev/stack`, and then the template. [The template's README](../template/README.md) describes it.
 
 ## The steps
 

@@ -100,7 +100,7 @@ Each app's container is boxed in the same way: a user that is not root, a read-o
 
 `pnpm local:up` is two steps in one script. `zigordev-stack up` starts the shared services and waits until each is healthy. `docker compose up --build --detach --wait` then builds the product's images, starts its containers, and returns when every one is healthy.
 
-On 2026-11-23 the first step cannot run from a product yet. `zigordev-stack` is the command of `@zigordev/stack`, and that package is not on npm. Until it is, the shared services are started from a clone of `platform`, with its own `pnpm local:up`.
+A product takes `@zigordev/stack` from npm, as a dev dependency. The first step therefore needs no clone of `platform`, and every product on the laptop starts the same five containers.
 
 ### The laptop and production
 
@@ -110,19 +110,13 @@ The three services that run everywhere start from the same file on the host. [Th
 
 The worked example is the product template in this repo, whose product name is `template`. It needs Docker running.
 
-Start the shared services, in a clone of `platform`:
+In the folder `template` of this repo, after `pnpm install` at the root:
 
 ```bash
 pnpm local:up
 ```
 
-Then start the template, in the folder `template` of this repo:
-
-```bash
-docker compose --file compose.yaml --file compose.local.yaml up --build --detach --wait
-```
-
-That second command is the second half of the template's `pnpm local:up`, which will do both steps once `@zigordev/stack` is on npm. The first build takes a few minutes. Then:
+It starts the shared services, or finds them running, pushes the dashboards and the alert rules, builds the template's two images, and returns when both containers are healthy. The first build takes a few minutes. Then:
 
 | Open                                     | What you see                                                                                |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------- |
@@ -175,25 +169,25 @@ labels:
 
 ## How to check that it works, and what to do when it does not
 
-| Try this                                                                | What must happen                                                        |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Start the shared services, then the template                            | Both commands end with every container healthy                          |
-| Open `http://template.localhost`                                        | The page reads "Hello from template-api"                                |
-| Stop the API's container, and load the page again                       | The page still renders, and says that the API does not answer           |
-| Open `http://nothing.localhost`                                         | The ingress answers 404, because no container asked for that address    |
-| In Grafana's Explore, pick Loki and run `{service_name="template-api"}` | The API's log lines show, each one as JSON                              |
-| Run `pnpm check:contract` in the folder `template`                      | Both apps keep promises 1 to 6                                          |
-| Run `pnpm local:down` in the folder `template`                          | The two containers are gone, and `http://grafana.localhost` still opens |
+| Try this                                                                | What must happen                                                                  |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Run `pnpm local:up` in the folder `template`                            | It ends with every container healthy, the five shared ones and the template's two |
+| Open `http://template.localhost`                                        | The page reads "Hello from template-api"                                          |
+| Stop the API's container, and load the page again                       | The page still renders, and says that the API does not answer                     |
+| Open `http://nothing.localhost`                                         | The ingress answers 404, because no container asked for that address              |
+| In Grafana's Explore, pick Loki and run `{service_name="template-api"}` | The API's log lines show, each one as JSON                                        |
+| Run `pnpm check:contract` in the folder `template`                      | Both apps keep promises 1 to 6                                                    |
+| Run `pnpm local:down` in the folder `template`                          | The two containers are gone, and `http://grafana.localhost` still opens           |
 
-| What you see                                                        | What it means                                                                        | What to do                                                                                              |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `Cannot connect to the Docker daemon`                               | Docker is not running                                                                | Start Docker Desktop                                                                                    |
-| `zigordev-stack: command not found`                                 | `@zigordev/stack` is not installed. On 2026-11-23 it is not on npm yet               | Start the shared services from a clone of `platform`, then run the `docker compose` command above       |
-| `network zigordev declared as external, but could not be found`     | The shared services are not running, so their network does not exist                 | Start the shared services first                                                                         |
-| `Bind for 127.0.0.1:80 failed: port is already allocated`           | Another program on the laptop holds port 80                                          | Find it with `lsof -nP -iTCP:80 -sTCP:LISTEN`, and stop it                                              |
-| The start waits, and ends with a container that is `unhealthy`      | The app did not pass its health check                                                | `docker logs <container>` shows why. An app that misses a setting names it there, and stops with code 1 |
-| The product's address answers 404 for a moment, right after a start | The ingress has not seen the new containers yet. It needs a few seconds              | Load the address again                                                                                  |
-| The ingress keeps answering 404 for the product's address           | The app is not on the network `zigordev`, has no `traefik.enable`, or is not healthy | `http://traefik.localhost` lists the routes the ingress knows                                           |
-| The page loads, and says that the API does not answer               | The web app cannot reach the API, or the API is down                                 | `docker ps` shows whether the API runs. `API_URL` in `compose.yaml` names where the web app looks       |
-| An app's log lines do not show in Grafana                           | The app is not on the network `zigordev`, so the agent does not read it              | Add the network to the app's service                                                                    |
-| An app's traces or metrics do not show                              | The app sends them somewhere else, or nowhere                                        | Set `OTEL_EXPORTER_OTLP_ENDPOINT` to `http://alloy:4318`. [Telemetry](telemetry.md) has the other cases |
+| What you see                                                        | What it means                                                                                      | What to do                                                                                              |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `Cannot connect to the Docker daemon`                               | Docker is not running                                                                              | Start Docker Desktop                                                                                    |
+| `zigordev-stack: command not found`                                 | The dependencies are not installed, so the command of `@zigordev/stack` is missing                 | Run `pnpm install` at the root of the repo                                                              |
+| `network zigordev declared as external, but could not be found`     | The product was started by hand, with `docker compose`, while the shared services were not running | Start it with `pnpm local:up`, which starts them first                                                  |
+| `Bind for 127.0.0.1:80 failed: port is already allocated`           | Another program on the laptop holds port 80                                                        | Find it with `lsof -nP -iTCP:80 -sTCP:LISTEN`, and stop it                                              |
+| The start waits, and ends with a container that is `unhealthy`      | The app did not pass its health check                                                              | `docker logs <container>` shows why. An app that misses a setting names it there, and stops with code 1 |
+| The product's address answers 404 for a moment, right after a start | The ingress has not seen the new containers yet. It needs a few seconds                            | Load the address again                                                                                  |
+| The ingress keeps answering 404 for the product's address           | The app is not on the network `zigordev`, has no `traefik.enable`, or is not healthy               | `http://traefik.localhost` lists the routes the ingress knows                                           |
+| The page loads, and says that the API does not answer               | The web app cannot reach the API, or the API is down                                               | `docker ps` shows whether the API runs. `API_URL` in `compose.yaml` names where the web app looks       |
+| An app's log lines do not show in Grafana                           | The app is not on the network `zigordev`, so the agent does not read it                            | Add the network to the app's service                                                                    |
+| An app's traces or metrics do not show                              | The app sends them somewhere else, or nowhere                                                      | Set `OTEL_EXPORTER_OTLP_ENDPOINT` to `http://alloy:4318`. [Telemetry](telemetry.md) has the other cases |

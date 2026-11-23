@@ -49,7 +49,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | pino                         | The logger that `@zigordev/otel` writes its JSON log lines with                                                                                                                                                                                                                                                                                                                                         |
 | Fastify 5                    | The web server framework of the template's API                                                                                                                                                                                                                                                                                                                                                          |
 | Next.js 16 with React 19     | The template's web app                                                                                                                                                                                                                                                                                                                                                                                  |
-| Docker Compose               | Describes the template as two containers. The check only reads its files, which needs the `docker` command and no running Docker. Running the containers needs Docker itself, and the shared services of `platform`                                                                                                                                                                                     |
+| Docker Compose               | Describes the template as two containers. The check only reads its files, which needs the `docker` command and no running Docker. Running the containers needs Docker itself. The shared services they stand behind come from npm, as the package `@zigordev/stack` of `platform`                                                                                                                       |
 | GitHub Actions               | Runs the pipeline on every pull request and on every merge to `main`                                                                                                                                                                                                                                                                                                                                    |
 | CodeQL                       | Scans our own code for vulnerable patterns, in the pipeline                                                                                                                                                                                                                                                                                                                                             |
 | Dependency Review            | Fails a pull request that adds a dependency with a known flaw                                                                                                                                                                                                                                                                                                                                           |
@@ -57,7 +57,7 @@ Every zigordev repo is built with the same tools, set up the same way. Keeping t
 | Renovate                     | Opens a pull request for each newer version of a package, a tool or an action. It merges patch and minor updates by itself, on weekdays between 08:00 and 18:00                                                                                                                                                                                                                                         |
 | Claude Code                  | Does the building, under the rules, skills and hooks in `.claude/`                                                                                                                                                                                                                                                                                                                                      |
 
-The check needs no other repo and no running service. Only running the template in containers does: [template/README.md](template/README.md) says how.
+The check needs no other repo and no running service. Running the template in containers needs Docker, and one command: [template/README.md](template/README.md) says how.
 
 ## Quick start
 
@@ -73,16 +73,17 @@ pnpm check
 
 `mise install` installs the pinned tools. `pnpm install` installs the dependencies and the git hooks. `pnpm check` runs the full check, and on a clean clone it must end with `check took` and a number of seconds, with no error above it.
 
-| Command                                  | What it does                                                                                      |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `pnpm check`                             | The full check: lint, build, type check, and tests with coverage. It prints how long it took      |
-| `pnpm check:quick`                       | The part of the check that needs no containers. The push hook runs it                             |
-| `pnpm format`                            | Fixes the formatting, the import order and the Markdown problems that have a safe fix             |
-| `pnpm lint`                              | Reports lint and formatting problems without changing a file                                      |
-| `pnpm typecheck`                         | Checks the types                                                                                  |
-| `pnpm test`                              | Runs the tests with coverage                                                                      |
-| `pnpm build`                             | Compiles the packages that are published                                                          |
-| `pnpm --dir template run check:contract` | Builds the template's two images and holds them to the platform contract. It needs Docker running |
+| Command                                  | What it does                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `pnpm check`                             | The full check: lint, build, type check, and tests with coverage. It prints how long it took                       |
+| `pnpm check:quick`                       | The part of the check that needs no containers. The push hook runs it                                              |
+| `pnpm format`                            | Fixes the formatting, the import order and the Markdown problems that have a safe fix                              |
+| `pnpm lint`                              | Reports lint and formatting problems without changing a file                                                       |
+| `pnpm typecheck`                         | Checks the types                                                                                                   |
+| `pnpm test`                              | Runs the tests with coverage                                                                                       |
+| `pnpm build`                             | Compiles the packages that are published                                                                           |
+| `pnpm --dir template run local:up`       | Starts the shared services and the template in containers, at `http://template.localhost`. It needs Docker running |
+| `pnpm --dir template run check:contract` | Builds the template's two images and holds them to the platform contract. It needs Docker running                  |
 
 [packages/dev](packages/dev/README.md) explains what each git hook does, and what the session rules and their guard hook do. [packages/config](packages/config/README.md) explains how an app reads its settings, and [packages/otel](packages/otel/README.md) what a service reports about itself. [template](template/README.md) explains the product template, and how to run it.
 
