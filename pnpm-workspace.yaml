@@ -31,6 +31,9 @@ catalog:
 catalogs:
   shipped:
     "@commitlint/config-conventional": 21.2.4
+    "@fastify/rate-limit": 11.3.0
+    "@fastify/swagger": 9.9.5
+    "@fastify/swagger-ui": 6.1.5
     "@opentelemetry/core": 3.1.1
     "@opentelemetry/exporter-trace-otlp-http": 0.301.2
     "@opentelemetry/exporter-trace-otlp-proto": 0.301.2
@@ -43,6 +46,7 @@ catalogs:
     "@opentelemetry/sdk-node": 0.301.2
     "@opentelemetry/sdk-trace": 3.1.1
     "@testcontainers/postgresql": 12.2.2
+    fastify-type-provider-zod: 7.0.0
     pg: 8.23.1
     pino: 10.4.0
 

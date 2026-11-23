@@ -1,0 +1,52 @@
+{
+  "name": "@zigordev/api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The base every zigordev API stands on: one Fastify start with the error format, paging, the OpenAPI pages, the health route, sign-in checks and a clean stop",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "catalog:shipped",
+    "@fastify/swagger": "catalog:shipped",
+    "@fastify/swagger-ui": "catalog:shipped",
+    "fastify-type-provider-zod": "catalog:shipped"
+  },
+  "peerDependencies": {
+    "@zigordev/otel": "workspace:^",
+    "fastify": "^5.12.0",
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "fastify": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/api"
+  }
+}
