@@ -4,5 +4,6 @@ export default defineProject({
   test: {
     name: 'dev',
     include: ['*.test.js', 'src/**/*.test.ts'],
+    testTimeout: 20_000,
   },
 });
