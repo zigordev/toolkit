@@ -1,0 +1,63 @@
+name: template
+
+services:
+  template-api:
+    image: ghcr.io/zigordev/template-api:${VERSION:-local}
+    user: "1000:1000"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    mem_limit: 256m
+    cpus: 1
+    environment:
+      PORT: "3000"
+      OTEL_SERVICE_NAME: template-api
+      OTEL_SERVICE_VERSION: ${VERSION:-local}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+    healthcheck:
+      test: [CMD, wget, -q, -T, "4", -O, /dev/null, "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.template-api.loadbalancer.server.port: "3000"
+    networks: [zigordev]
+
+  template-web:
+    image: ghcr.io/zigordev/template-web:${VERSION:-local}
+    user: "1000:1000"
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    mem_limit: 384m
+    cpus: 1
+    environment:
+      PORT: "3000"
+      OTEL_SERVICE_NAME: template-web
+      OTEL_SERVICE_VERSION: ${VERSION:-local}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      API_URL: http://template-api:3000
+    tmpfs:
+      - /app/.next/cache:uid=1000,gid=1000,size=64m
+    healthcheck:
+      test: [CMD, wget, -q, -T, "4", -O, /dev/null, "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
+    labels:
+      traefik.enable: "true"
+      traefik.http.services.template-web.loadbalancer.server.port: "3000"
+    networks: [zigordev]
+
+networks:
+  zigordev:
+    external: true
