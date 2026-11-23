@@ -397,6 +397,17 @@ describe('sign-in', () => {
     expect(response.statusCode).toBe(401);
   });
 
+  it('checks the credentials before it reads the body, so a broken body without them is a 401', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/things',
+      headers: { 'content-type': 'application/json' },
+      payload: '{"name":',
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
   it('answers with 403 when the credentials lack the scope, and names the scope', async () => {
     const response = await app.inject({
       method: 'POST',

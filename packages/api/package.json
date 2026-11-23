@@ -22,6 +22,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fastify/rate-limit": "catalog:shipped",
     "@fastify/swagger": "catalog:shipped",
     "@fastify/swagger-ui": "catalog:shipped",
     "fastify-type-provider-zod": "catalog:shipped"

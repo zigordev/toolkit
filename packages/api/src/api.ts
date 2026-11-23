@@ -9,6 +9,7 @@ import { type Authenticate, requireSignIn } from './auth.ts';
 import { type DocsOptions, serveDocs } from './docs.ts';
 import { handleErrors } from './errors.ts';
 import { serveHealth } from './health.ts';
+import { defaultRateLimit, limitRate, type RateLimitOptions, trustOneProxy } from './rate-limit.ts';
 
 export interface ApiOptions {
   readonly service: string;
@@ -17,6 +18,7 @@ export interface ApiOptions {
   readonly health?: readonly HealthComponent[];
   readonly authenticate?: Authenticate;
   readonly bodyLimit?: number;
+  readonly rateLimit?: RateLimitOptions;
 }
 
 export async function createApi(options: ApiOptions) {
@@ -25,11 +27,13 @@ export async function createApi(options: ApiOptions) {
     loggerInstance,
     logController: new LogController({ disableRequestLogging: true }),
     bodyLimit: options.bodyLimit ?? 1024 * 1024,
+    trustProxy: trustOneProxy,
   }).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   app.removeContentTypeParser('text/plain');
   handleErrors(app);
+  await limitRate(app, options.rateLimit ?? defaultRateLimit);
   app.addHook('onRequest', async (request) => {
     const route = request.routeOptions.url;
     if (route !== undefined) {

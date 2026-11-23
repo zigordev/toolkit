@@ -36,5 +36,7 @@ export {
   problemSchema,
   unauthorized,
 } from './problems.ts';
+export type { RateLimitOptions } from './rate-limit.ts';
+export { clientAddress, defaultRateLimit } from './rate-limit.ts';
 export type { ServeOptions, Server, Signal, Signals } from './server.ts';
 export { defaultStopTimeoutMs, serve, stopOnSignals } from './server.ts';

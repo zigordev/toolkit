@@ -23,6 +23,7 @@ const clientErrorCodes: Readonly<Record<number, string>> = {
   406: 'request.not_acceptable',
   413: 'request.too_large',
   415: 'request.unsupported_media_type',
+  429: 'request.rate_limited',
 };
 
 function locationOf(value: unknown): Location {

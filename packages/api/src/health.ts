@@ -15,7 +15,7 @@ export function serveHealth(
   app.decorate('healthComponents', [...components]);
   app.get(
     '/health',
-    { config: { public: true }, schema: { hide: true } },
+    { config: { public: true, rateLimit: false }, schema: { hide: true } },
     async (_request, reply) => {
       const report = await checkHealth({ service, components: app.healthComponents });
       return reply.code(report.statusCode).serializer(JSON.stringify).send(report.body);

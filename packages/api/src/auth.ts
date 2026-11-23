@@ -32,15 +32,16 @@ function isPublic(request: FastifyRequest): boolean {
 
 export function requireSignIn(app: FastifyInstance, authenticate: Authenticate | undefined): void {
   app.decorateRequest('principal', undefined);
-  app.addHook('onRequest', async (request) => {
+  app.addHook('preParsing', async (request, _reply, payload) => {
     if (isPublic(request)) {
-      return;
+      return payload;
     }
     const principal = authenticate === undefined ? undefined : await authenticate(request);
     if (principal === undefined) {
       throw unauthorized();
     }
     request.principal = principal;
+    return payload;
   });
 }
 

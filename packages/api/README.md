@@ -15,6 +15,7 @@ Fastify is the web server framework of every API. Zod describes each request and
 | `problemResponses(400, 404, …)`                           | The error answers a route declares, so that the OpenAPI document lists them                                 |
 | `listQuery`, `parseSort`, `pageOf`, `pageSchema`, cursors | The query string and the answer of a list: filters, sorting, a limit and a cursor                           |
 | `requireScope(request, scope)`, `principalOf(request)`    | Who signed in, and whether they may do this. `bearerToken(request)` reads an `Authorization: Bearer` header |
+| `clientAddress(request)`, `defaultRateLimit`              | The address a client is counted under, and the limit every API gets unless it sets `rateLimit`              |
 | `addHealthComponent(app, component)`                      | Adds a part the service depends on to the health route                                                      |
 | `openapiDocument(app)`                                    | The OpenAPI document as the committed `openapi.json` holds it                                               |
 
@@ -33,9 +34,10 @@ Without this package, every service would write those parts again, and each copy
 3. The API accepts JSON only. A body in plain text gets 415.
 4. One error handler and one not-found handler write every error as an RFC 9457 problem, with the media type `application/problem+json`.
 5. Every request is named by its route pattern, such as `/api/v1/notes/:noteId`, for the traces and the duration metric. A raw path never becomes a label.
-6. Every route needs a signed-in caller unless it says `config: { public: true }`. A route that matches nothing answers 404 to everyone.
-7. The OpenAPI 3.1 document is at `/api/v1/openapi.json`, and Swagger UI shows it at `/api/v1/docs`. Both are public.
-8. `GET /health` answers at the root, outside any prefix.
+6. Each client may make 300 calls a minute, unless the app sets `rateLimit`. A client over the limit gets 429. The health route is never limited.
+7. Every route needs a signed-in caller unless it says `config: { public: true }`. The check runs after the rate limit and before the body is read, so failed attempts count, and a large body from a stranger is never parsed. A route that matches nothing answers 404 to everyone.
+8. The OpenAPI 3.1 document is at `/api/v1/openapi.json`, and Swagger UI shows it at `/api/v1/docs`. Both are public.
+9. `GET /health` answers at the root, outside any prefix.
 
 ### The error format
 
@@ -78,6 +80,21 @@ Without this package, every service would write those parts again, and each copy
 | 500    | `server.error`                   | Anything else. The body says nothing of the cause, and the log line `request.failed` holds it |
 
 A feature adds its own codes, named `area.what`, such as `note.not_found`.
+
+### The rate limit
+
+`@fastify/rate-limit` counts each client's calls in memory, in a window of one minute. The owner chose it on 2026-11-23: every API limits its clients itself, and nothing is limited at Cloudflare's edge.
+
+A client is counted under one address, found in this order:
+
+1. **`CF-Connecting-IP`**, when the request has it. In production the only way into the host is the Cloudflare Tunnel, and no port is open, so this header can only come from Cloudflare, which sets it to the visitor's address. A visitor cannot forge it.
+2. **The address the proxy forwards.** On the laptop the header is absent, and the request comes through Traefik. Fastify trusts exactly one hop: the address that Traefik puts last in `X-Forwarded-For`, and only when the request reaches the app from a private address, which is where the containers of the platform live. An address that a client put in front of it is ignored, and so is the header of a request that does not come from a container.
+
+IPv6 addresses of one network of 64 count as one client, because one visitor holds a whole such network. A service that calls another one inside the host is counted under its container's address.
+
+| Status | Code                   | When                                                               |
+| ------ | ---------------------- | ------------------------------------------------------------------ |
+| 429    | `request.rate_limited` | The client used up its calls. `Retry-After` says when to try again |
 
 ### Lists
 
