@@ -25,18 +25,18 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@opentelemetry/core": "catalog:",
-    "@opentelemetry/exporter-trace-otlp-http": "catalog:",
-    "@opentelemetry/exporter-trace-otlp-proto": "catalog:",
-    "@opentelemetry/instrumentation": "catalog:",
-    "@opentelemetry/instrumentation-http": "catalog:",
-    "@opentelemetry/instrumentation-pg": "catalog:",
-    "@opentelemetry/instrumentation-runtime-node": "catalog:",
-    "@opentelemetry/instrumentation-undici": "catalog:",
-    "@opentelemetry/resources": "catalog:",
-    "@opentelemetry/sdk-node": "catalog:",
-    "@opentelemetry/sdk-trace": "catalog:",
-    "pino": "catalog:"
+    "@opentelemetry/core": "catalog:shipped",
+    "@opentelemetry/exporter-trace-otlp-http": "catalog:shipped",
+    "@opentelemetry/exporter-trace-otlp-proto": "catalog:shipped",
+    "@opentelemetry/instrumentation": "catalog:shipped",
+    "@opentelemetry/instrumentation-http": "catalog:shipped",
+    "@opentelemetry/instrumentation-pg": "catalog:shipped",
+    "@opentelemetry/instrumentation-runtime-node": "catalog:shipped",
+    "@opentelemetry/instrumentation-undici": "catalog:shipped",
+    "@opentelemetry/resources": "catalog:shipped",
+    "@opentelemetry/sdk-node": "catalog:shipped",
+    "@opentelemetry/sdk-trace": "catalog:shipped",
+    "pino": "catalog:shipped"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.10.0"

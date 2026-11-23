@@ -35,7 +35,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@commitlint/config-conventional": "catalog:"
+    "@commitlint/config-conventional": "catalog:shipped"
   },
   "peerDependencies": {
     "@biomejs/biome": "^2.6.0",
