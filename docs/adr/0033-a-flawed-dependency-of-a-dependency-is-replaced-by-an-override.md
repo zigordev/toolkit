@@ -1,6 +1,6 @@
 # 0033. A flawed dependency of a dependency is replaced by an override
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-22
 - Supersedes: none
 
