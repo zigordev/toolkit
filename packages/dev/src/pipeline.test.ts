@@ -8,6 +8,9 @@ function read(path: string): string {
 const workflow = read('../../../.github/workflows/check.yml');
 const release = read('../../../.github/workflows/release.yml');
 const caller = read('../../../.github/workflows/ci.yml');
+const template = JSON.parse(read('../../../template/package.json')) as {
+  readonly scripts: Readonly<Record<string, string>>;
+};
 
 function job(text: string, name: string): string {
   const rest = text.slice(text.indexOf(`\n  ${name}:\n`) + 1);
@@ -22,6 +25,47 @@ function setting(name: string): string | undefined {
 describe('the Dependencies job', () => {
   it('fails on a known flaw of any severity', () => {
     expect(setting('fail-on-severity')).toBe('low');
+  });
+});
+
+describe('the Contract job', () => {
+  it('runs only for a repo that names the folder of a product', () => {
+    expect(workflow).toContain('      product-folder:\n');
+    expect(workflow).toContain('        type: string\n        default: ""\n');
+    expect(job(workflow, 'contract')).toContain("if: inputs.product-folder != ''");
+  });
+
+  it('runs on an arm64 machine, because the images are built for arm64 only', () => {
+    expect(job(workflow, 'contract')).toContain('runs-on: ubuntu-24.04-arm');
+  });
+
+  it('may read the repo, and nothing else', () => {
+    expect(job(workflow, 'contract')).toContain('    permissions:\n      contents: read\n');
+    expect(job(workflow, 'contract')).not.toContain('write');
+    expect(job(workflow, 'contract')).toContain('persist-credentials: false');
+  });
+
+  it('runs the script check:contract in that folder, and takes the folder as a variable', () => {
+    const steps = job(workflow, 'contract');
+
+    expect(steps).toMatch(/^ {10}PRODUCT_FOLDER: \$\{\{ inputs\.product-folder \}\}$/m);
+    expect(steps).toContain('        run: pnpm --dir "$PRODUCT_FOLDER" run check:contract\n');
+    expect(steps.match(/inputs\.product-folder/g)).toHaveLength(2);
+  });
+
+  it('sits behind the same gate as every other job', () => {
+    expect(job(caller, 'check')).toContain('needs: [pipeline]');
+    expect(job(caller, 'check')).toContain('test "$RESULT" = "success"');
+  });
+
+  it('is asked for by this repo, for the product template', () => {
+    expect(job(caller, 'pipeline')).toContain('    with:\n      product-folder: template\n');
+  });
+
+  it('finds, in the template, the script that builds the images and holds them to the contract', () => {
+    expect(template.scripts['check:contract']).toBe(
+      'docker compose --file compose.yaml --file compose.local.yaml build && zigordev contract'
+    );
   });
 });
 

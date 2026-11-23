@@ -23,15 +23,16 @@ flowchart LR
   run --> release["Tag the next version and publish the packages"]
 ```
 
-The pipeline has four jobs, and one gate that passes only when all of them passed:
+The pipeline has five jobs, and one gate that passes only when all of them passed:
 
-| Job          | What it checks                                                         | Runs on                            |
-| ------------ | ---------------------------------------------------------------------- | ---------------------------------- |
-| Quality      | `pnpm check`, exactly as on a laptop                                   | Every pull request and every merge |
-| Title        | The pull request's title is a Conventional Commit                      | Pull requests                      |
-| Dependencies | No dependency the pull request adds has a known flaw                   | Pull requests                      |
-| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows | Every pull request and every merge |
-| `check`      | Every job above passed                                                 | Every pull request and every merge |
+| Job          | What it checks                                                                    | Runs on                            |
+| ------------ | --------------------------------------------------------------------------------- | ---------------------------------- |
+| Quality      | `pnpm check`, exactly as on a laptop                                              | Every pull request and every merge |
+| Title        | The pull request's title is a Conventional Commit                                 | Pull requests                      |
+| Dependencies | No dependency the pull request adds has a known flaw                              | Pull requests                      |
+| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows            | Every pull request and every merge |
+| Contract     | The product template's two apps keep the platform contract, on their built images | Every pull request and every merge |
+| `check`      | Every job above passed                                                            | Every pull request and every merge |
 
 [The pipeline](handbook/the-pipeline.md) explains each job, and how another repo calls it.
 

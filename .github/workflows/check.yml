@@ -2,6 +2,11 @@ name: Check
 
 on:
   workflow_call:
+    inputs:
+      product-folder:
+        description: The folder that holds a product's compose.yaml. Its images are built and held to the platform contract. A repo without apps leaves it out.
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -30,6 +35,30 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: pnpm check
+
+  contract:
+    name: Contract
+    if: inputs.product-folder != ''
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      LEFTHOOK: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the images and hold them to the contract
+        env:
+          PRODUCT_FOLDER: ${{ inputs.product-folder }}
+        run: pnpm --dir "$PRODUCT_FOLDER" run check:contract
 
   title:
     name: Title

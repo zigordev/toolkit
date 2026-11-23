@@ -16,6 +16,8 @@ jobs:
   pipeline:
     name: Pipeline
     uses: $/.github/workflows/check.yml
+    with:
+      product-folder: template
     permissions:
       contents: read
       security-events: write
