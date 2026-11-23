@@ -14,6 +14,7 @@ One command and a handful of files that a repo refers to instead of writing its 
 | `tsconfig/base.json`    | The strict TypeScript options                                                    | `@zigordev/dev/tsconfig/base.json`        |
 | `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                  | `@zigordev/dev/tsconfig/node.json`        |
 | `tsconfig/library.json` | The same, for a package that is compiled before it ships                         | `@zigordev/dev/tsconfig/library.json`     |
+| `tsconfig/next.json`    | The base, for a Next.js app                                                      | `@zigordev/dev/tsconfig/next.json`        |
 | `lefthook.yml`          | The git hooks                                                                    | `node_modules/@zigordev/dev/lefthook.yml` |
 | `commitlint.js`         | The commit rules                                                                 | `@zigordev/dev/commitlint`                |
 | `semantic-release.js`   | The release settings, for a repo that publishes packages                         | `@zigordev/dev/semantic-release`          |
@@ -144,6 +145,8 @@ markdownlint leaves the file out. A description starts with a second-level headi
 Biome reads the YAML block at the top of a Markdown file as front matter, because every rule and skill file starts with one. The Biome rules are Biome's recommended set plus three: no `console`, type-only imports written as `import type`, and Node.js built-ins imported with the `node:` prefix. Code is formatted with two spaces, single quotes, semicolons and lines of up to 100 characters.
 
 The TypeScript base turns on strict mode and three checks beyond it: a value read by index may be `undefined`, an override must be marked, and a `switch` case may not fall through. It also accepts only the syntax that Node.js can strip, because Node.js runs the `.ts` files directly.
+
+The base for a Next.js app adds the browser's types and JSX, resolves modules the way a bundler does, and writes no output, because Next.js compiles the app itself. It also names the folders where Next.js writes its own types. Next.js adds those to a `tsconfig.json` by itself, but never to one that extends another file.
 
 ## How to use it
 
