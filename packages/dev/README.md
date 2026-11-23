@@ -42,7 +42,7 @@ The command exists for the rules that no ready-made tool checks. A rule that onl
 | `scripts`     | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`                       |
 | `shared`      | Every shared file in the repo matches the copy in this package                                                                    |
 
-The `comments` rule allows the few lines a tool needs to work: the first line of a script that names its interpreter, the version beside a pinned action, a Dockerfile's `syntax` line, and suppressions such as `biome-ignore` and `@ts-expect-error`. It reads code with a small scanner of its own, which knows strings, template literals and regular expressions. It does not look inside the code blocks of a Markdown file.
+The `comments` rule allows the few lines a tool needs to work: the first line of a script that names its interpreter, the version beside a pinned action, a Dockerfile's `syntax` line, and suppressions such as `biome-ignore` and `@ts-expect-error`. It reads code with a small scanner of its own, which knows strings, template literals and regular expressions. It does not look inside the code blocks of a Markdown file. It skips the two lock files that a tool writes and rewrites, `pnpm-lock.yaml` and OpenTofu's `.terraform.lock.hcl`, whose header `tofu init` puts back on every change of providers.
 
 The `identity` rule accepts two more names: Renovate as the author of its own updates, and GitHub as the committer of a merge it made.
 

@@ -130,7 +130,7 @@ const wordsBeforeRegex = new Set([
 
 function familyOf(path: string): Family | undefined {
   const name = basename(path).toLowerCase();
-  if (name === 'pnpm-lock.yaml') {
+  if (name === 'pnpm-lock.yaml' || name === '.terraform.lock.hcl') {
     return undefined;
   }
   if (name === 'dockerfile' || name.startsWith('dockerfile.') || name.endsWith('.dockerfile')) {
