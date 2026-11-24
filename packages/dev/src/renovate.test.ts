@@ -45,6 +45,21 @@ describe('the Renovate preset', () => {
     expect(preset.automergeStrategy).toBe('squash');
   });
 
+  it('pins each image of others in a compose file by its digest, as the owner chose on 2026-11-24, and merges a new digest by itself', () => {
+    const pins = rules.filter((rule) => 'pinDigests' in rule);
+
+    expect(pins).toEqual([
+      {
+        description: expect.stringContaining('2026-11-24'),
+        matchManagers: ['docker-compose'],
+        pinDigests: true,
+      },
+    ]);
+    expect(rules.indexOf(pins[0] ?? {})).toBeLessThan(rules.length - 1);
+    expect(ruleFor('pinDigest')?.automerge).toBe(true);
+    expect(ruleFor('digest')?.automerge).toBe(true);
+  });
+
   it('holds a new major version for a month, and then for a person', () => {
     expect(ruleFor('major')).toMatchObject({ automerge: false, minimumReleaseAge: '30 days' });
   });
