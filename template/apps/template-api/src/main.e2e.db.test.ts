@@ -127,8 +127,11 @@ function metrics(): ExportedMetric[] {
 }
 
 describe('the API as a process', () => {
-  it('starts, answers, and stops cleanly on a SIGTERM', async () => {
-    const outcome = await run({ OTEL_SERVICE_NAME: 'template-api' }, ['/api/v1/hello', '/health']);
+  it('starts, answers with its version, and stops cleanly on a SIGTERM', async () => {
+    const outcome = await run(
+      { OTEL_SERVICE_NAME: 'template-api', OTEL_SERVICE_VERSION: '1f3a9c2' },
+      ['/api/v1/hello', '/health']
+    );
 
     expect(outcome.stderr).toBe('');
     expect(outcome.code).toBe(0);
@@ -136,7 +139,12 @@ describe('the API as a process', () => {
       { status: 200, body: { message: 'Hello from template-api' } },
       {
         status: 200,
-        body: { status: 'ok', service: 'template-api', components: { db: { status: 'up' } } },
+        body: {
+          status: 'ok',
+          service: 'template-api',
+          version: '1f3a9c2',
+          components: { db: { status: 'up' } },
+        },
       },
     ]);
   }, 30_000);

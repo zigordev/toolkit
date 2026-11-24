@@ -11,6 +11,7 @@ beforeEach(async () => {
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   vi.stubEnv('OTEL_SERVICE_NAME', 'template-web');
+  vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
 });
 
 afterEach(async () => {
@@ -32,7 +33,12 @@ describe('GET /health', () => {
 
     expect(answer).toEqual({
       status: 200,
-      body: { status: 'ok', service: 'template-web', components: { api: { status: 'up' } } },
+      body: {
+        status: 'ok',
+        service: 'template-web',
+        version: '1f3a9c2',
+        components: { api: { status: 'up' } },
+      },
     });
   });
 
@@ -44,6 +50,7 @@ describe('GET /health', () => {
       body: {
         status: 'degraded',
         service: 'template-web',
+        version: '1f3a9c2',
         components: { api: { status: 'down' } },
       },
     });

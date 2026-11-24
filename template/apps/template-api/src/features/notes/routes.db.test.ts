@@ -3,7 +3,7 @@ import { createLogger } from '@zigordev/otel';
 import { captureLogs, expectProblem, useApp } from '@zigordev/test/app';
 import { useTestDatabase } from '@zigordev/test/postgres';
 import { sql } from 'drizzle-orm';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { buildApp } from '../../app.ts';
 import { readConfig } from '../../config.ts';
 import { hashKey } from '../../plugins/api-keys.ts';
@@ -335,12 +335,17 @@ describe('GET /api/v1/notes', () => {
 });
 
 describe('GET /health', () => {
-  it('answers 200 ok with the database up', async () => {
+  it('answers 200 ok with the database up, and names its version', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
     const response = await server.app.inject({ method: 'GET', url: '/health' });
 
     expect(response.json()).toEqual({
       status: 'ok',
       service: 'template-api',
+      version: '1f3a9c2',
       components: { db: { status: 'up' } },
     });
   });

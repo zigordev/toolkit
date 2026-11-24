@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkHealth, type HealthComponent } from './index.ts';
+
+beforeEach(() => {
+  vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 const up = (name: string, required: boolean): HealthComponent => ({
   name,
@@ -24,9 +32,29 @@ describe('checkHealth', () => {
       body: {
         status: 'ok',
         service: 'gpool-api',
+        version: '1f3a9c2',
         components: { db: { status: 'up' }, mail: { status: 'up' } },
       },
     });
+  });
+
+  it('names the version that runs, from OTEL_SERVICE_VERSION, also when it is unwell', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', '0123456789abcdef0123456789abcdef01234567');
+
+    const report = await checkHealth({ service: 'gpool-api', components: [down('db', true)] });
+
+    expect(report.statusCode).toBe(503);
+    expect(report.body.version).toBe('0123456789abcdef0123456789abcdef01234567');
+  });
+
+  it('names the version unknown when OTEL_SERVICE_VERSION is missing or empty', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', undefined);
+    const missing = await checkHealth({ service: 'gpool-api', components: [] });
+    vi.stubEnv('OTEL_SERVICE_VERSION', '');
+    const empty = await checkHealth({ service: 'gpool-api', components: [] });
+
+    expect(missing.body.version).toBe('unknown');
+    expect(empty.body.version).toBe('unknown');
   });
 
   it('answers 200 degraded when only an optional component is down', async () => {
@@ -104,7 +132,7 @@ describe('checkHealth', () => {
 
     expect(report).toEqual({
       statusCode: 200,
-      body: { status: 'ok', service: 'cv-web', components: {} },
+      body: { status: 'ok', service: 'cv-web', version: '1f3a9c2', components: {} },
     });
   });
 });

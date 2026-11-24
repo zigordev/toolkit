@@ -1,5 +1,5 @@
 import { createLogger } from '@zigordev/otel';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type App, buildApp } from './app.ts';
 import { readConfig } from './config.ts';
 
@@ -21,6 +21,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await app.close();
+  vi.unstubAllEnvs();
 });
 
 function events(): unknown[] {
@@ -29,12 +30,14 @@ function events(): unknown[] {
 
 describe('GET /health', () => {
   it('answers 503 error, naming the database, while the database cannot be reached', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
     const response = await app.inject({ method: 'GET', url: '/health' });
 
     expect(response.statusCode).toBe(503);
     expect(response.json()).toEqual({
       status: 'error',
       service: 'template-api',
+      version: '1f3a9c2',
       components: { db: { status: 'down' } },
     });
   });

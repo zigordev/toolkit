@@ -10,6 +10,7 @@ export interface HealthComponent {
 export interface HealthBody {
   readonly status: HealthStatus;
   readonly service: string;
+  readonly version: string;
   readonly components: Readonly<Record<string, { readonly status: ComponentStatus }>>;
 }
 
@@ -56,8 +57,9 @@ export async function checkHealth(options: CheckHealthOptions): Promise<HealthRe
     ({ component, status }) => !component.required && status === 'down'
   );
   const status: HealthStatus = requiredDown ? 'error' : optionalDown ? 'degraded' : 'ok';
+  const version = process.env.OTEL_SERVICE_VERSION || 'unknown';
   return {
     statusCode: requiredDown ? 503 : 200,
-    body: { status, service: options.service, components },
+    body: { status, service: options.service, version, components },
   };
 }

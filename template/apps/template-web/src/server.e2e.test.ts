@@ -172,8 +172,11 @@ function spans(): ExportedSpan[] {
 }
 
 describe('the web app as a process', () => {
-  it('shows what the API says, and answers its health route', async () => {
-    const server = await start({ OTEL_SERVICE_NAME: 'template-web' });
+  it('shows what the API says, and answers its health route with its version', async () => {
+    const server = await start({
+      OTEL_SERVICE_NAME: 'template-web',
+      OTEL_SERVICE_VERSION: '1f3a9c2',
+    });
     await ready(server);
 
     const page = await fetch(`${server.base}/`);
@@ -185,6 +188,7 @@ describe('the web app as a process', () => {
     expect(await health.json()).toEqual({
       status: 'ok',
       service: 'template-web',
+      version: '1f3a9c2',
       components: { api: { status: 'up' } },
     });
   }, 60_000);
