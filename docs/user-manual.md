@@ -7,6 +7,7 @@
 | The developer setup          | `@zigordev/dev`                   | Yes. On npm since 2026-11-22                                                                                                                                                                                                                                                           |
 | The session rules            | `packages/dev/shared/.claude`     | Yes                                                                                                                                                                                                                                                                                    |
 | The pipeline                 | `.github/workflows/check.yml`     | Yes. `platform` calls it since 2026-11-22                                                                                                                                                                                                                                              |
+| Delivery of a product        | `publish.yml` and `deploy.yml`    | Written on 2026-11-24. The host's side is built in `platform` at the same time                                                                                                                                                                                                         |
 | Dependency updates           | `renovate/default.json`           | Yes                                                                                                                                                                                                                                                                                    |
 | The way to record a decision | The `write-decision-record` skill | Yes                                                                                                                                                                                                                                                                                    |
 | The shared packages for apps | `packages/`                       | `@zigordev/config`, `@zigordev/otel`, `@zigordev/test` and `@zigordev/api` are on npm since 2026-11-23. The others arrive from phase 6 on                                                                                                                                              |
@@ -66,6 +67,12 @@ The commit is the one that the version tag points at, and the job that holds the
 In the repo's settings, `check` is the one required check on `main`. A new repo also needs its dependency graph switched on, or the Dependencies job fails.
 
 A repo that holds a product adds `with:` and `product-folder: .` under that line. The pipeline then builds the product's images and holds each app to the platform contract, with the product's own script `check:contract`. [The pipeline](handbook/the-pipeline.md) has both.
+
+## Delivering a product
+
+A product's caller adds two jobs after `check`, on a push to `main` only. `publish.yml` builds each app's image for arm64, pushes it as `ghcr.io/zigordev/<app>:<commit>` and attests it. `deploy.yml` verifies each image's build record, asks the host through AWS Systems Manager to run the commit, asks the product's `/health` from outside, and rolls back on a wrong answer. Both are pinned to the same commit of `toolkit` as `check.yml`.
+
+The deploy needs a secret that the owner sets, `AWS_ACCOUNT_ID`, and the product's entry in `platform`. [Delivery](handbook/delivery.md) shows the whole caller and the four things a product needs before its first deploy.
 
 ## Publishing packages
 

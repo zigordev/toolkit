@@ -49,7 +49,7 @@ On the laptop, `pnpm check` runs what the Quality job runs, and the push hook ru
 
 The Contract job has a machine of its own, one of GitHub's arm64 runners, because an app's image is built for arm64 only. It builds the product's images from the pull request's code, starts them, and runs `zigordev contract`. [The developer setup](../../packages/dev/README.md) says what that command does for each promise. A repo without a product does not name a product folder, and the job is skipped there.
 
-Nothing of the pipeline runs on the host. In a repo that publishes packages, the release follows a green `check` on `main`. In a product, the deploy will follow it, from phase 3.
+Nothing of the pipeline runs on the host. In a repo that publishes packages, the release follows a green `check` on `main`. In a product, two more reusable workflows follow it: `publish.yml` builds and attests the images, and `deploy.yml` asks the host to run them. [Delivery](delivery.md) explains both. They are files of their own, apart from `check.yml`, because GitHub checks every job of a called workflow against the caller's permissions when the run starts, even a job that would be skipped, and a pull request must never be granted the right to push an image.
 
 ### The caller
 

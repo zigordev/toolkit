@@ -1,0 +1,297 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: The deploy target, as platform/infra/products.json names it, or platform for the shared services. The command and the role in AWS carry this name.
+        type: string
+        required: true
+      compose-dir:
+        description: The folder that holds compose.yaml and compose.production.yaml, the same folder that the target's command reads on the host.
+        type: string
+        default: "."
+      health-url:
+        description: The address that must name the new version from outside once the host has deployed it, such as https://gpool.zigordev.com/health. Without it the run ends with the host's answer.
+        type: string
+        default: ""
+    secrets:
+      AWS_ACCOUNT_ID:
+        description: The number of the AWS account, which the address of the role holds.
+        required: true
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-26.04
+    timeout-minutes: 40
+    environment: production
+    concurrency:
+      group: deploy-${{ inputs.target }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+      attestations: read
+    defaults:
+      run:
+        shell: bash
+    env:
+      TARGET: ${{ inputs.target }}
+      COMPOSE_DIR: ${{ inputs.compose-dir }}
+      HEALTH_URL: ${{ inputs.health-url }}
+      COMMIT: ${{ github.sha }}
+    steps:
+      - name: Check what this run deploys
+        run: |
+          if [[ ! "$TARGET" =~ ^[a-z][a-z0-9-]*$ ]]; then
+            echo "::error::The target is a name of lowercase letters, digits and dashes, such as gpool or platform."
+            exit 1
+          fi
+          if [[ ! "$COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The commit is not a full SHA of 40 characters."
+            exit 1
+          fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Only main deploys, and this run is on $GITHUB_REF."
+            exit 1
+          fi
+          if [[ ! "$COMPOSE_DIR" =~ ^[A-Za-z0-9._/-]+$ || "$COMPOSE_DIR" == /* || "/$COMPOSE_DIR/" == */../* ]]; then
+            echo "::error::compose-dir is a folder inside the repo, such as . or stack."
+            exit 1
+          fi
+          if [ -n "$HEALTH_URL" ] && [[ ! "$HEALTH_URL" =~ ^https://[^[:space:]]+$ ]]; then
+            echo "::error::health-url is an https address, such as https://gpool.zigordev.com/health."
+            exit 1
+          fi
+          echo "This run deploys $COMMIT of $GITHUB_REPOSITORY to the target $TARGET."
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Find this commit's images, and verify how each one was built
+        id: images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          listed="$(cd "$COMPOSE_DIR" && VERSION="$COMMIT" docker compose --file compose.yaml --file compose.production.yaml config --images)"
+          own="$(printf '%s\n' "$listed" | grep '^ghcr\.io/zigordev/' | sort -u || true)"
+          images=""
+          for reference in $own; do
+            repository="${reference%:*}"
+            if [ "$reference" != "$repository:$COMMIT" ]; then
+              echo "::error::The compose files run $reference, which is not tagged with VERSION. Write it as $repository:\${VERSION:-local}."
+              exit 1
+            fi
+            if ! inspected="$(docker buildx imagetools inspect "$reference" --format '{{json .Manifest}}' 2>&1)"; then
+              printf '%s\n' "$inspected"
+              echo "::error::GHCR shows no image $reference to a visitor who is not signed in, and the host pulls without signing in. Either the publish job did not push it, or its package is private: the owner makes a new package public once, in its settings."
+              exit 1
+            fi
+            digest="$(printf '%s' "$inspected" | jq -r '.digest // empty')"
+            if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::GHCR named no digest for $reference."
+              exit 1
+            fi
+            if ! verified="$(gh attestation verify "oci://$repository@$digest" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow zigordev/toolkit/.github/workflows/publish.yml \
+              --source-ref refs/heads/main \
+              --source-digest "$COMMIT" \
+              --deny-self-hosted-runners 2>&1)"; then
+              printf '%s\n' "$verified"
+              echo "::error::$repository@$digest has no build record from $GITHUB_REPOSITORY at $COMMIT on main, signed by toolkit's publish workflow, so it is not deployed."
+              exit 1
+            fi
+            echo "Verified $repository@$digest: toolkit's publish workflow built it from $GITHUB_REPOSITORY at $COMMIT."
+            images="${images:+$images }$repository@$digest"
+          done
+          if [ -z "$images" ]; then
+            echo "The target runs no image of ghcr.io/zigordev/, so there is no build record to verify."
+          fi
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+
+      - name: Sign in to AWS with the target's role
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/platform-deploy-${{ inputs.target }}
+          role-session-name: deploy-${{ inputs.target }}-${{ github.run_id }}
+          aws-region: eu-west-1
+          mask-aws-account-id: true
+
+      - name: Deploy on the host, check from outside, and roll back on a wrong answer
+        env:
+          IMAGES: ${{ steps.images.outputs.images }}
+        run: |
+          region=eu-west-1
+          token="$(openssl rand -hex 16)"
+          line=""
+
+          send() {
+            local action="$1" images="$2" parameters command instance status problem output deadline
+            parameters="$(jq -cn --arg action "$action" --arg commit "$COMMIT" --arg images "$images" '{action: [$action], commit: [$commit], images: [$images]}')"
+            command="$(aws ssm send-command \
+              --region "$region" \
+              --document-name "platform-deploy-$TARGET" \
+              --targets Key=tag:Name,Values=platform-host \
+              --parameters "$parameters" \
+              --comment "$GITHUB_REPOSITORY run $GITHUB_RUN_ID" \
+              --query Command.CommandId \
+              --output text)"
+            echo "Sent $action of $COMMIT to the host, as the command $command."
+            deadline=$(( $(date +%s) + 120 ))
+            instance=None
+            while [ -z "$instance" ] || [ "$instance" = None ]; do
+              if [ "$(date +%s)" -ge "$deadline" ]; then
+                echo "::error::No host took the command $command within 2 minutes. The host is the running instance tagged Name=platform-host."
+                return 1
+              fi
+              sleep 2
+              instance="$(aws ssm list-command-invocations --region "$region" --command-id "$command" --query 'CommandInvocations[0].InstanceId' --output text)"
+            done
+            deadline=$(( $(date +%s) + 960 ))
+            while :; do
+              if status="$(aws ssm get-command-invocation --region "$region" --command-id "$command" --instance-id "$instance" --query Status --output text 2>"$RUNNER_TEMP/invocation.err")"; then
+                case "$status" in
+                  Success | Failed | Cancelled | TimedOut) break ;;
+                esac
+              else
+                problem="$(cat "$RUNNER_TEMP/invocation.err")"
+                if [[ "$problem" != *InvocationDoesNotExist* ]]; then
+                  printf '%s\n' "$problem"
+                  echo "::error::Systems Manager did not say how the command $command goes."
+                  return 1
+                fi
+              fi
+              if [ "$(date +%s)" -ge "$deadline" ]; then
+                echo "::error::The command $command did not end within 16 minutes."
+                return 1
+              fi
+              sleep 5
+            done
+            output="$(aws ssm get-command-invocation --region "$region" --command-id "$command" --instance-id "$instance" --query StandardOutputContent --output text)"
+            echo "::group::What the host wrote for the command $command, which ended as $status"
+            echo "::stop-commands::$token"
+            printf '%s\n' "$output"
+            echo "::$token::"
+            echo "::endgroup::"
+            line="$(printf '%s\n' "$output" | grep '^platform-deploy: ' | tail -n 1 || true)"
+          }
+
+          field() {
+            local pair
+            for pair in $line; do
+              case "$pair" in
+                "$1"=*)
+                  printf '%s' "${pair#*=}"
+                  return 0
+                  ;;
+              esac
+            done
+          }
+
+          served() {
+            local deadline answer version
+            deadline=$(( $(date +%s) + 120 ))
+            while :; do
+              answer="$(curl --silent --show-error --fail --max-time 5 --header 'Cache-Control: no-cache' "$HEALTH_URL" 2>&1 || true)"
+              version="$(printf '%s' "$answer" | jq -r 'if type == "object" then .version // "" else "" end' 2>/dev/null || true)"
+              if [ "$version" = "$COMMIT" ]; then
+                return 0
+              fi
+              if [ "$(date +%s)" -ge "$deadline" ]; then
+                echo "The last answer of $HEALTH_URL was:"
+                echo "::stop-commands::$token"
+                printf '%s\n' "${answer:0:500}"
+                echo "::$token::"
+                return 1
+              fi
+              sleep 5
+            done
+          }
+
+          row() {
+            printf '| %s | %s |\n' "$1" "$2" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          {
+            echo "### Deploy to $TARGET"
+            echo ""
+            echo "| What | Answer |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+          row Target "\`$TARGET\`"
+          row Commit "\`$COMMIT\`"
+
+          send deploy "$IMAGES"
+          result="$(field result)"
+          if [ -n "$result" ] && [ "$(field target)" != "$TARGET" ]; then
+            echo "::error::The host answered for another target: $line"
+            exit 1
+          fi
+
+          case "$result" in
+            deployed)
+              if [ "$(field commit)" != "$COMMIT" ]; then
+                echo "::error::The host answered for another commit: $line"
+                exit 1
+              fi
+              previous="$(field previous)"
+              row Previous "\`$previous\`"
+              row "On the host" deployed
+              if [ -z "$HEALTH_URL" ]; then
+                echo "The host deployed $COMMIT, after $previous."
+                exit 0
+              fi
+              if served; then
+                row "From outside" "$HEALTH_URL names the commit"
+                echo "$HEALTH_URL names $COMMIT, so the deploy is done. The version before it was $previous."
+                exit 0
+              fi
+              row "From outside" "$HEALTH_URL did not name the commit within 120 seconds"
+              echo "::error::$HEALTH_URL did not name $COMMIT within 120 seconds, so the host rolls it back."
+              send rollback ""
+              if [ "$(field result)" = rolled-back ]; then
+                row Rollback "\`$(field commit)\` serves again"
+                echo "::error::The host rolled back: $(field commit) serves again, in place of $COMMIT."
+              else
+                row Rollback "did not happen: ${line:-no answer}"
+                echo "::error::The rollback did not happen, so $COMMIT may still serve. The host answered: ${line:-nothing}"
+              fi
+              exit 1
+              ;;
+            skipped)
+              row "On the host" "skipped, because \`$(field current)\` is newer and already runs"
+              echo "::notice::A newer commit, $(field current), already runs on $TARGET, so $COMMIT was not deployed."
+              ;;
+            failed)
+              restored="$(field restored)"
+              case "$restored" in
+                none) serving="nothing served before this first deploy, so nothing serves now" ;;
+                failed) serving="the version before it could not be brought back, so the product may be down" ;;
+                "") serving="the host did not say which version serves" ;;
+                *) serving="$restored serves again" ;;
+              esac
+              row "On the host" "failed at $(field reason): $serving"
+              echo "::error::The deploy of $COMMIT failed on the host at $(field reason), and $serving."
+              exit 1
+              ;;
+            refused)
+              row "On the host" "refused: $(field reason)"
+              echo "::error::The host refused the deploy of $COMMIT, and changed nothing: $(field reason)."
+              exit 1
+              ;;
+            rolled-back)
+              row "On the host" "rolled back"
+              echo "::error::The host answered the deploy with a rollback: $line"
+              exit 1
+              ;;
+            *)
+              row "On the host" "no result"
+              echo "::error::The host wrote no line that starts with platform-deploy:, so the result is unknown."
+              exit 1
+              ;;
+          esac

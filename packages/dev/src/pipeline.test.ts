@@ -7,6 +7,8 @@ function read(path: string): string {
 
 const workflow = read('../../../.github/workflows/check.yml');
 const release = read('../../../.github/workflows/release.yml');
+const publish = read('../../../.github/workflows/publish.yml');
+const deploy = read('../../../.github/workflows/deploy.yml');
 const caller = read('../../../.github/workflows/ci.yml');
 const template = JSON.parse(read('../../../template/package.json')) as {
   readonly scripts: Readonly<Record<string, string>>;
@@ -23,17 +25,53 @@ function jobs(text: string): string[] {
   return [...body.matchAll(/^ {2}([\w-]+):$/gm)].map((match) => match[1] ?? '');
 }
 
+function permissions(block: string): string[] {
+  const listed = /^ {4}permissions:\n((?: {6}.+\n)+)/m.exec(block)?.[1] ?? '';
+  return listed
+    .trim()
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+}
+
+function scripts(text: string): string[] {
+  const lines = text.split('\n');
+  return lines.flatMap((line, index) => {
+    const found = /^( +)(?:- )?run: (.*)$/.exec(line);
+    if (found === null) {
+      return [];
+    }
+    if (found[2] !== '|') {
+      return [found[2] ?? ''];
+    }
+    const indent = found[1]?.length ?? 0;
+    const end = lines.findIndex(
+      (next, after) => after > index && next.trim() !== '' && next.search(/\S/) <= indent
+    );
+    return [lines.slice(index + 1, end === -1 ? undefined : end).join('\n')];
+  });
+}
+
 function setting(name: string): string | undefined {
   return new RegExp(`^ +${name}: (.+)$`, 'm').exec(workflow)?.[1];
 }
 
 describe('the machines of the pipeline', () => {
   const ubuntu = 'ubuntu-26.04';
-  const files = { 'check.yml': workflow, 'release.yml': release, 'ci.yml': caller };
+  const files = {
+    'check.yml': workflow,
+    'release.yml': release,
+    'publish.yml': publish,
+    'deploy.yml': deploy,
+    'ci.yml': caller,
+  };
+  const arm = new Set(['contract', 'image']);
 
-  it('reads every job of the three workflows', () => {
+  it('reads every job of the five workflows', () => {
     expect(jobs(workflow)).toEqual(['quality', 'contract', 'title', 'dependencies', 'scan']);
     expect(jobs(release)).toEqual(['version', 'pack', 'publish']);
+    expect(jobs(publish)).toEqual(['plan', 'image']);
+    expect(jobs(deploy)).toEqual(['deploy']);
     expect(jobs(caller)).toEqual(['pipeline', 'check', 'release']);
   });
 
@@ -43,7 +81,7 @@ describe('the machines of the pipeline', () => {
         const block = job(text, name);
         const label = /^ {4}runs-on: (.+)$/m.exec(block)?.[1];
         const calls = /^ {4}uses: \S*\.github\/workflows\/[\w-]+\.yml$/m.test(block);
-        const named = name === 'contract' ? `${ubuntu}-arm` : ubuntu;
+        const named = arm.has(name) ? `${ubuntu}-arm` : ubuntu;
         const right = label === undefined ? calls : label === named;
         return right ? [] : [`${file}: the job ${name} runs on ${label ?? 'no named machine'}`];
       })
@@ -56,6 +94,109 @@ describe('the machines of the pipeline', () => {
     for (const text of Object.values(files)) {
       expect(text).not.toMatch(/runs-on: \S*latest/);
     }
+  });
+
+  it('hand every value of an expression to a script through env, never inside the script', () => {
+    const inline = Object.entries(files).flatMap(([file, text]) =>
+      scripts(text)
+        .filter((script) => script.includes('${{'))
+        .map((script) => `${file}: ${script.trim().split('\n')[0]}`)
+    );
+
+    expect(scripts(deploy).length).toBeGreaterThan(2);
+    expect(inline).toEqual([]);
+  });
+});
+
+describe('the publish workflow', () => {
+  it('is called with the folder of a product, the repo itself by default', () => {
+    expect(publish).toMatch(
+      /^ {2}workflow_call:\n {4}inputs:\n {6}product-folder:\n {8}description: .+\n {8}type: string\n {8}default: "\."\n/m
+    );
+  });
+
+  it('builds each app in a job of its own, on an arm64 machine', () => {
+    expect(job(publish, 'image')).toContain('    runs-on: ubuntu-26.04-arm\n');
+    expect(job(publish, 'image')).toContain(
+      `        include: \${{ fromJSON(needs.plan.outputs.apps) }}\n`
+    );
+  });
+
+  it('lets the plan only read, and only the image job push and sign', () => {
+    expect(permissions(job(publish, 'plan'))).toEqual(['contents: read']);
+    expect(permissions(job(publish, 'image'))).toEqual([
+      'contents: read',
+      'packages: write',
+      'id-token: write',
+      'attestations: write',
+    ]);
+  });
+
+  it("attests each image into the registry with GitHub's own action, with no storage record, which only an organisation can keep", () => {
+    expect(job(publish, 'image')).toMatch(
+      / {8}uses: actions\/attest@[0-9a-f]{40} # v\d+\.\d+\.\d+\n {8}with:\n {10}subject-name: \$\{\{ steps\.build\.outputs\.image \}\}\n {10}subject-digest: \$\{\{ steps\.build\.outputs\.digest \}\}\n {10}push-to-registry: true\n {10}create-storage-record: false\n/
+    );
+  });
+
+  it('signs out of GHCR at the end, also after a failure', () => {
+    expect(job(publish, 'image')).toMatch(
+      / {6}- name: Sign out of GHCR\n {8}if: always\(\)\n {8}run: docker logout ghcr\.io\n$/
+    );
+  });
+
+  it('installs no dependency in the job that can push and sign', () => {
+    expect(job(publish, 'image')).not.toMatch(/pnpm|npm |mise/);
+  });
+});
+
+describe('the deploy workflow', () => {
+  it('takes a target, a folder and an address to ask, and the number of the AWS account as a secret', () => {
+    expect(deploy).toMatch(
+      / {6}target:\n {8}description: .+\n {8}type: string\n {8}required: true\n/
+    );
+    expect(deploy).toMatch(
+      / {6}compose-dir:\n {8}description: .+\n {8}type: string\n {8}default: "\."\n/
+    );
+    expect(deploy).toMatch(
+      / {6}health-url:\n {8}description: .+\n {8}type: string\n {8}default: ""\n/
+    );
+    expect(deploy).toMatch(
+      / {4}secrets:\n {6}AWS_ACCOUNT_ID:\n {8}description: .+\n {8}required: true\n/
+    );
+  });
+
+  it('runs in the environment production, one deploy per target at a time, and never cancels one', () => {
+    const block = job(deploy, 'deploy');
+
+    expect(block).toContain('    environment: production\n');
+    expect(block).toContain(
+      `    concurrency:\n      group: deploy-\${{ inputs.target }}\n      cancel-in-progress: false\n`
+    );
+  });
+
+  it('may read the repo and its build records, and ask for the proof that AWS trusts, and nothing more', () => {
+    expect(permissions(job(deploy, 'deploy'))).toEqual([
+      'contents: read',
+      'id-token: write',
+      'attestations: read',
+    ]);
+  });
+
+  it("signs in with the target's own role, whose address takes the account's number from the secret, and hides that number", () => {
+    expect(deploy).toMatch(
+      / {8}uses: aws-actions\/configure-aws-credentials@[0-9a-f]{40} # v\d+\.\d+\.\d+\n {8}with:\n {10}role-to-assume: arn:aws:iam::\$\{\{ secrets\.AWS_ACCOUNT_ID \}\}:role\/platform-deploy-\$\{\{ inputs\.target \}\}\n {10}role-session-name: .+\n {10}aws-region: eu-west-1\n {10}mask-aws-account-id: true\n/
+    );
+  });
+
+  it('verifies every build record before it signs in to AWS', () => {
+    expect(deploy.indexOf('gh attestation verify')).toBeGreaterThan(0);
+    expect(deploy.indexOf('gh attestation verify')).toBeLessThan(
+      deploy.indexOf('configure-aws-credentials')
+    );
+  });
+
+  it('installs no dependency in the job that can deploy', () => {
+    expect(job(deploy, 'deploy')).not.toMatch(/pnpm|npm |mise/);
   });
 });
 
