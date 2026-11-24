@@ -45,3 +45,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0035](0035-labels-tell-the-platform-what-a-service-is.md)                     | Labels tell the platform what a service is                             | 2026-11-23 | accepted           |
 | [0037](0037-a-migration-that-deletes-data-waits-for-the-owners-label.md)       | A migration that deletes data waits for the owner's label              | 2026-11-23 | accepted           |
 | [0036](0036-the-client-generator-runs-on-its-own-typescript-5.md)              | The client generator runs on its own TypeScript 5                      | 2026-11-23 | accepted           |
+| [0038](0038-images-of-others-are-pinned-by-their-digest.md)                    | Images of others are pinned by their digest                            | 2026-11-24 | accepted           |
