@@ -17,7 +17,7 @@ catalog:
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitest/coverage-v8": 5.1.1
-  "@zigordev/stack": 1.1.0
+  "@zigordev/stack": 1.2.1
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4
   fastify: 5.12.8
