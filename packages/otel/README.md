@@ -69,7 +69,7 @@ The start reads the standard variables of OpenTelemetry:
 | Variable                      | Holds                                                                                           |
 | ----------------------------- | ----------------------------------------------------------------------------------------------- |
 | `OTEL_SERVICE_NAME`           | The app's one name, `<product>-<part>`, such as `gpool-api`                                     |
-| `OTEL_SERVICE_VERSION`        | The version that is running. It becomes `service.version`                                       |
+| `OTEL_SERVICE_VERSION`        | The version that is running. It becomes `service.version`, and `version` in the health answer   |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | The agent's address. `http://localhost:4318` when it is not set                                 |
 | `OTEL_RESOURCE_ATTRIBUTES`    | More facts about the service, such as `deployment.environment.name=production`                  |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` sends JSON, which a person can read. Anything else sends protobuf, a compact format |
@@ -172,10 +172,13 @@ Two things can still be plain text:
 
 A part reports `up`, `down` or `unknown`. `unknown` means nothing has tried it yet, and it does not count as failing. A check that throws, or that takes longer than 800 ms, counts as `down`, so the route answers in under a second.
 
+The answer also names the version that runs, from `OTEL_SERVICE_VERSION`: in production the full commit, the same as the image's tag. The deploy asks the product's `/health` from outside after each deploy, and rolls back when the version is not the one it sent. Without the variable the version is `unknown`.
+
 ```json
 {
   "status": "ok",
   "service": "gpool-api",
+  "version": "1f3a9c2e8b7d6a5f4e3d2c1b0a9f8e7d6c5b4a39",
   "components": { "db": { "status": "up" } }
 }
 ```

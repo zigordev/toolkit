@@ -461,7 +461,7 @@ await shutdownTelemetry();
 
     expect(health).toEqual({
       status: 200,
-      body: { status: 'ok', service: 'toolkit-e2e', components: {} },
+      body: { status: 'ok', service: 'toolkit-e2e', version: '9.9.9', components: {} },
     });
     expect(spans().map(pathOf)).not.toContain('/health');
     expect(exports.map((entry) => entry.body.toString()).join('\n')).not.toContain('/health');

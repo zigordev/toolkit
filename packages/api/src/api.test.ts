@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createLogger } from '@zigordev/otel';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import * as z from 'zod';
 import { type Api, type ApiOptions, createApi } from './api.ts';
 import { bearerToken, type Principal, principalOf, requireScope } from './auth.ts';
@@ -618,12 +618,21 @@ describe('the OpenAPI pages', () => {
 });
 
 describe('the health route', () => {
-  it('answers 200 ok at the root, without sign-in, and writes no log line', async () => {
+  it('answers 200 ok at the root, with its version, without sign-in, and writes no log line', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
     lines.length = 0;
     const response = await app.inject({ method: 'GET', url: '/health' });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: 'ok', service: 'things-api', components: {} });
+    expect(response.json()).toEqual({
+      status: 'ok',
+      service: 'things-api',
+      version: '1f3a9c2',
+      components: {},
+    });
     expect(lines).toEqual([]);
   });
 

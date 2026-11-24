@@ -3,7 +3,7 @@ import { useApp } from '@zigordev/test/app';
 import { useTestDatabase } from '@zigordev/test/postgres';
 import { and, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createApi } from './api.ts';
 import { addDatabase, afterCursor, keysetOrder } from './database.ts';
 import { decodeCursor, pageOf } from './pagination.ts';
@@ -43,12 +43,17 @@ describe('addDatabase', () => {
   });
 
   it('adds the database to the health route as a required part', async () => {
+    vi.stubEnv('OTEL_SERVICE_VERSION', '1f3a9c2');
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+    });
     const response = await server.app.inject({ method: 'GET', url: '/health' });
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       status: 'ok',
       service: 'things-api',
+      version: '1f3a9c2',
       components: { db: { status: 'up' } },
     });
   });
