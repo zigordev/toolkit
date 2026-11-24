@@ -15,7 +15,7 @@ concurrency:
 jobs:
   pipeline:
     name: Pipeline
-    uses: zigordev/toolkit/.github/workflows/check.yml@1fe362f49b1c6a5278e28f2bd960b311b9a5d466 # v1.18.0
+    uses: zigordev/toolkit/.github/workflows/check.yml@0bc71363d6078f30a24455779350093449c28673 # v1.19.0
     with:
       product-folder: .
     permissions:
@@ -41,7 +41,7 @@ jobs:
     name: Publish
     needs: [check]
     if: github.event_name == 'push'
-    uses: zigordev/toolkit/.github/workflows/publish.yml@1fe362f49b1c6a5278e28f2bd960b311b9a5d466 # v1.18.0
+    uses: zigordev/toolkit/.github/workflows/publish.yml@0bc71363d6078f30a24455779350093449c28673 # v1.19.0
     permissions:
       contents: read
       packages: write
@@ -52,7 +52,7 @@ jobs:
     name: Deploy
     needs: [publish]
     if: github.event_name == 'push'
-    uses: zigordev/toolkit/.github/workflows/deploy.yml@1fe362f49b1c6a5278e28f2bd960b311b9a5d466 # v1.18.0
+    uses: zigordev/toolkit/.github/workflows/deploy.yml@0bc71363d6078f30a24455779350093449c28673 # v1.19.0
     with:
       target: template
       health-url: https://template.zigordev.com/health
