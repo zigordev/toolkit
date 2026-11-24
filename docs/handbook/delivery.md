@@ -117,6 +117,39 @@ The host writes one line that starts with `platform-deploy:`. The last such line
 
 The role may send its own target's command to the host and read the result, and nothing else. It cannot read a secret, open a shell on the host, or touch another target.
 
+### What a product's compose files hold
+
+The host reads three files of the product from `main`: `compose.yaml`, `compose.production.yaml` and `.env.production.example`. They have to hold seven things, or the host refuses or fails the deploy. `zigordev contract` checks all of them on every pull request, as part of promise 7 of [the contract](the-platform.md), so a product learns it there and not on the host.
+
+| Rule                                                                                                                                                                                                                          | Why                                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compose.yaml` starts with `name: <product>`                                                                                                                                                                                  | It is the name of the Compose project on the host                                                                                                             |
+| Our images are `ghcr.io/zigordev/<product>-<part>:${VERSION:-local}`, beside `OTEL_SERVICE_VERSION: ${VERSION:-local}`                                                                                                        | The host sets `VERSION` to the commit, so the image and the telemetry name the same version                                                                   |
+| Every other image is pinned as `name:tag@sha256:<digest>`                                                                                                                                                                     | The host runs exactly the image that was checked. The owner chose this on 2026-11-24                                                                          |
+| Every long-running service has `restart: unless-stopped`, and a job `restart: "no"`                                                                                                                                           | The host restarts itself at night for its updates, and everything has to come back                                                                            |
+| A service that Traefik routes has no `container_name` and no `ports`                                                                                                                                                          | docker-rollout runs the new version beside the old one for a moment, and two containers cannot share a name or a port                                         |
+| Its health check fails while `/tmp/drain` exists, `/tmp` is in memory, and it has the label `docker-rollout.pre-stop-hook: "touch /tmp/drain && sleep <S>"`, where S is the check's interval times its retries plus 5 seconds | docker-rollout runs that hook in the old container. Its health check then fails, Traefik takes it out, and it stops only after that, so no request is cut off |
+| `.env.production.example` names every secret as `NAME=`, with no value, and the compose files use no other variable but `VERSION` and `DOCKER_SOCKET_GROUP`                                                                   | The host reads each name from Parameter Store under `/<product>/<NAME>`, and gives compose those values and no others                                         |
+
+`compose.production.yaml` also routes the product to `<product>.zigordev.com`, whose `/health` answers with `version`. The deploy asks that address from outside.
+
+The drain is easiest to see in the template's `compose.yaml`:
+
+```yaml
+tmpfs:
+  - /tmp:uid=1000,gid=1000,size=1m
+healthcheck:
+  test:
+    [CMD-SHELL, "test ! -e /tmp/drain && wget -q -T 4 -O /dev/null http://127.0.0.1:3000/health"]
+  interval: 10s
+  retries: 3
+labels:
+  traefik.enable: "true"
+  docker-rollout.pre-stop-hook: "touch /tmp/drain && sleep 35"
+```
+
+docker-rollout reads the label from the old container, so draining starts with the second deploy of a service.
+
 ## How to use it, with one worked example
 
 A product's caller runs four jobs: the pipeline and its gate, as [the pipeline](the-pipeline.md) shows, and then publish and deploy, on a push to `main` only. The three `uses` lines name the same commit of `toolkit`, with its version beside it:

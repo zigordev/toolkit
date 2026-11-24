@@ -20,7 +20,11 @@ interface Service {
   readonly labels?: Readonly<Record<string, string>>;
   readonly ports?: readonly unknown[];
   readonly networks?: Readonly<Record<string, unknown>>;
-  readonly healthcheck?: { readonly test?: readonly string[] };
+  readonly healthcheck?: {
+    readonly test?: readonly string[];
+    readonly interval?: string;
+    readonly retries?: number;
+  };
   readonly tmpfs?: readonly string[];
   readonly command?: readonly string[];
   readonly restart?: string;
@@ -205,9 +209,25 @@ describe.each(apps)('%s', (app) => {
     expect(service?.environment?.PORT).toBe('3000');
   });
 
-  it('has a health check that asks its health route', () => {
-    expect(service?.healthcheck?.test?.[0]).toBe('CMD');
-    expect(service?.healthcheck?.test?.at(-1)).toBe('http://127.0.0.1:3000/health');
+  it('has a health check that asks its health route, and fails while /tmp/drain exists', () => {
+    expect(service?.healthcheck?.test).toEqual([
+      'CMD-SHELL',
+      'test ! -e /tmp/drain && wget -q -T 4 -O /dev/null http://127.0.0.1:3000/health',
+    ]);
+  });
+
+  it('drains before it stops: the pre-stop hook waits until the health check has failed, plus 5 seconds', () => {
+    const interval = Number.parseInt(service?.healthcheck?.interval ?? '', 10);
+    const retries = service?.healthcheck?.retries ?? 0;
+
+    expect(service?.healthcheck?.interval).toBe('10s');
+    expect(service?.labels?.['docker-rollout.pre-stop-hook']).toBe(
+      `touch /tmp/drain && sleep ${interval * retries + 5}`
+    );
+  });
+
+  it('restarts unless it was stopped, because the host restarts itself at night', () => {
+    expect(service?.restart).toBe('unless-stopped');
   });
 
   it('has a memory limit and a CPU limit', () => {
@@ -221,11 +241,12 @@ describe.each(apps)('%s', (app) => {
     expect(service?.read_only).toBe(true);
   });
 
-  it('writes only to memory, and to no more of it than a size it names', () => {
+  it('writes only to memory, and to no more of it than a size it names: /tmp for the drain, and its own folders', () => {
     for (const mount of service?.tmpfs ?? []) {
-      expect(mount).toMatch(/^\/app\/[\w./-]+:uid=1000,gid=1000,size=\d+m$/);
+      expect(mount).toMatch(/^\/(?:tmp|app\/[\w./-]+):uid=1000,gid=1000,size=\d+m$/);
     }
-    expect(service?.tmpfs?.length ?? 0).toBe(app === 'template-web' ? 1 : 0);
+    expect(service?.tmpfs?.[0]).toBe('/tmp:uid=1000,gid=1000,size=1m');
+    expect(service?.tmpfs?.length ?? 0).toBe(app === 'template-web' ? 2 : 1);
   });
 
   it('can gain no privilege, holds no capability, and gets 30 seconds to stop', () => {
@@ -305,11 +326,15 @@ describe('template-api-migrate, the one-shot job', () => {
 describe('template-postgres, the store', () => {
   const store = everywhere.services['template-postgres'];
 
-  it('runs PostgreSQL 18, the same image as the API tests', async () => {
+  it('runs PostgreSQL 18, pinned by its digest, and the API tests run the same image', async () => {
     const { postgresImage } = await import('./apps/template-api/global-setup.ts');
 
-    expect(store?.image).toBe(postgresImage);
-    expect(store?.image).toMatch(/^postgres:18\.\d+-alpine\d+\.\d+$/);
+    expect(store?.image).toMatch(/^postgres:18\.\d+-alpine\d+\.\d+@sha256:[0-9a-f]{64}$/);
+    expect(postgresImage).toBe(store?.image);
+  });
+
+  it('restarts unless it was stopped, because the host restarts itself at night', () => {
+    expect(store?.restart).toBe('unless-stopped');
   });
 
   it('is found by the backup through its label, and keeps its data in a volume of its own', () => {

@@ -3,6 +3,8 @@ export interface App {
   readonly image: string;
   readonly port: string | undefined;
   readonly agent: string | undefined;
+  readonly version: string | undefined;
+  readonly routed: boolean;
 }
 
 export interface Job {
@@ -65,6 +67,8 @@ export function readProduct(config: string): Product {
       image: service.image ?? '',
       port: service.environment?.PORT ?? undefined,
       agent: service.environment?.OTEL_EXPORTER_OTLP_ENDPOINT ?? undefined,
+      version: service.environment?.OTEL_SERVICE_VERSION ?? undefined,
+      routed: service.labels?.['traefik.enable'] === 'true',
     }));
   return {
     name: model.name ?? '',

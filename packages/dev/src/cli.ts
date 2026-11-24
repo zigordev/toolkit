@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
 import { contract } from './contract/run.ts';
 import { repoFiles } from './files.ts';
@@ -229,7 +229,13 @@ export function main(argv: readonly string[], io: Io): number {
     }
   }
   if (command === 'contract' && rest.length === 0) {
-    return contract(io);
+    return contract({
+      ...io,
+      read: (file) => {
+        const path = resolve(io.cwd, file);
+        return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+      },
+    });
   }
   io.write(usage(rules));
   return command === undefined || command === 'help' || command === '--help' ? 0 : 2;

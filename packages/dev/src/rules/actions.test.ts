@@ -59,11 +59,24 @@ describe('the actions rule', () => {
     ]);
   });
 
+  it("reads the workflows that a product copies from the template, in the template's own folder", () => {
+    expect(
+      run({
+        'template/.github/workflows/ci.yml':
+          '    uses: zigordev/toolkit/.github/workflows/check.yml@main\n',
+      })
+    ).toEqual([
+      'template/.github/workflows/ci.yml:1 the action "zigordev/toolkit/.github/workflows/check.yml@main" is not pinned to a commit',
+    ]);
+  });
+
   it('reads only workflow and action files', () => {
     expect(
       run({
         'compose.yaml': '      - uses: actions/checkout@v7\n',
         '.github/workflows/notes.md': '      - uses: actions/checkout@v7\n',
+        '.github/workflows/old/ci.yml': '      - uses: actions/checkout@v7\n',
+        'docs/.github-workflows/ci.yml': '      - uses: actions/checkout@v7\n',
       })
     ).toEqual([]);
   });

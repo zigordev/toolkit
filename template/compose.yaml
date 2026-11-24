@@ -3,6 +3,7 @@ name: template
 services:
   template-api:
     image: ghcr.io/zigordev/template-api:${VERSION:-local}
+    restart: unless-stopped
     user: "1000:1000"
     init: true
     read_only: true
@@ -21,8 +22,14 @@ services:
     depends_on:
       template-api-migrate:
         condition: service_completed_successfully
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,size=1m
     healthcheck:
-      test: [CMD, wget, -q, -T, "4", -O, /dev/null, "http://127.0.0.1:3000/health"]
+      test:
+        [
+          CMD-SHELL,
+          "test ! -e /tmp/drain && wget -q -T 4 -O /dev/null http://127.0.0.1:3000/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -31,6 +38,7 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.services.template-api.loadbalancer.server.port: "3000"
+      docker-rollout.pre-stop-hook: "touch /tmp/drain && sleep 35"
     networks: [zigordev, template]
 
   template-api-migrate:
@@ -57,7 +65,8 @@ services:
     networks: [zigordev, template]
 
   template-postgres:
-    image: postgres:18.7-alpine3.24
+    image: postgres:18.7-alpine3.24@sha256:0115267ab5a509022df9319c77be365cef335adb71556c75f60f5360ee247e71
+    restart: unless-stopped
     init: true
     security_opt: [no-new-privileges:true]
     stop_grace_period: 30s
@@ -80,6 +89,7 @@ services:
 
   template-web:
     image: ghcr.io/zigordev/template-web:${VERSION:-local}
+    restart: unless-stopped
     user: "1000:1000"
     init: true
     read_only: true
@@ -95,9 +105,14 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       API_URL: http://template-api:3000
     tmpfs:
+      - /tmp:uid=1000,gid=1000,size=1m
       - /app/.next/cache:uid=1000,gid=1000,size=64m
     healthcheck:
-      test: [CMD, wget, -q, -T, "4", -O, /dev/null, "http://127.0.0.1:3000/health"]
+      test:
+        [
+          CMD-SHELL,
+          "test ! -e /tmp/drain && wget -q -T 4 -O /dev/null http://127.0.0.1:3000/health",
+        ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -106,6 +121,7 @@ services:
     labels:
       traefik.enable: "true"
       traefik.http.services.template-web.loadbalancer.server.port: "3000"
+      docker-rollout.pre-stop-hook: "touch /tmp/drain && sleep 35"
     networks: [zigordev]
 
 networks:

@@ -188,7 +188,7 @@ labels:
 | Stop the API's container, and load the page again                       | The page still renders, and says that the API does not answer                     |
 | Open `http://nothing.localhost`                                         | The ingress answers 404, because no container asked for that address              |
 | In Grafana's Explore, pick Loki and run `{service_name="template-api"}` | The API's log lines show, each one as JSON                                        |
-| Run `pnpm check:contract` in the folder `template`                      | Both apps keep promises 1 to 6                                                    |
+| Run `pnpm check:contract` in the folder `template`                      | Both apps keep promises 1 to 7, and the compose files keep promise 7              |
 | Run `pnpm local:down` in the folder `template`                          | The two containers are gone, and `http://grafana.localhost` still opens           |
 
 | What you see                                                          | What it means                                                                                                                  | What to do                                                                                                 |

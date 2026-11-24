@@ -10,6 +10,7 @@ const release = read('../../../.github/workflows/release.yml');
 const publish = read('../../../.github/workflows/publish.yml');
 const deploy = read('../../../.github/workflows/deploy.yml');
 const caller = read('../../../.github/workflows/ci.yml');
+const product = read('../../../template/.github/workflows/ci.yml');
 const template = JSON.parse(read('../../../template/package.json')) as {
   readonly scripts: Readonly<Record<string, string>>;
 };
@@ -64,6 +65,7 @@ describe('the machines of the pipeline', () => {
     'publish.yml': publish,
     'deploy.yml': deploy,
     'ci.yml': caller,
+    'template/.github/workflows/ci.yml': product,
   };
   const arm = new Set(['contract', 'image']);
 
@@ -73,6 +75,7 @@ describe('the machines of the pipeline', () => {
     expect(jobs(publish)).toEqual(['plan', 'image']);
     expect(jobs(deploy)).toEqual(['deploy']);
     expect(jobs(caller)).toEqual(['pipeline', 'check', 'release']);
+    expect(jobs(product)).toEqual(['pipeline', 'check', 'publish', 'deploy']);
   });
 
   it('name Ubuntu 26.04 exactly on every job, or call a workflow of this repo that does', () => {
@@ -80,7 +83,8 @@ describe('the machines of the pipeline', () => {
       jobs(text).flatMap((name) => {
         const block = job(text, name);
         const label = /^ {4}runs-on: (.+)$/m.exec(block)?.[1];
-        const calls = /^ {4}uses: \S*\.github\/workflows\/[\w-]+\.yml$/m.test(block);
+        const calls =
+          /^ {4}uses: \S*\.github\/workflows\/[\w-]+\.yml(?:@[0-9a-f]{40} # v\S+)?$/m.test(block);
         const named = arm.has(name) ? `${ubuntu}-arm` : ubuntu;
         const right = label === undefined ? calls : label === named;
         return right ? [] : [`${file}: the job ${name} runs on ${label ?? 'no named machine'}`];
@@ -105,6 +109,53 @@ describe('the machines of the pipeline', () => {
 
     expect(scripts(deploy).length).toBeGreaterThan(2);
     expect(inline).toEqual([]);
+  });
+});
+
+describe("the template's caller, which every product copies", () => {
+  const pins = [
+    ...product.matchAll(
+      /uses: zigordev\/toolkit\/\.github\/workflows\/([\w-]+\.yml)@([0-9a-f]{40}) # (v\d+\.\d+\.\d+)\n/g
+    ),
+  ];
+
+  function asked(text: string): string[] {
+    return [...new Set(jobs(text).flatMap((name) => permissions(job(text, name))))].sort();
+  }
+
+  it('calls the three workflows of one commit of toolkit, with its version beside it', () => {
+    expect(pins.map((pin) => pin[1])).toEqual(['check.yml', 'publish.yml', 'deploy.yml']);
+    expect(new Set(pins.map((pin) => `${pin[2]} ${pin[3]}`)).size).toBe(1);
+  });
+
+  it('runs the pipeline on the product in the folder of the repo, behind the same gate as here', () => {
+    expect(job(product, 'pipeline')).toContain('    with:\n      product-folder: .\n');
+    expect(job(product, 'check')).toBe(job(caller, 'check'));
+  });
+
+  it('publishes and deploys on a push to main only, after the gate and in that order', () => {
+    expect(job(product, 'publish')).toContain(
+      "    needs: [check]\n    if: github.event_name == 'push'\n"
+    );
+    expect(job(product, 'deploy')).toContain(
+      "    needs: [publish]\n    if: github.event_name == 'push'\n"
+    );
+  });
+
+  it('grants each workflow it calls every permission that the jobs of that workflow ask for, and no more', () => {
+    expect(permissions(job(product, 'pipeline')).sort()).toEqual(asked(workflow));
+    expect(permissions(job(product, 'publish')).sort()).toEqual(asked(publish));
+    expect(permissions(job(product, 'deploy')).sort()).toEqual(asked(deploy));
+  });
+
+  it("deploys the target named after the product, asks the product's own address, and hands on the one secret", () => {
+    expect(job(product, 'deploy')).toContain(
+      '    with:\n      target: template\n      health-url: https://template.zigordev.com/health\n'
+    );
+    expect(job(product, 'deploy')).toContain(
+      `    secrets:\n      AWS_ACCOUNT_ID: \${{ secrets.AWS_ACCOUNT_ID }}\n`
+    );
+    expect(product).not.toContain('secrets: inherit');
   });
 });
 
