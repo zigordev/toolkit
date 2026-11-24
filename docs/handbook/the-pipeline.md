@@ -6,14 +6,14 @@ The pipeline is the set of checks that every change passes on GitHub: on its pul
 
 It is written once, in `toolkit`, as the file `.github/workflows/check.yml`. GitHub calls such a file a reusable workflow, because the workflow of another repo can call it. Every repo's own workflow is a short caller, and holds no check of its own.
 
-| Job          | What it checks                                                                                      | Runs on                                                          |
-| ------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Quality      | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage               | Every pull request and every merge                               |
-| Title        | The pull request's title is a Conventional Commit                                                   | Pull requests                                                    |
-| Dependencies | No package the pull request adds has a known flaw                                                   | Pull requests                                                    |
-| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                              | Every pull request and every merge                               |
-| Contract     | Each app of a product keeps promises 1 to 6 of [the contract](the-platform.md), on its built images | Every pull request and every merge, in a repo that has a product |
-| `check`      | Every job above passed. It is the gate, and the one check that `main` requires                      | Every pull request and every merge                               |
+| Job          | What it checks                                                                                                                                          | Runs on                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Quality      | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage                                                                   | Every pull request and every merge                               |
+| Title        | The pull request's title is a Conventional Commit                                                                                                       | Pull requests                                                    |
+| Dependencies | No package the pull request adds has a known flaw                                                                                                       | Pull requests                                                    |
+| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                                                                                  | Every pull request and every merge                               |
+| Contract     | Each app of a product keeps promises 1 to 7 of [the contract](the-platform.md), on its built images, and its compose files keep the rules of the deploy | Every pull request and every merge, in a repo that has a product |
+| `check`      | Every job above passed. It is the gate, and the one check that `main` requires                                                                          | Every pull request and every merge                               |
 
 The gate sits in the caller, not in `check.yml`. It is the same few lines in every repo.
 

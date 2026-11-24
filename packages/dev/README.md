@@ -77,35 +77,54 @@ A repo's own `release.config.js` passes these settings on in one line. semantic-
 
 ### The contract command
 
-Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves.
+Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves. It also checks promise 7, that the product describes itself in its compose files, as far as the deploy depends on it: the rules that [Delivery](../../docs/handbook/delivery.md) lists, and that each app the ingress routes drains before it stops.
 
 It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already. A service with the label `com.zigordev.job`, such as a migration job on the app's own image, is a job and not an app: it runs once and ends. [Record 0035](../../docs/adr/0035-labels-tell-the-platform-what-a-service-is.md) sets the label.
 
 The command starts the product once more, under the name `<product>-contract` and on a network of its own. Nothing of it touches a product that already runs on the laptop, or the shared services. In place of the telemetry agent it starts a stand-in: one small script in a Node.js container, under the name and the port that `compose.yaml` gives the apps. The stand-in records what the apps send. Every request to an app is also made from there, so no port is published.
 
-| #   | The promise                                          | What the command does to see it                                                                                                                                                          |
-| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | An arm64 image that runs as a non-root user          | It reads the architecture of the image and the user of the running container                                                                                                             |
-| 2   | Settings from the environment, checked at start      | It starts the image with no settings and no network. The app must stop within 15 seconds, with a code that is not 0                                                                      |
-| 3   | Listens on `PORT`, and answers `GET /health`         | It asks `/health` on the port that `compose.yaml` names. Then it starts a second copy with another `PORT`, and asks there. Both must answer 200 with a status of `ok` or `degraded`      |
-| 4   | JSON lines on standard output, with no personal data | It visits the app twice as a visitor would, with an address, a user agent, an email and a code. Every line the container printed must then be a JSON object, with none of the four in it |
-| 5   | Traces and metrics over OTLP, under its own name     | Both must reach the stand-in within 20 seconds, under the name of the compose service, and with none of the four in them                                                                 |
-| 6   | A clean stop within 30 seconds of a SIGTERM          | It begins a request to `/health` and holds it half sent. Then it stops the container. The app must still answer that request, and end by itself with code 0 or 143                       |
+| #   | The promise                                           | What the command does to see it                                                                                                                                                                                                                                                 |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | An arm64 image that runs as a non-root user           | It reads the architecture of the image and the user of the running container                                                                                                                                                                                                    |
+| 2   | Settings from the environment, checked at start       | It starts the image with no settings and no network. The app must stop within 15 seconds, with a code that is not 0                                                                                                                                                             |
+| 3   | Listens on `PORT`, and answers `GET /health`          | It asks `/health` on the port that `compose.yaml` names. Then it starts a second copy with another `PORT`, and asks there. Both must answer 200 with a status of `ok` or `degraded`. The first answer must name the app's `OTEL_SERVICE_VERSION` as `version`                   |
+| 4   | JSON lines on standard output, with no personal data  | It visits the app twice as a visitor would, with an address, a user agent, an email and a code. Every line the container printed must then be a JSON object, with none of the four in it                                                                                        |
+| 5   | Traces and metrics over OTLP, under its own name      | Both must reach the stand-in within 20 seconds, under the name of the compose service, and with none of the four in them                                                                                                                                                        |
+| 6   | A clean stop within 30 seconds of a SIGTERM           | It begins a request to `/health` and holds it half sent. Then it stops the container. The app must still answer that request, and end by itself with code 0 or 143                                                                                                              |
+| 7   | It drains before it stops, when the ingress routes it | It runs the app's own health check, writes `/tmp/drain` in the container as the user of the container, runs the check again, removes the file and runs it once more. The check must pass, fail, and pass again. That is what docker-rollout does to the old version on a deploy |
 
 For promise 4, nothing may be on the error output either. For the run, the command sets `OTEL_METRIC_EXPORT_INTERVAL` to one second and `OTEL_BSP_SCHEDULE_DELAY` to half a second, so that the telemetry arrives while it waits. Both are standard variables of OpenTelemetry. Code 143 is how a process says that a SIGTERM ended it, and Next.js ends that way after it has finished its requests.
 
-It prints one line for each promise of each app, with what it saw:
+The rules of the compose files are read without starting anything, from `compose.yaml` and `compose.production.yaml` together, as the host reads them, with their variables left as written. `.env.production.example` is read beside them.
+
+| The rule of promise 7                      | What the command reads                                                                                                                                                   |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The product has one name                   | A line `name: <product>` at the top of `compose.yaml`                                                                                                                    |
+| Our images follow `VERSION`                | Every image of `ghcr.io/zigordev/` is `<product>-<part>:${VERSION:-local}`, and every service that runs one has `OTEL_SERVICE_VERSION: ${VERSION:-local}`                |
+| Every other image is pinned by its digest  | It is written `name:tag@sha256:<digest>`                                                                                                                                 |
+| Services restart after the night's restart | Every long-running service has `restart: unless-stopped`, and a job has `restart: "no"`                                                                                  |
+| A routed service can drain                 | No `container_name` and no `ports`. Its health check names `/tmp/drain`, `/tmp` is in memory, and the label `docker-rollout.pre-stop-hook` waits long enough             |
+| The secrets are named, and only named      | Each line of `.env.production.example` is `NAME=`, and every variable of the compose files is one of them, but `VERSION` and `DOCKER_SOCKET_GROUP`, which the host gives |
+| Production has its address                 | Every routed service has a router rule with ``Host(`<product>.zigordev.com`)`` in `compose.production.yaml`                                                              |
+
+It prints one line for each rule of the compose files, then one for each promise of each app, with what it saw:
 
 ```text
+the compose files
+  kept    7  compose.yaml names the product template, which is its project's name on the host
+  kept    7  every long-running service restarts unless stopped, and a job never does
 template-api
   kept    1  an arm64 image that runs as the user 1000:1000
   kept    2  without its settings it stops at once, with code 1
-  kept    3  it listens on the port in PORT, and answers GET /health with 200
+  kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local
   kept    4  6 lines, all JSON, with nothing a visitor sent
   kept    5  traces and metrics reached the agent under the name template-api
   kept    6  it stopped 1.3 s after a SIGTERM with code 0, and answered the request it had begun
-zigordev contract: 1 app keeps promises 1 to 6
+  kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone
+zigordev contract: 1 app keeps promises 1 to 7, and the compose files keep promise 7
 ```
+
+The example leaves out five of the seven lines of the compose files.
 
 A job keeps two promises of its own, and gets the same kind of lines under its name:
 
@@ -118,7 +137,7 @@ A job keeps two promises of its own, and gets the same kind of lines under its n
 template-api-migrate, a job
   kept    1  it ended with code 0 before template-api started
   kept    2  3 lines, all JSON
-zigordev contract: 2 apps keep promises 1 to 6, and 1 job keeps promises 1 and 2
+zigordev contract: 2 apps keep promises 1 to 7, the compose files keep promise 7, and 1 job keeps promises 1 and 2
 ```
 
 When a job fails, its app never starts, and the command says that the product did not start, with the last lines of Compose, which name the job.

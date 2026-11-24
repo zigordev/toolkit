@@ -10,7 +10,7 @@ const version = /^v?\d+\.\d+\.\d+\S*$/;
 function isWorkflow(path: string): boolean {
   const name = basename(path);
   return (
-    (path.startsWith('.github/workflows/') && (name.endsWith('.yml') || name.endsWith('.yaml'))) ||
+    /(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/.test(path) ||
     name === 'action.yml' ||
     name === 'action.yaml'
   );

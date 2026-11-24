@@ -7,7 +7,12 @@ const model = {
   services: {
     'gpool-api': {
       image: 'ghcr.io/zigordev/gpool-api:local',
-      environment: { PORT: '3000', OTEL_EXPORTER_OTLP_ENDPOINT: 'http://alloy:4318' },
+      environment: {
+        PORT: '3000',
+        OTEL_EXPORTER_OTLP_ENDPOINT: 'http://alloy:4318',
+        OTEL_SERVICE_VERSION: 'local',
+      },
+      labels: { 'traefik.enable': 'true' },
     },
     'gpool-web': {
       image: 'ghcr.io/zigordev/gpool-web:local',
@@ -32,7 +37,7 @@ function product(change: (services: typeof model.services) => unknown = (service
 }
 
 describe('readProduct', () => {
-  it('takes the services that run our own images as the apps, and leaves the data stores', () => {
+  it('takes the services that run our own images as the apps, with their version and whether the ingress routes them', () => {
     expect(product()).toEqual({
       name: 'gpool',
       networks: ['zigordev'],
@@ -43,12 +48,16 @@ describe('readProduct', () => {
           image: 'ghcr.io/zigordev/gpool-api:local',
           port: '3000',
           agent: 'http://alloy:4318',
+          version: 'local',
+          routed: true,
         },
         {
           service: 'gpool-web',
           image: 'ghcr.io/zigordev/gpool-web:local',
           port: '3000',
           agent: 'http://alloy:4318',
+          version: undefined,
+          routed: false,
         },
       ],
     });
@@ -69,6 +78,8 @@ describe('readProduct', () => {
           image: 'ghcr.io/zigordev/gpool-api:local',
           port: undefined,
           agent: undefined,
+          version: undefined,
+          routed: false,
         },
       ],
     });

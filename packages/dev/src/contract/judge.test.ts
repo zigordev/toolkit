@@ -6,11 +6,25 @@ const line = (fields: Record<string, unknown>): string =>
 
 const sound: Evidence = {
   service: 'gpool-api',
+  version: 'local',
+  drain: {
+    test: [
+      'CMD-SHELL',
+      'test ! -e /tmp/drain && wget -q -O /dev/null http://127.0.0.1:3000/health',
+    ],
+    touched: { status: 0, stderr: '' },
+    before: 0,
+    during: 1,
+    after: 0,
+  },
   architecture: 'arm64',
   user: '1000:1000',
   bare: { status: 'exited', code: 1 },
   port: '3000',
-  health: { status: 200, body: '{"status":"ok","service":"gpool-api","components":{}}' },
+  health: {
+    status: 200,
+    body: '{"status":"ok","service":"gpool-api","version":"local","components":{}}',
+  },
   moved: { status: 200, body: '{"status":"degraded"}' },
   stdout: `${line({ event: 'service.started' })}\n${line({ event: 'service.stopping' })}\n`,
   stderr: '',
@@ -27,14 +41,15 @@ function verdict(promise: number, change: Partial<Evidence>) {
 }
 
 describe('judge', () => {
-  it('finds all six promises kept by an app that keeps them, and says what it saw', () => {
+  it('finds all seven promises kept by an app that keeps them, and says what it saw', () => {
     expect(judge(sound)).toEqual([
       { promise: 1, kept: true, detail: 'an arm64 image that runs as the user 1000:1000' },
       { promise: 2, kept: true, detail: 'without its settings it stops at once, with code 1' },
       {
         promise: 3,
         kept: true,
-        detail: 'it listens on the port in PORT, and answers GET /health with 200',
+        detail:
+          'it listens on the port in PORT, and answers GET /health with 200 and its version local',
       },
       { promise: 4, kept: true, detail: '2 lines, all JSON, with nothing a visitor sent' },
       {
@@ -47,6 +62,11 @@ describe('judge', () => {
         kept: true,
         detail:
           'it stopped 1.2 s after a SIGTERM with code 0, and answered the request it had begun',
+      },
+      {
+        promise: 7,
+        kept: true,
+        detail: 'its health check fails while /tmp/drain exists, and passes again once it is gone',
       },
     ]);
   });
@@ -108,6 +128,36 @@ describe('judge', () => {
       kept: false,
       detail: `GET /health on port 3000 ${said}`,
     });
+  });
+
+  it.each([
+    ['{"status":"ok"}', 'GET /health names no version, which the deploy asks for from outside'],
+    [
+      '{"status":"ok","version":""}',
+      'GET /health names no version, which the deploy asks for from outside',
+    ],
+    [
+      '{"status":"ok","version":"unknown"}',
+      'GET /health names the version unknown, where OTEL_SERVICE_VERSION is local',
+    ],
+  ])(
+    '3: refuses the health answer %s, which does not name the version that runs',
+    (body, detail) => {
+      expect(verdict(3, { health: { status: 200, body } })).toEqual({
+        promise: 3,
+        kept: false,
+        detail,
+      });
+    }
+  );
+
+  it('3: takes any version an app names when compose.yaml gives it none', () => {
+    expect(
+      verdict(3, {
+        version: undefined,
+        health: { status: 200, body: '{"status":"ok","version":"9"}' },
+      })?.detail
+    ).toBe('it listens on the port in PORT, and answers GET /health with 200 and its version 9');
   });
 
   it('3: refuses an app that does not answer on another port it was given', () => {
@@ -225,6 +275,49 @@ const job: JobEvidence = {
   stdout: `${line({ event: 'migration.started' })}\n${line({ event: 'migration.finished' })}\n`,
   stderr: '',
 };
+
+describe('judge, on draining', () => {
+  const drained = sound.drain ?? {
+    test: [],
+    touched: { status: 0, stderr: '' },
+    before: 0,
+    during: 1,
+    after: 0,
+  };
+
+  it.each([
+    [
+      { ...drained, test: [] },
+      'it has no health check, which a deploy waits for and which drains it',
+    ],
+    [{ ...drained, before: 1 }, 'its health check fails with code 1 while it is healthy'],
+    [
+      { ...drained, touched: { status: 1, stderr: 'touch: /tmp/drain: Read-only file system\n' } },
+      'it cannot write /tmp/drain: touch: /tmp/drain: Read-only file system',
+    ],
+    [
+      { ...drained, during: 0 },
+      'its health check still passes while /tmp/drain exists, so the ingress would keep sending it requests while it stops',
+    ],
+    [{ ...drained, after: 1 }, 'its health check still fails with code 1 once /tmp/drain is gone'],
+  ])('7: refuses the drain %j', (drain, detail) => {
+    expect(verdict(7, { drain })).toEqual({ promise: 7, kept: false, detail });
+  });
+
+  it('7: says why it cannot write /tmp/drain even when the container says nothing', () => {
+    expect(verdict(7, { drain: { ...drained, touched: { status: 1, stderr: '' } } })?.detail).toBe(
+      'it cannot write /tmp/drain: no reason'
+    );
+  });
+
+  it('7: takes an app that the ingress does not route', () => {
+    expect(verdict(7, { drain: undefined })).toEqual({
+      promise: 7,
+      kept: true,
+      detail: 'the ingress does not route it, so it has nothing to drain',
+    });
+  });
+});
 
 describe('judgeJob', () => {
   it('finds both promises kept by a job that ended with code 0 and printed JSON only', () => {

@@ -43,16 +43,49 @@ interface World {
   heldAfter: number;
   logs: Outcome;
   agentScript: string;
+  files: Record<string, string | undefined>;
+  production: object;
+  productionFails: boolean;
+  healthTest: string[] | null;
+  drainIgnored: boolean;
+  tmpReadOnly: boolean;
+  drained: Set<string>;
 }
 
 const ok: Outcome = { status: 0, stdout: '', stderr: '' };
 const line = JSON.stringify({ level: 'info', event: 'service.started' });
-const healthy: Answer = { status: 200, body: '{"status":"ok"}' };
+const healthy: Answer = { status: 200, body: '{"status":"ok","version":"local"}' };
+const version = `\${VERSION:-local}`;
+const drainCheck = 'test ! -e /tmp/drain && wget -q -T 4 -O /dev/null http://127.0.0.1:3000/health';
 
-function app(name: string): { image: string; environment: Record<string, string> } {
+function app(name: string): {
+  image: string;
+  environment: Record<string, string>;
+  labels: Record<string, string>;
+} {
   return {
     image: `ghcr.io/zigordev/${name}:local`,
-    environment: { PORT: '3000', OTEL_EXPORTER_OTLP_ENDPOINT: 'http://alloy:4318' },
+    environment: {
+      PORT: '3000',
+      OTEL_EXPORTER_OTLP_ENDPOINT: 'http://alloy:4318',
+      OTEL_SERVICE_VERSION: 'local',
+    },
+    labels: { 'traefik.enable': 'true' },
+  };
+}
+
+function released(name: string): object {
+  return {
+    image: `ghcr.io/zigordev/${name}:${version}`,
+    restart: 'unless-stopped',
+    tmpfs: ['/tmp:uid=1000,gid=1000,size=1m'],
+    environment: { OTEL_SERVICE_VERSION: version },
+    healthcheck: { test: ['CMD-SHELL', drainCheck], interval: '10s', retries: 3 },
+    labels: {
+      'traefik.enable': 'true',
+      'docker-rollout.pre-stop-hook': 'touch /tmp/drain && sleep 35',
+      [`traefik.http.routers.${name}.rule`]: 'Host(`gpool.zigordev.com`)',
+    },
   };
 }
 
@@ -104,6 +137,27 @@ beforeEach(() => {
       stderr: '',
     },
     agentScript: '/repo/packages/dev/src/contract/agent.ts',
+    files: {
+      'compose.yaml': 'name: gpool\n',
+      'compose.production.yaml': 'services: {}\n',
+      '.env.production.example': 'POSTGRES_PASSWORD=\n',
+    },
+    production: {
+      services: {
+        'gpool-api': released('gpool-api'),
+        'gpool-web': released('gpool-web'),
+        db: {
+          image: `postgres:18.1-alpine3.24@sha256:${'e'.repeat(64)}`,
+          restart: 'unless-stopped',
+          environment: { POSTGRES_PASSWORD: `\${POSTGRES_PASSWORD:-}` },
+        },
+      },
+    },
+    productionFails: false,
+    healthTest: ['CMD-SHELL', drainCheck],
+    drainIgnored: false,
+    tmpReadOnly: false,
+    drained: new Set(),
   };
   calls = [];
   output = '';
@@ -126,6 +180,36 @@ const docker: Run = (command, args) => {
     return world.configFails
       ? failed('one\ntwo\nno configuration file provided: not found')
       : text(JSON.stringify(world.model));
+  }
+  if (
+    call ===
+    'compose --file compose.yaml --file compose.production.yaml config --format json --no-interpolate'
+  ) {
+    return world.productionFails
+      ? failed('services.gpool-api.restrt additional property restrt is not allowed')
+      : text(JSON.stringify(world.production));
+  }
+  if (call.startsWith('inspect --format {{json .Config.Healthcheck.Test}} ')) {
+    return text(`${JSON.stringify(world.healthTest)}\n`);
+  }
+  const container = args[1] ?? '';
+  if (call === `exec ${container} touch /tmp/drain`) {
+    if (world.tmpReadOnly) {
+      return failed('touch: /tmp/drain: Read-only file system');
+    }
+    world.drained.add(container);
+    return ok;
+  }
+  if (call === `exec ${container} rm -f /tmp/drain`) {
+    world.drained.delete(container);
+    return ok;
+  }
+  if (call.startsWith(`exec ${container} /bin/sh -c `)) {
+    const drains = call.includes('/tmp/drain') && !world.drainIgnored;
+    return world.drained.has(container) && drains ? failed('') : ok;
+  }
+  if (call.startsWith(`exec ${container} wget `)) {
+    return ok;
   }
   if (call.startsWith('version ')) {
     return world.dockerDown
@@ -199,6 +283,7 @@ function run(): number {
   const io: ContractIo = {
     cwd: '/repo/gpool',
     run: docker,
+    read: (file) => world.files[file],
     write: (text) => {
       output += text;
     },
@@ -234,21 +319,31 @@ describe('the contract command', () => {
 
     expect(output).toBe(
       [
+        'the compose files',
+        "  kept    7  compose.yaml names the product gpool, which is its project's name on the host",
+        '  kept    7  our images and their OTEL_SERVICE_VERSION follow VERSION: ghcr.io/zigordev/gpool-api and ghcr.io/zigordev/gpool-web',
+        '  kept    7  every other image is pinned by its digest: postgres',
+        '  kept    7  every long-running service restarts unless stopped, and a job never does',
+        '  kept    7  gpool-api and gpool-web drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout',
+        '  kept    7  .env.production.example names 1 secret, with no value, and the compose files use no other',
+        '  kept    7  compose.production.yaml routes gpool-api and gpool-web to gpool.zigordev.com',
         'gpool-api',
         '  kept    1  an arm64 image that runs as the user 1000:1000',
         '  kept    2  without its settings it stops at once, with code 1',
-        '  kept    3  it listens on the port in PORT, and answers GET /health with 200',
+        '  kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local',
         '  kept    4  1 line, all JSON, with nothing a visitor sent',
         '  kept    5  traces and metrics reached the agent under the name gpool-api',
         '  kept    6  it stopped 1.2 s after a SIGTERM with code 0, and answered the request it had begun',
+        '  kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone',
         'gpool-web',
         '  kept    1  an arm64 image that runs as the user 1000:1000',
         '  kept    2  without its settings it stops at once, with code 1',
-        '  kept    3  it listens on the port in PORT, and answers GET /health with 200',
+        '  kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local',
         '  kept    4  1 line, all JSON, with nothing a visitor sent',
         '  kept    5  traces and metrics reached the agent under the name gpool-web',
         '  kept    6  it stopped 1.2 s after a SIGTERM with code 0, and answered the request it had begun',
-        'zigordev contract: 2 apps keep promises 1 to 6',
+        '  kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone',
+        'zigordev contract: 2 apps keep promises 1 to 7, and the compose files keep promise 7',
         '',
       ].join('\n')
     );
@@ -264,7 +359,7 @@ describe('the contract command', () => {
         'gpool-api-migrate, a job',
         '  kept    1  it ended with code 0 before gpool-api started',
         '  kept    2  1 line, all JSON',
-        'zigordev contract: 2 apps keep promises 1 to 6, and 1 job keeps promises 1 and 2',
+        'zigordev contract: 2 apps keep promises 1 to 7, the compose files keep promise 7, and 1 job keeps promises 1 and 2',
         '',
       ].join('\n')
     );
@@ -427,7 +522,11 @@ describe('the contract command', () => {
 
     expect(run()).toBe(0);
 
-    expect(output.endsWith('zigordev contract: 1 app keeps promises 1 to 6\n')).toBe(true);
+    expect(
+      output.endsWith(
+        'zigordev contract: 1 app keeps promises 1 to 7, and the compose files keep promise 7\n'
+      )
+    ).toBe(true);
   });
 
   it('waits for the second copy to answer', () => {
@@ -524,6 +623,108 @@ describe('the contract command', () => {
 
     expect(output).toContain(
       '  broken  3  GET /health on port 3000 gave no answer (the agent gave no answer)\n'
+    );
+  });
+
+  it('drains each routed app the way docker-rollout does, and puts it back', () => {
+    run();
+
+    expect(
+      called(/^docker (inspect --format \{\{json \S+ gpool-api-id|exec gpool-api-id )/)
+    ).toEqual([
+      'docker inspect --format {{json .Config.Healthcheck.Test}} gpool-api-id',
+      `docker exec gpool-api-id /bin/sh -c ${drainCheck}`,
+      'docker exec gpool-api-id touch /tmp/drain',
+      `docker exec gpool-api-id /bin/sh -c ${drainCheck}`,
+      'docker exec gpool-api-id rm -f /tmp/drain',
+      `docker exec gpool-api-id /bin/sh -c ${drainCheck}`,
+    ]);
+  });
+
+  it('runs a health check written as a list of words without a shell', () => {
+    world.healthTest = ['CMD', 'wget', '-q', 'http://127.0.0.1:3000/health'];
+
+    expect(run()).toBe(1);
+
+    expect(called(/^docker exec gpool-web-id wget /)).toHaveLength(3);
+    expect(output).toContain(
+      '  broken  7  its health check still passes while /tmp/drain exists, so the ingress would keep sending it requests while it stops\n'
+    );
+  });
+
+  it('finds promise 7 broken when an app cannot write /tmp/drain, or has no health check', () => {
+    world.tmpReadOnly = true;
+
+    expect(run()).toBe(1);
+    expect(output).toContain(
+      '  broken  7  it cannot write /tmp/drain: touch: /tmp/drain: Read-only file system\n'
+    );
+
+    output = '';
+    world.tmpReadOnly = false;
+    world.healthTest = null;
+
+    expect(run()).toBe(1);
+    expect(output).toContain(
+      '  broken  7  it has no health check, which a deploy waits for and which drains it\n'
+    );
+  });
+
+  it('drains no app that the ingress does not route', () => {
+    for (const service of ['gpool-api', 'gpool-web']) {
+      world.model.services[service] = { ...app(service), labels: {} };
+    }
+
+    expect(run()).toBe(0);
+
+    expect(called(/ touch \/tmp\/drain$/)).toEqual([]);
+    expect(output).toContain(
+      '  kept    7  the ingress does not route it, so it has nothing to drain\n'
+    );
+  });
+
+  it('counts a broken deploy rule of the compose files, and fails', () => {
+    world.files['.env.production.example'] = undefined;
+
+    expect(run()).toBe(1);
+
+    expect(output).toContain(
+      'the compose files\n  kept    7  compose.yaml names the product gpool'
+    );
+    expect(output).toContain(
+      '  broken  7  there is no .env.production.example beside compose.yaml\n'
+    );
+    expect(output.endsWith('zigordev contract: 1 promise is broken\n')).toBe(true);
+  });
+
+  it('says why compose.yaml and compose.production.yaml cannot be read together', () => {
+    world.productionFails = true;
+
+    expect(run()).toBe(1);
+
+    expect(output).toContain(
+      '  broken  7  compose.yaml and compose.production.yaml cannot be read together: services.gpool-api.restrt additional property restrt is not allowed\n'
+    );
+  });
+
+  it('reads no production model when there is no compose.production.yaml', () => {
+    world.files['compose.production.yaml'] = undefined;
+
+    expect(run()).toBe(1);
+
+    expect(called(/compose\.production\.yaml/)).toEqual([]);
+    expect(output).toContain(
+      '  broken  7  there is no compose.production.yaml beside compose.yaml\n'
+    );
+  });
+
+  it('finds promise 3 broken when the health answer names another version than the app runs', () => {
+    world.health = { status: 200, body: '{"status":"ok","version":"unknown"}' };
+
+    expect(run()).toBe(1);
+
+    expect(output).toContain(
+      '  broken  3  GET /health names the version unknown, where OTEL_SERVICE_VERSION is local\n'
     );
   });
 

@@ -1,7 +1,17 @@
 import type { Answer, Held, Received } from './agent.ts';
 
+export interface Drain {
+  readonly test: readonly string[];
+  readonly touched: { readonly status: number; readonly stderr: string };
+  readonly before: number;
+  readonly during: number;
+  readonly after: number;
+}
+
 export interface Evidence {
   readonly service: string;
+  readonly version: string | undefined;
+  readonly drain: Drain | undefined;
   readonly architecture: string;
   readonly user: string;
   readonly bare: { readonly status: string; readonly code: number };
@@ -84,16 +94,18 @@ function settings(evidence: Evidence): Verdict {
   return kept(2, `without its settings it stops at once, with code ${code}`);
 }
 
-function healthy(answer: Answer): boolean {
-  if (answer.status !== 200) {
-    return false;
-  }
+function bodyOf(answer: Answer): { status?: unknown; version?: unknown } {
   try {
-    const body = JSON.parse(answer.body) as { status?: unknown };
-    return body.status === 'ok' || body.status === 'degraded';
+    const body: unknown = JSON.parse(answer.body);
+    return typeof body === 'object' && body !== null ? body : {};
   } catch {
-    return false;
+    return {};
   }
+}
+
+function healthy(answer: Answer): boolean {
+  const { status } = bodyOf(answer);
+  return answer.status === 200 && (status === 'ok' || status === 'degraded');
 }
 
 function said(answer: Answer): string {
@@ -115,7 +127,20 @@ function health(evidence: Evidence): Verdict {
       `started with another PORT, GET /health there ${said(evidence.moved)}, so it does not listen on the port it is given`
     );
   }
-  return kept(3, `it listens on the port in PORT, and answers GET /health with 200`);
+  const named = bodyOf(evidence.health).version;
+  if (typeof named !== 'string' || named === '') {
+    return broken(3, 'GET /health names no version, which the deploy asks for from outside');
+  }
+  if (evidence.version !== undefined && named !== evidence.version) {
+    return broken(
+      3,
+      `GET /health names the version ${named}, where OTEL_SERVICE_VERSION is ${evidence.version}`
+    );
+  }
+  return kept(
+    3,
+    `it listens on the port in PORT, and answers GET /health with 200 and its version ${named}`
+  );
 }
 
 function isJsonObject(line: string): boolean {
@@ -183,6 +208,38 @@ function stop(evidence: Evidence): Verdict {
   );
 }
 
+function drain(evidence: Evidence): Verdict {
+  const found = evidence.drain;
+  if (found === undefined) {
+    return kept(7, 'the ingress does not route it, so it has nothing to drain');
+  }
+  if (found.test.length === 0) {
+    return broken(7, 'it has no health check, which a deploy waits for and which drains it');
+  }
+  if (found.before !== 0) {
+    return broken(7, `its health check fails with code ${found.before} while it is healthy`);
+  }
+  if (found.touched.status !== 0) {
+    return broken(7, `it cannot write /tmp/drain: ${short(found.touched.stderr) || 'no reason'}`);
+  }
+  if (found.during === 0) {
+    return broken(
+      7,
+      'its health check still passes while /tmp/drain exists, so the ingress would keep sending it requests while it stops'
+    );
+  }
+  if (found.after !== 0) {
+    return broken(
+      7,
+      `its health check still fails with code ${found.after} once /tmp/drain is gone`
+    );
+  }
+  return kept(
+    7,
+    'its health check fails while /tmp/drain exists, and passes again once it is gone'
+  );
+}
+
 export function judge(evidence: Evidence): Verdict[] {
   return [
     image(evidence),
@@ -191,6 +248,7 @@ export function judge(evidence: Evidence): Verdict[] {
     logs(evidence),
     telemetry(evidence),
     stop(evidence),
+    drain(evidence),
   ];
 }
 

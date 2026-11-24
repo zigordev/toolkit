@@ -18,6 +18,7 @@ A product on the platform is an API and a web app that is one of its clients. Th
 | `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                         |
 | `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                           |
 | `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                             |
+| `.github/workflows/ci.yml`           | The product's caller: the pipeline on every pull request, then publish and deploy on every merge to `main`                                         |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -28,7 +29,7 @@ It has two jobs.
 - **It proves the packages.** The template runs on the packages of the same checkout. The pull request that changes a package is therefore checked against a real app, before the package is published.
 - **It starts every new product.** A new product begins as a copy of it, so every product has the same shape from its first day.
 
-It stays minimal on purpose, and it is never deployed.
+It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci.yml` runs only in a product made from it: GitHub reads workflows at the root of a repo, and the template's folder is not one.
 
 ## What it is built with
 
@@ -195,20 +196,23 @@ That keeps every line that does something inside the tests' reach. A test that s
 
 `compose.yaml` describes each service once, the way it runs everywhere. The other two files hold only what differs.
 
-| What                 | In `compose.yaml`                                                                                     | Why                                                                          |
-| -------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| The image            | `ghcr.io/zigordev/<app>:${VERSION:-local}`                                                            | One image per app, tagged with the version that runs                         |
-| The version          | `VERSION` also becomes `OTEL_SERVICE_VERSION`                                                         | The telemetry names the same version as the image. A laptop build is `local` |
-| The user             | `user: "1000:1000"`, the user `node` of the image                                                     | Nothing runs as root                                                         |
-| The file system      | `read_only: true`. The web app gets one folder in memory, of 64 MiB at most, for the cache of Next.js | A process that is broken into can change no file                             |
-| The privileges       | `cap_drop: [ALL]` and `no-new-privileges`                                                             | The process holds no special right and can gain none                         |
-| The first process    | `init: true`                                                                                          | Signals reach the app, and no dead child process stays behind                |
-| The stop             | `stop_grace_period: 30s`                                                                              | The app gets 30 seconds to finish its requests after a SIGTERM               |
-| The limits           | 256 MiB and one CPU for the API, 384 MiB and one CPU for the web app                                  | One app can never take the host down                                         |
-| The health check     | `wget` asks `http://127.0.0.1:3000/health` every 10 seconds                                           | Compose, and later the deploy, know when the app can take requests           |
-| The route            | Two labels: `traefik.enable`, and the port the app listens on                                         | The ingress finds the app by its labels. No port is published                |
-| The network          | `zigordev`, which the shared services create                                                          | The ingress and the telemetry agent are reached by name on it                |
-| The telemetry target | `OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318`                                                      | Every app sends to the agent, and never to Grafana itself                    |
+| What                 | In `compose.yaml`                                                                                                                                    | Why                                                                                                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The image            | `ghcr.io/zigordev/<app>:${VERSION:-local}`                                                                                                           | One image per app, tagged with the version that runs                                                                                                                 |
+| The version          | `VERSION` also becomes `OTEL_SERVICE_VERSION`                                                                                                        | The telemetry names the same version as the image. A laptop build is `local`                                                                                         |
+| The user             | `user: "1000:1000"`, the user `node` of the image                                                                                                    | Nothing runs as root                                                                                                                                                 |
+| The file system      | `read_only: true`. Each app gets `/tmp` in memory, of 1 MiB, for the drain below, and the web app one more folder of 64 MiB for the cache of Next.js | A process that is broken into can change no file                                                                                                                     |
+| The privileges       | `cap_drop: [ALL]` and `no-new-privileges`                                                                                                            | The process holds no special right and can gain none                                                                                                                 |
+| The first process    | `init: true`                                                                                                                                         | Signals reach the app, and no dead child process stays behind                                                                                                        |
+| The stop             | `stop_grace_period: 30s`                                                                                                                             | The app gets 30 seconds to finish its requests after a SIGTERM                                                                                                       |
+| The limits           | 256 MiB and one CPU for the API, 384 MiB and one CPU for the web app                                                                                 | One app can never take the host down                                                                                                                                 |
+| The health check     | It fails while `/tmp/drain` exists, and otherwise `wget` asks `http://127.0.0.1:3000/health`, every 10 seconds                                       | Compose and the deploy know when the app can take requests, and the ingress stops sending it requests while it drains                                                |
+| The drain            | The label `docker-rollout.pre-stop-hook: "touch /tmp/drain && sleep 35"`                                                                             | On a deploy, docker-rollout writes `/tmp/drain` in the old container. Its health check fails within 30 seconds, the ingress takes it out, and only then does it stop |
+| The restart          | `restart: unless-stopped`, for both apps and the database. The migrate job keeps `restart: "no"`                                                     | The host restarts itself at night for its updates, and everything comes back                                                                                         |
+| Images of others     | The database's image is pinned by its digest: `postgres:18.7-alpine3.24@sha256:…`. The API's tests read it from `compose.yaml`                       | The host runs exactly the image that was checked, and the tests run the same one. Renovate proposes a new digest                                                     |
+| The route            | Two labels: `traefik.enable`, and the port the app listens on                                                                                        | The ingress finds the app by its labels. No port is published                                                                                                        |
+| The network          | `zigordev`, which the shared services create                                                                                                         | The ingress and the telemetry agent are reached by name on it                                                                                                        |
+| The telemetry target | `OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318`                                                                                                     | Every app sends to the agent, and never to Grafana itself                                                                                                            |
 
 `compose.local.yaml` adds how each image is built, the environment name `local`, and the address: the web app answers at `template.localhost`, and the API at the same address under `/api`. `compose.production.yaml` adds the environment name `production` and the address `template.zigordev.com`. The API's own health route is not reachable from outside: `/health` at the product's address is the web app's.
 
@@ -232,32 +236,51 @@ Inside that copy the build script runs through Node.js itself, with `node --run 
 | `template-api` | 79 MB                   | arm64     |
 | `template-web` | 167 MB                  | arm64     |
 
+## How it reaches production
+
+In a product made from the template, `.github/workflows/ci.yml` runs four jobs. On a pull request, the pipeline and its gate `check`. On a merge to `main`, also Publish, which builds both images for arm64, pushes them as `ghcr.io/zigordev/<app>:<commit>` and attests them, and then Deploy, which verifies them, asks the host to run the commit, and checks `https://<product>.zigordev.com/health` from outside. [Delivery](../docs/handbook/delivery.md) explains each step, and the four things a product needs before its first deploy.
+
+The three workflows are `toolkit`'s, pinned to one commit of it, and Renovate moves all three together.
+
 ## The contract test
 
-Every app on the platform keeps twelve promises, and [the platform page](../docs/handbook/the-platform.md) lists them. The first six are checked on the images themselves:
+Every app on the platform keeps twelve promises, and [the platform page](../docs/handbook/the-platform.md) lists them. The first six are checked on the images themselves, and promise 7 on the compose files and on each app that the ingress routes:
 
 ```bash
 pnpm check:contract
 ```
 
-It builds both images, starts them once more under the name `template-contract`, on a network of their own, and holds each app to the six promises with `zigordev contract`. A product that already runs at `template.localhost` is not touched. It takes about half a minute once the images are built, and it needs Docker running, but not the shared services.
+It builds both images, starts them once more under the name `template-contract`, on a network of their own, and holds each app to the promises with `zigordev contract`. It first reads `compose.yaml` and `compose.production.yaml` together, as the host does, and checks the rules of the deploy that [Delivery](../docs/handbook/delivery.md) lists. A product that already runs at `template.localhost` is not touched. It takes about half a minute once the images are built, and it needs Docker running, but not the shared services. This is its output on 2026-11-24:
 
 ```text
+the compose files
+  kept    7  compose.yaml names the product template, which is its project's name on the host
+  kept    7  our images and their OTEL_SERVICE_VERSION follow VERSION: ghcr.io/zigordev/template-api and ghcr.io/zigordev/template-web
+  kept    7  every other image is pinned by its digest: postgres
+  kept    7  every long-running service restarts unless stopped, and a job never does
+  kept    7  template-api and template-web drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout
+  kept    7  .env.production.example names 3 secrets, with no value, and the compose files use no other
+  kept    7  compose.production.yaml routes template-api and template-web to template.zigordev.com
 template-api
   kept    1  an arm64 image that runs as the user 1000:1000
   kept    2  without its settings it stops at once, with code 1
-  kept    3  it listens on the port in PORT, and answers GET /health with 200
-  kept    4  6 lines, all JSON, with nothing a visitor sent
+  kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local
+  kept    4  7 lines, all JSON, with nothing a visitor sent
   kept    5  traces and metrics reached the agent under the name template-api
-  kept    6  it stopped 1.3 s after a SIGTERM with code 0, and answered the request it had begun
+  kept    6  it stopped 1.4 s after a SIGTERM with code 0, and answered the request it had begun
+  kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone
 template-web
   kept    1  an arm64 image that runs as the user 1000:1000
   kept    2  without its settings it stops at once, with code 1
-  kept    3  it listens on the port in PORT, and answers GET /health with 200
+  kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local
   kept    4  6 lines, all JSON, with nothing a visitor sent
   kept    5  traces and metrics reached the agent under the name template-web
-  kept    6  it stopped 1.3 s after a SIGTERM with code 143, and answered the request it had begun
-zigordev contract: 2 apps keep promises 1 to 6
+  kept    6  it stopped 1.4 s after a SIGTERM with code 143, and answered the request it had begun
+  kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone
+template-api-migrate, a job
+  kept    1  it ended with code 0 before template-api started
+  kept    2  4 lines, all JSON
+zigordev contract: 2 apps keep promises 1 to 7, the compose files keep promise 7, and 1 job keeps promises 1 and 2
 ```
 
 The pipeline runs the same script on every pull request, in a job named Contract, on an arm64 machine. [The developer setup](../packages/dev/README.md) says what the command does to see each promise.
