@@ -2,8 +2,6 @@
 
 Events between the services of the platform, over Kafka: typed events, a send that is never lost once a change is saved, a consumer that retries and then sets a message aside, duplicates skipped, traces that cross Kafka, and the health and metrics of all of it.
 
-The package is private until the owner publishes it for the first time.
-
 ## What it is
 
 An event is a short message that says something happened, such as "a note was created". One service sends it, and any service that cares reads it. Kafka is the broker in between: a server that keeps the messages of each topic in order, so that a reader can take them at its own pace. [Record 0039](../../docs/adr/0039-apache-kafka-is-the-broker-one-node-on-the-host.md) chose Apache Kafka, and [record 0040](../../docs/adr/0040-apps-use-kafka-only-through-zigordev-events.md) says that apps use it only through this package.

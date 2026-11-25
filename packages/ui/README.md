@@ -2,8 +2,6 @@
 
 The design system's components, and the one stylesheet that dresses them: the Button today, and each component a product needs later. Every component has stories, which are its browser tests.
 
-The package is private until the owner publishes it for the first time.
-
 ## What it is
 
 | Export       | What it is                                                                                                                                                                      |

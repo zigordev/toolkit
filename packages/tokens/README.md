@@ -2,8 +2,6 @@
 
 The design tokens of every zigordev app: the colours, the type, the spacing, the corners and the motion of one brand, built into CSS custom properties. Dark is the default, and light is the other mode.
 
-The package is private until the owner publishes it for the first time.
-
 ## What it is
 
 A design token is one named design value, such as `--ds-color-accent-solid` or `--ds-radius-button`. A component and an app's own CSS use the name, never the value, so the value can change in one place.

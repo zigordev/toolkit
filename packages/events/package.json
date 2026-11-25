@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/events",
   "version": "0.0.0",
-  "private": true,
   "description": "Events between zigordev services over Kafka: typed events, the transactional outbox, the consumer with retries and a dead-letter topic, skipped duplicates, trace headers, health and metrics",
   "license": "UNLICENSED",
   "type": "module",

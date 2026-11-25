@@ -2,8 +2,6 @@
 
 The emails of the platform's apps: messages built with React Email on the design tokens, rendered into finished HTML and plain text when the app builds, and filled in with their values when the app sends them. Every message exists in English and Spanish.
 
-The package is private until the owner publishes it for the first time.
-
 ## What it is
 
 Two entries, for two moments:
