@@ -324,10 +324,11 @@ describe('the Stories job', () => {
     expect(job(workflow, 'stories')).toContain('persist-credentials: false');
   });
 
-  it('installs only Node.js and pnpm, builds, and runs the stories', () => {
+  it('installs only Node.js and pnpm, runs no install script, builds, and runs the stories', () => {
     const steps = job(workflow, 'stories');
 
     expect(steps).toContain('          install_args: node pnpm\n');
+    expect(steps).toContain('        run: pnpm install --frozen-lockfile --ignore-scripts\n');
     expect(steps).toContain('        run: pnpm run build\n');
     expect(steps).toContain('        run: pnpm run test:stories\n');
   });
