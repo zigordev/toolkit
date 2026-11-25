@@ -2,6 +2,9 @@ import { createElement as h, type ReactElement } from 'react';
 import { render } from 'react-email';
 import type { EmailTemplate, Language, StandardTemplates } from './fill.ts';
 import { languages, placeholdersOf } from './fill.ts';
+import { AccountExists, accountExistsTexts } from './messages/account-exists.ts';
+import { DeleteAccount, deleteAccountTexts } from './messages/delete-account.ts';
+import { ResetPassword, resetPasswordTexts } from './messages/reset-password.ts';
 import { VerifyEmail, verifyEmailTexts } from './messages/verify-email.ts';
 
 export {
@@ -41,13 +44,21 @@ export async function renderTemplate(
   return { subject, html, text };
 }
 
+const standardMessages = {
+  verifyEmail: { component: VerifyEmail, texts: verifyEmailTexts },
+  resetPassword: { component: ResetPassword, texts: resetPasswordTexts },
+  accountExists: { component: AccountExists, texts: accountExistsTexts },
+  deleteAccount: { component: DeleteAccount, texts: deleteAccountTexts },
+} as const;
+
 export async function renderStandardMessages(): Promise<StandardTemplates> {
-  const verifyEmail = {} as Record<Language, EmailTemplate>;
-  for (const lang of languages) {
-    verifyEmail[lang] = await renderTemplate(
-      h(VerifyEmail, { lang }),
-      verifyEmailTexts[lang].subject
-    );
+  const rendered = {} as Record<keyof typeof standardMessages, Record<Language, EmailTemplate>>;
+  for (const [name, { component, texts }] of Object.entries(standardMessages)) {
+    const byLanguage = {} as Record<Language, EmailTemplate>;
+    for (const lang of languages) {
+      byLanguage[lang] = await renderTemplate(h(component, { lang }), texts[lang].subject);
+    }
+    rendered[name as keyof typeof standardMessages] = byLanguage;
   }
-  return { verifyEmail };
+  return rendered;
 }

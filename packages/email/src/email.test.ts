@@ -12,7 +12,7 @@ import {
   theme,
 } from './build.ts';
 import { messages } from './generated/messages.ts';
-import { languages, verifyEmail } from './index.ts';
+import { accountExists, deleteAccount, languages, resetPassword, verifyEmail } from './index.ts';
 
 describe('the standard messages', () => {
   it('match their saved copy, in English and in Spanish', async () => {
@@ -21,14 +21,32 @@ describe('the standard messages', () => {
 
     expect(rendered).toEqual(messages);
     expect(saved).toBe(messagesModule(rendered));
-    expect(Object.keys(rendered.verifyEmail)).toEqual([...languages]);
+    expect(Object.keys(rendered)).toEqual([
+      'verifyEmail',
+      'resetPassword',
+      'accountExists',
+      'deleteAccount',
+    ]);
+    for (const templates of Object.values(rendered)) {
+      expect(Object.keys(templates)).toEqual([...languages]);
+    }
   });
 
   it('keep the values for the send as places to fill, never as filled text', () => {
+    for (const name of ['verifyEmail', 'resetPassword', 'deleteAccount'] as const) {
+      for (const lang of languages) {
+        const template = messages[name][lang];
+        expect(template.html).toContain('href="{{link}}"');
+        expect(template.text).toContain('{{link}}');
+        expect(template.subject).toContain('{{product}}');
+      }
+    }
+  });
+
+  it('give the notice of a second sign-up no link at all', () => {
     for (const lang of languages) {
-      const template = messages.verifyEmail[lang];
-      expect(template.html).toContain('href="{{link}}"');
-      expect(template.text).toContain('{{link}}');
+      const template = messages.accountExists[lang];
+      expect(template.html).not.toContain('{{link}}');
       expect(template.subject).toContain('{{product}}');
     }
   });
@@ -61,6 +79,40 @@ describe('verifyEmail', () => {
 
     expect(html).toContain(`background-color:${theme.colors.accent}`);
     expect(html).toContain(`border-radius:${theme.radius.button}`);
+  });
+});
+
+describe('the sign-in messages', () => {
+  const link = 'https://notes.zigordev.com/reset?token=abc';
+
+  it('send a link to choose a new password, valid for an hour', () => {
+    const email = resetPassword({ lang: 'en', product: 'Notes', link });
+
+    expect(email.subject).toBe('Choose a new password for Notes');
+    expect(email.html).toContain(`href="${link}"`);
+    expect(email.text).toContain('The link works for one hour.');
+    expect(resetPassword({ lang: 'es', product: 'Notes', link }).subject).toBe(
+      'Elige una contraseña nueva para Notes'
+    );
+  });
+
+  it('tell the owner of an address that someone tried to sign up with it, with no link', () => {
+    const email = accountExists({ lang: 'en', product: 'Notes' });
+
+    expect(email.subject).toBe('Someone tried to sign up to Notes with your address');
+    expect(email.html).not.toContain('href="http');
+    expect(accountExists({ lang: 'es', product: 'Notes' }).html).toContain('Ya tienes una cuenta');
+  });
+
+  it('ask the user to confirm the deletion while signed in', () => {
+    const email = deleteAccount({ lang: 'en', product: 'Notes', link });
+
+    expect(email.subject).toBe('Confirm that you want to delete your Notes account');
+    expect(email.html).toContain('Delete my account');
+    expect(email.html).toContain(`href="${link}"`);
+    expect(deleteAccount({ lang: 'es', product: 'Notes', link }).html).toContain(
+      'Eliminar mi cuenta'
+    );
   });
 });
 
