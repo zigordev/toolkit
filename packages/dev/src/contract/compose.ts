@@ -210,8 +210,9 @@ function drainRule(services: [string, RawService][]): Verdict {
   if (routed.length === 0) {
     return kept('no service is routed by the ingress, so none has to drain');
   }
+  const one = routed.length === 1;
   return kept(
-    `${list(routed.map(([name]) => name))} drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout`
+    `${list(routed.map(([name]) => name))} ${one ? 'drains before it stops' : 'drain before they stop'}: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout`
   );
 }
 
