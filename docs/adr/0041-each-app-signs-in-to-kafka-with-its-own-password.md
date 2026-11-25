@@ -1,6 +1,6 @@
 # 0041. Each app signs in to Kafka with its own password
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -8,7 +8,7 @@
 
 [Record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) puts one broker on the host for every app. Without a sign-in, any container that reaches it could write to any topic, so a request could claim to come from any app. A Kafka message does not carry the identity of the client that wrote it. Proof of the sender therefore needs a topic per app, and a rule that only that app may write to it. November's HTTP design gave each caller of the notifications service its own key for the same reason.
 
-On 2026-11-24 the owner chose, in their words: "B: password per app".
+On 2026-11-24 the owner chose, in their words: "B: password per app". The owner accepted this record on 2026-11-25, in their words: "Accept 0041 (Recommended)".
 
 Facts:
 

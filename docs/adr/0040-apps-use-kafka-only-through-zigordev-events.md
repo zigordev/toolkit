@@ -1,6 +1,6 @@
 # 0040. Apps use Kafka only through `@zigordev/events`, on `@platformatic/kafka`
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -8,7 +8,7 @@
 
 [Record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) makes Apache Kafka the broker. Every app has to use it the same way: typed events, a send that is never lost once the app's own change is saved, a consumer that retries, and the same telemetry. toolkit runs Node.js 26, and its supply-chain settings run no install scripts.
 
-On 2026-11-23 the owner chose the Node.js client, in their words: "A", `@platformatic/kafka`. The yes also covers adding it as a new library.
+On 2026-11-23 the owner chose the Node.js client, in their words: "A", `@platformatic/kafka`. The yes also covers adding it as a new library. The owner accepted this record on 2026-11-25, in their words: "Accept 0040 (Recommended)".
 
 Facts checked on npm and GitHub on 2026-11-25:
 

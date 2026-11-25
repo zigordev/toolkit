@@ -1,6 +1,6 @@
 # 0045. Mobile apps are built with Expo, beside the web app
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -18,6 +18,8 @@ The owner took eight decisions on 2026-11-24, one at a time. In their words:
 6. The end-to-end test tool: "A", Maestro.
 7. The unit-test runner: "C: Vitest only".
 8. When the store accounts open: "A: at first publish".
+
+The owner accepted this record on 2026-11-25, in their words: "Accept 0045 (Recommended)".
 
 Facts checked on 2026-11-25:
 

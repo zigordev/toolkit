@@ -1,6 +1,6 @@
 # 0039. Apache Kafka is the broker, one node on the host
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -13,6 +13,8 @@ The owner took three decisions on 2026-11-23, one at a time:
 1. Kafka as the platform's broker, the owner's own wish.
 2. Where it runs in production. In their words: "A", one broker in a container on the host.
 3. Apache Kafka or Redpanda. In their words: "A", Apache Kafka.
+
+The owner accepted this record on 2026-11-25, in their words: "Accept 0039 (Recommended)".
 
 Facts checked on 2026-11-25:
 

@@ -1,6 +1,6 @@
 # 0044. Live updates reach pages as Server-Sent Events
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -16,6 +16,8 @@ The owner took four decisions on 2026-11-24, one at a time. In their words:
 2. How every running copy hears of a change: "A: PostgreSQL".
 3. What a message carries: "A: what changed".
 4. Where it sits in the plan: "A: after step 6.5".
+
+The owner accepted this record on 2026-11-25, in their words: "Accept 0044 (Recommended)".
 
 Facts checked on 2026-11-25:
 

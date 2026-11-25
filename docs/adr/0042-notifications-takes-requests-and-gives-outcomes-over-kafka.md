@@ -1,6 +1,6 @@
 # 0042. Notifications takes requests and gives outcomes over Kafka
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: [0019](0019-email-through-the-notifications-service.md)
 
@@ -8,7 +8,7 @@
 
 [Record 0019](0019-email-through-the-notifications-service.md), accepted on 2026-11-21, sends every product's email through one notifications service. A product renders its message with `@zigordev/email` and sends it over HTTP with `@zigordev/notifications-client`, generated from the service's OpenAPI document, with a key that makes a retry safe. November's service also answered `GET /api/v1/emails/{id}` with an email's status, which nothing in the legacy code called. The service before November's took its requests from Kafka and sent nothing back.
 
-On 2026-11-23 the owner asked for the service to take its requests through Kafka, which [record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) makes the broker. On 2026-11-24 they chose how an app learns what happened to its email, in their words: "A: outcome event".
+On 2026-11-23 the owner asked for the service to take its requests through Kafka, which [record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) makes the broker. On 2026-11-24 they chose how an app learns what happened to its email, in their words: "A: outcome event". The owner accepted this record on 2026-11-25, in their words: "Accept 0042 (Recommended)".
 
 Amazon SES's answer to a send means that SES accepted the email, not that it arrived. Bounces come later, through an SES event feed that nothing in the plan builds yet.
 

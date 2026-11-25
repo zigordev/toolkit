@@ -1,6 +1,6 @@
 # 0043. The host steps up to a t4g.medium when the broker arrives
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: [0015](0015-one-small-host-on-ubuntu.md)
 
@@ -8,7 +8,7 @@
 
 [Record 0015](0015-one-small-host-on-ubuntu.md), accepted on 2026-11-21, runs production on one t4g.small with 2 GiB of memory, on Ubuntu LTS. It steps up to a t4g.medium with 4 GiB when gpool joins, and to a t4g.large with 8 GiB when trading-bot brings its analytics store. It estimated the shared services and the notifications service at about 1 GiB, and each product at about 0.5 GiB more.
 
-[Record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) puts a Kafka broker on the host. Kafka runs on Java, and its start script gives it 1 GB of memory for its heap unless told otherwise. On 2026-11-23 the owner chose, in their words: "A", one broker on the host, and the host steps up to a t4g.medium when the broker arrives.
+[Record 0039](0039-apache-kafka-is-the-broker-one-node-on-the-host.md) puts a Kafka broker on the host. Kafka runs on Java, and its start script gives it 1 GB of memory for its heap unless told otherwise. On 2026-11-23 the owner chose, in their words: "A", one broker on the host, and the host steps up to a t4g.medium when the broker arrives. The owner accepted this record on 2026-11-25, in their words: "Accept 0043 (Recommended)".
 
 Facts checked on 2026-11-25:
 
