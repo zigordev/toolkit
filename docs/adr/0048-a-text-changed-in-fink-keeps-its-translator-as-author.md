@@ -1,6 +1,6 @@
 # 0048. A text changed in Fink keeps its translator as author
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -10,7 +10,7 @@
 
 Fink's own docs, read on 2026-11-25, add a second question. Fink commits through GitHub as the person who signed in, and adds to every commit a co-author line of its own, which names Fink and its address at inlang.com. It pushes only to an existing branch or to a fork, never to `main`, and leaves the pull request to the person. Two core rules refuse such a commit today: every commit is authored as zigordev, and no commit carries a co-author line.
 
-The owner chose on 2026-11-25, in their words: "Narrow exception (Recommended)".
+The owner chose on 2026-11-25, in their words: "Narrow exception (Recommended)". The owner accepted this record and the two sentences it adds to the core rules the same day: "Accept, merge it (Recommended)".
 
 ## Decision
 

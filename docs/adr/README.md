@@ -55,4 +55,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0045](0045-mobile-apps-are-built-with-expo-beside-the-web-app.md)             | Mobile apps are built with Expo, beside the web app                      | 2026-11-25 | accepted           |
 | [0046](0046-each-app-reads-its-own-flags-in-the-app.md)                        | Each app reads its own flags in the app, through OpenFeature             | 2026-11-25 | accepted           |
 | [0047](0047-emails-are-rendered-at-build-and-filled-in-at-send.md)             | Emails are rendered when an app builds, and filled in when it sends      | 2026-11-25 | accepted           |
-| [0048](0048-a-text-changed-in-fink-keeps-its-translator-as-author.md)          | A text changed in Fink keeps its translator as author                    | 2026-11-25 | proposed           |
+| [0048](0048-a-text-changed-in-fink-keeps-its-translator-as-author.md)          | A text changed in Fink keeps its translator as author                    | 2026-11-25 | accepted           |
