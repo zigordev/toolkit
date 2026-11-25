@@ -1,6 +1,7 @@
 import { exists, selection } from '../commits.ts';
 import { git } from '../files.ts';
 import type { Finding, Rule } from '../rule.ts';
+import { changesOnlyTexts } from '../translations.ts';
 
 export const owner = 'zigordev <zigordev@gmail.com>';
 export const renovate = 'renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>';
@@ -37,6 +38,9 @@ function commits(root: string, pullRequest: boolean): Finding[] {
   const findings: Finding[] = [];
   for (const entry of log.split('\n').filter((line) => line !== '')) {
     const [hash = '', author = '', committer = ''] = entry.split('\t');
+    if ((!authors.has(author) || !committers.has(committer)) && changesOnlyTexts(root, hash)) {
+      continue;
+    }
     if (!authors.has(author)) {
       findings.push({
         rule: 'identity',

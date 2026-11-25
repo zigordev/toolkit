@@ -150,3 +150,45 @@ describe('the attribution rule', () => {
     ]);
   });
 });
+
+describe('a text changed in Fink', () => {
+  const fink = 'Co-authored-by: Fink <hello@inlang.com>';
+  const translator = 'Ada Lovelace <ada@example.com>';
+
+  function textCommit(paths: readonly string[], text: string): void {
+    box.commit('feat: base');
+    box.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    for (const path of paths) {
+      box.write(path, '{ "greeting": "Hola" }\n');
+      box.git('add', path);
+    }
+    box.commit(text, translator, github);
+  }
+
+  it("accepts Fink's own line on a commit that changes only texts in messages/", () => {
+    start();
+    textCommit(['apps/notes-web/messages/es.json', 'messages/en.json'], `Update texts\n\n${fink}`);
+
+    expect(run({ PR_TITLE: 'Update texts', PR_BODY: `Update texts\r\n\r\n${fink}` })).toEqual([]);
+  });
+
+  it("reports Fink's line on a commit that changes anything else as well", () => {
+    start();
+    textCommit(
+      ['apps/notes-web/messages/es.json', 'apps/notes-web/src/page.tsx'],
+      `Update\n\n${fink}`
+    );
+
+    expect(run({ PR_BODY: `Update\n\n${fink}` })).toEqual([
+      `the pull request description: ${message}`,
+      `commit: ${message}`,
+    ]);
+  });
+
+  it('reports any other co-author line on a commit of texts', () => {
+    start();
+    textCommit(['messages/en.json'], `Update\n\n${trailer}`);
+
+    expect(run()).toEqual([`commit: ${message}`]);
+  });
+});
