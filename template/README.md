@@ -108,6 +108,8 @@ A dev process differs from its container in a few ways, all on purpose:
 | The API's telemetry | Sent to the agent at `alloy:4318`      | Sent to the agent at `127.0.0.1:4318`, giving up on a send after one second |
 | The web's telemetry | Sent to the agent                      | None: `next dev` runs without `@zigordev/otel/register`, see below          |
 
+The web app's dev server also keeps the browser's console out of its own log, with `logging.browserToTerminal: false` in `next.config.ts`. Next.js 16.4.6 writes each browser message into `.next/dev/logs`, and that write made the dev server rebuild and reload the page, which logged again, so every page reloaded forever.
+
 The web app's dev server sends no traces and no metrics. `next dev` compiles a page the first time it is asked for, so its timings say nothing about the app. And the register entry turns every line printed to the console into a JSON line, which would hide the compiler's messages from the person reading the terminal. To see the web app's telemetry, run it in its container.
 
 The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. The shared services publish it from `@zigordev/stack` 1.1.0 on, which the template takes. When the agent cannot be reached there, the dev API writes one error line a minute about it, and carries on. That happens while the shared services are stopped, or when they were last started by a product that holds an older `@zigordev/stack`. The short send timeout keeps a restart at about a second either way.
