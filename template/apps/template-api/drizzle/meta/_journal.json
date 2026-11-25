@@ -15,6 +15,13 @@
       "when": 1795446512340,
       "tag": "0001_add_notes_created_at_index",
       "breakpoints": false
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795616389656,
+      "tag": "0002_add_sign_in_tables",
+      "breakpoints": false
     }
   ]
 }

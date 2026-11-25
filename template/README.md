@@ -114,20 +114,23 @@ The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. T
 
 ## The settings
 
-| Variable                      | Read by          | What it holds                                                                | When it is not set                              |
-| ----------------------------- | ---------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
-| `OTEL_SERVICE_NAME`           | Both             | The app's one name                                                           | The app does not start                          |
-| `OTEL_SERVICE_VERSION`        | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                                  |
-| `LOG_LEVEL`                   | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                          |
-| `PORT`                        | Both             | The port the app listens on                                                  | 3000                                            |
-| `HOST`                        | The API          | The address it listens on                                                    | `0.0.0.0`, every one                            |
-| `DATABASE_URL`                | The API, the job | The address of the app's database, as its own role                           | The app does not start                          |
-| `API_KEYS`                    | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401         |
-| `FLAGS_FILE`                  | The API          | The path of its flags file                                                   | Its own `flags.json`, beside its `package.json` |
-| `DATABASE_ADMIN_URL`          | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                           |
-| `API_URL`                     | The web          | Where the web app's server reaches the API                                   | The app does not start                          |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                         |
-| `OTEL_RESOURCE_ATTRIBUTES`    | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                                  |
+| Variable                                             | Read by          | What it holds                                                                | When it is not set                              |
+| ---------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| `OTEL_SERVICE_NAME`                                  | Both             | The app's one name                                                           | The app does not start                          |
+| `OTEL_SERVICE_VERSION`                               | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                                  |
+| `LOG_LEVEL`                                          | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                          |
+| `PORT`                                               | Both             | The port the app listens on                                                  | 3000                                            |
+| `HOST`                                               | The API          | The address it listens on                                                    | `0.0.0.0`, every one                            |
+| `DATABASE_URL`                                       | The API, the job | The address of the app's database, as its own role                           | The app does not start                          |
+| `API_KEYS`                                           | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401         |
+| `FLAGS_FILE`                                         | The API          | The path of its flags file                                                   | Its own `flags.json`, beside its `package.json` |
+| `AUTH_SECRET`, `AUTH_URL`                            | The API          | Sign-in's secret of at least 32 characters, and the origin browsers use      | Sign-in is off: no `/api/auth/*`, only API keys |
+| `AUTH_EMAIL_HOLD`                                    | The API          | `true` holds sign-in's emails in the API, which only an http origin allows   | `false`, which refuses sign-in for now          |
+| `AUTH_GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_CLIENT_SECRET` | The API          | A Google OAuth client, to offer Google                                       | Sign-in offers email and passkeys only          |
+| `DATABASE_ADMIN_URL`                                 | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                           |
+| `API_URL`                                            | The web          | Where the web app's server reaches the API                                   | The app does not start                          |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                        | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                         |
+| `OTEL_RESOURCE_ATTRIBUTES`                           | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                                  |
 
 The compose files set every one of them that a container needs. An app reads nothing but environment variables.
 
@@ -182,6 +185,16 @@ const { data, error } = await api.GET('/api/v1/notes', { params: { query: { stat
 ```
 
 After a change to `openapi.json`, write the types again with `pnpm --dir packages/template-api-client run generate`. A test fails while they differ from the file. The generator runs on TypeScript 5.9.3, because openapi-typescript does not run on TypeScript 7. [Record 0036](../docs/adr/0036-the-client-generator-runs-on-its-own-typescript-5.md) says why, and when that ends.
+
+## Sign-in
+
+People sign in through [`@zigordev/auth`](../packages/auth/README.md), with email and a password, passkeys, optional two-factor and Google, as [record 0050](../docs/adr/0050-sign-in-carries-over-novembers-design.md) says. Better Auth runs in the API, which serves `/api/auth/*`, keeps users and sessions in the API's own database, and answers `GET /api/v1/me` with the person who is signed in. Every other route takes a session or an API key: the notes still need a key with its scopes.
+
+- **On this Mac, in containers:** sign-in is on at `http://template.localhost`, as `compose.local.yaml` sets.
+- **With the dev servers:** `pnpm dev api` has sign-in on for the web app at `http://localhost:3001`, from `apps/template-api/.env.development`. The API also reads an untracked `.env.local` beside it, which is where the Google client's two values go. Git ignores every `.env*.local` file.
+- **In production:** sign-in is off, because its emails cannot reach the notifications service yet.
+
+Sign-in sends four emails: verify an address, choose a new password, someone tried to sign up with your address, and confirm a deletion. The API builds each with [`@zigordev/email`](../packages/email/README.md), in the language the browser asks for. Until the template's Kafka slice sends them to the notifications service, the API holds them: it logs `auth.email_held` with their kind only, and keeps the last 50 in memory, where the tests read them. `AUTH_EMAIL_HOLD=true` turns that on, and an `https` origin refuses it, so held emails never reach production. On this Mac, email sign-up cannot be finished by hand until then, so sign in with Google or a passkey.
 
 ## The feature flags
 
@@ -315,13 +328,14 @@ A missing package waits for the owner's first publish and the pull request that 
 
 Each slice arrived in one pull request. To leave one out, put the files of that pull request back to the release before it, in the exported copy, and delete the files it added.
 
-| Slice    | What it adds                                                                        | Packages it needs                                     | Arrived in                                                        |
-| -------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- |
-| 1, hello | Both apps answer `/health` and send their telemetry, and the API says hello         | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                 |
-| 2, notes | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                 |
-| 4, flags | The API's `flags.json` and the flag `friendly-greeting`                             | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0 |
+| Slice      | What it adds                                                                                       | Packages it needs                                     | Arrived in                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1, hello   | Both apps answer `/health` and send their telemetry, and the API says hello                        | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                       |
+| 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
+| 3, sign-in | The API's half: sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
+| 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                            | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 
-Slices 3, sign-in, and 5, the notes pages, are not built yet.
+The web half of slice 3 and slice 5, the notes pages, are not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 ### A product with only an API
 
@@ -340,7 +354,8 @@ Without the web app's code, the coverage of branches comes close to the floor of
 ## What is left for later
 
 - **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
-- **Sign-in for people.** The API knows callers by their API keys. People sign in with the third slice, in phase 6.
+- **Sign-in in the web app:** the sign-in, sign-up and account pages, and the web app's forwarding of `/api/auth/*` to the API. They arrive with the web half of the third slice.
+- **Sign-in's emails through notifications:** the API holds them until the template's Kafka slice, which waits for the broker in `@zigordev/stack`.
 
 ## Known limits
 

@@ -109,10 +109,10 @@ describe.each(apps)('%s while it is edited', (app) => {
   ).scripts;
   const development = parseEnv(readFileSync(`${folder}apps/${app}/.env.development`, 'utf8'));
 
-  it('has a dev script that reloads it on a change, on this Mac only', () => {
+  it('has a dev script that reloads it on a change, on this Mac only, with its untracked settings', () => {
     expect(scripts.dev).toBe(
       app === 'template-api'
-        ? 'node --env-file=.env.development --watch --import @zigordev/otel/register src/main.ts'
+        ? 'node --env-file=.env.development --env-file-if-exists=.env.local --watch --import @zigordev/otel/register src/main.ts'
         : 'NEXT_TELEMETRY_DISABLED=1 next dev --hostname 127.0.0.1 --port 3001'
     );
   });

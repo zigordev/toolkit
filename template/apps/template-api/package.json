@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "start": "node --import @zigordev/otel/register src/main.ts",
-    "dev": "node --env-file=.env.development --watch --import @zigordev/otel/register src/main.ts",
+    "dev": "node --env-file=.env.development --env-file-if-exists=.env.local --watch --import @zigordev/otel/register src/main.ts",
     "typecheck": "tsc -p tsconfig.json",
     "db:generate": "drizzle-kit generate",
     "migrate": "node --env-file=.env.development src/migrate.ts",
@@ -27,7 +27,9 @@
     "@openfeature/server-sdk": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@zigordev/api": "workspace:*",
+    "@zigordev/auth": "workspace:*",
     "@zigordev/config": "workspace:*",
+    "@zigordev/email": "workspace:*",
     "@zigordev/flags": "workspace:*",
     "@zigordev/otel": "workspace:*",
     "drizzle-orm": "catalog:",

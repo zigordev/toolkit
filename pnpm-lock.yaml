@@ -954,9 +954,15 @@ importers:
       '@zigordev/api':
         specifier: workspace:*
         version: link:../../../packages/api
+      '@zigordev/auth':
+        specifier: workspace:*
+        version: link:../../../packages/auth
       '@zigordev/config':
         specifier: workspace:*
         version: link:../../../packages/config
+      '@zigordev/email':
+        specifier: workspace:*
+        version: link:../../../packages/email
       '@zigordev/flags':
         specifier: workspace:*
         version: link:../../../packages/flags
