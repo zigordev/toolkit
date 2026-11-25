@@ -1,0 +1,51 @@
+{
+  "name": "@zigordev/flags",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Feature flags for zigordev apps: OpenFeature, reading the app's own flags.json in the app through flagd's provider",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@openfeature/flagd-provider": "catalog:shipped"
+  },
+  "peerDependencies": {
+    "@grpc/grpc-js": "^1.14.0",
+    "@openfeature/server-sdk": "^1.23.0",
+    "@zigordev/otel": "workspace:^",
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@grpc/grpc-js": "catalog:",
+    "@openfeature/server-sdk": "catalog:",
+    "@types/node": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/flags"
+  }
+}

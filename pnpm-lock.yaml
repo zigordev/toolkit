@@ -201,6 +201,12 @@ catalogs:
     '@fontsource-variable/mona-sans':
       specifier: 5.3.0
       version: 5.3.0
+    '@grpc/grpc-js':
+      specifier: 1.14.7
+      version: 1.14.7
+    '@openfeature/server-sdk':
+      specifier: 1.23.0
+      version: 1.23.0
     '@opentelemetry/api':
       specifier: 1.10.0
       version: 1.10.0
@@ -326,6 +332,9 @@ catalogs:
     '@fastify/swagger-ui':
       specifier: 6.1.5
       version: 6.1.5
+    '@openfeature/flagd-provider':
+      specifier: 0.18.0
+      version: 0.18.0
     '@opentelemetry/core':
       specifier: 3.1.1
       version: 3.1.1
@@ -578,6 +587,37 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
 
+  packages/flags:
+    dependencies:
+      '@openfeature/flagd-provider':
+        specifier: catalog:shipped
+        version: 0.18.0(@grpc/grpc-js@1.14.7)(@openfeature/core@1.12.0)(@openfeature/server-sdk@1.23.0(@openfeature/core@1.12.0))
+    devDependencies:
+      '@grpc/grpc-js':
+        specifier: 'catalog:'
+        version: 1.14.7
+      '@openfeature/server-sdk':
+        specifier: 'catalog:'
+        version: 1.23.0(@openfeature/core@1.12.0)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      '@zigordev/dev':
+        specifier: workspace:*
+        version: link:../dev
+      '@zigordev/otel':
+        specifier: workspace:*
+        version: link:../otel
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.1(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(@vitest/browser-playwright@5.1.1)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+
   packages/otel:
     dependencies:
       '@opentelemetry/core':
@@ -787,6 +827,12 @@ importers:
 
   template/apps/template-api:
     dependencies:
+      '@grpc/grpc-js':
+        specifier: 'catalog:'
+        version: 1.14.7
+      '@openfeature/server-sdk':
+        specifier: 'catalog:'
+        version: 1.23.0(@openfeature/core@1.12.0)
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
@@ -796,6 +842,9 @@ importers:
       '@zigordev/config':
         specifier: workspace:*
         version: link:../../../packages/config
+      '@zigordev/flags':
+        specifier: workspace:*
+        version: link:../../../packages/flags
       '@zigordev/otel':
         specifier: workspace:*
         version: link:../../../packages/otel
@@ -2064,6 +2113,26 @@ packages:
 
   '@octokit/types@18.0.0':
     resolution: {integrity: sha512-l6bAF43PNxkJp6g+W4PjoUSSkxHomXw2nOum5CTftJz1NlV3vu93NImgOYtLf6CbBUb5j+fiuzW0PPQ5JTSvZA==}
+
+  '@openfeature/core@1.12.0':
+    resolution: {integrity: sha512-7PCPzyd1OC19begz30+CRknFB0ChtyaZUhk7YWrk+Bov1fpVw0HYkTXtoxxsvPfDZB9P9WsT7uixN+Z8f9+bcA==}
+
+  '@openfeature/flagd-core@5.0.0':
+    resolution: {integrity: sha512-efrtGMK3CO66/GAzGaRV2PnRkCgI4LtISrEg3WbT9PcNM0Dl73QHUOrzzI05dXE4Jf//ex0uh11KdNE1HHkgPw==}
+    peerDependencies:
+      '@openfeature/core': '>=1.6.0'
+
+  '@openfeature/flagd-provider@0.18.0':
+    resolution: {integrity: sha512-/pm1EJnjR3f6drEf1tkElj8u85YKxF8F+ksnjrLdEewWlQxpOA81inDWQXK1n2v4AQrs8qn8trKLDcif0CZGIA==}
+    peerDependencies:
+      '@grpc/grpc-js': ~1.8.0 || ~1.9.0 || ~1.10.0 || ~1.11.0 || ~1.12.0 || ~1.13.0 || ~1.14.0
+      '@openfeature/server-sdk': ^1.17.0
+
+  '@openfeature/server-sdk@1.23.0':
+    resolution: {integrity: sha512-JWeLvltJIV0AFgOfbw7hK9b9Rw/5wWq+RMhCIU9sJtAqarxr8hSPglG+JAGGhYdElAz3Qwe9W3ApWyPNkQEyqg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@openfeature/core': ^1.12.0
 
   '@opentelemetry/api@1.10.0':
     resolution: {integrity: sha512-lMkyes8iHrG+mk6WH7X70MdCLI2RS0FwNBY1PyQ8UemaijE2m5mv5A0Niy3HtbYTFrgkUEQjFMXmSAk2hQDuPQ==}
@@ -4178,6 +4247,10 @@ packages:
   import-meta-resolve@4.2.0:
     resolution: {integrity: sha512-Iqv2fzaTQN28s/FwZAoFq0ZSs/7hMAHJVX+w8PZl3cY19Pxk6jFFalxQoIfW2826i/fDLXv8IiEZRIT0lDuWcg==}
 
+  imurmurhash@0.1.4:
+    resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
+    engines: {node: '>=0.8.19'}
+
   indent-string@4.0.0:
     resolution: {integrity: sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==}
     engines: {node: '>=8'}
@@ -4329,6 +4402,10 @@ packages:
     resolution: {integrity: sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==}
     engines: {node: '>=6'}
     hasBin: true
+
+  json-logic-engine@5.0.7:
+    resolution: {integrity: sha512-Q7L18Ds60urcXPfw2yNJgE21zJOqvoBvVLLHnvzH3NR1GfFeoDu+YxCdLsHBNYiWzO5UAsv3T77VaUVeslmbrA==}
+    engines: {node: '>=12.22.7'}
 
   json-parse-better-errors@1.0.2:
     resolution: {integrity: sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==}
@@ -4902,6 +4979,10 @@ packages:
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
+
+  object-hash@3.0.0:
+    resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
+    engines: {node: '>= 6'}
 
   obliterator@2.0.5:
     resolution: {integrity: sha512-42CPE9AhahZRsMNslczq0ctAEtqk8Eka26QofnqC346BZdHDySk3LWka23LI7ULIw11NmltpiLagIq8gBozxTw==}
@@ -7036,6 +7117,29 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 29.0.1
 
+  '@openfeature/core@1.12.0': {}
+
+  '@openfeature/flagd-core@5.0.0(@openfeature/core@1.12.0)':
+    dependencies:
+      '@openfeature/core': 1.12.0
+      imurmurhash: 0.1.4
+      json-logic-engine: 5.0.7
+      object-hash: 3.0.0
+      semver: 7.8.6
+
+  '@openfeature/flagd-provider@0.18.0(@grpc/grpc-js@1.14.7)(@openfeature/core@1.12.0)(@openfeature/server-sdk@1.23.0(@openfeature/core@1.12.0))':
+    dependencies:
+      '@grpc/grpc-js': 1.14.7
+      '@openfeature/flagd-core': 5.0.0(@openfeature/core@1.12.0)
+      '@openfeature/server-sdk': 1.23.0(@openfeature/core@1.12.0)
+      lru-cache: 11.5.3
+    transitivePeerDependencies:
+      - '@openfeature/core'
+
+  '@openfeature/server-sdk@1.23.0(@openfeature/core@1.12.0)':
+    dependencies:
+      '@openfeature/core': 1.12.0
+
   '@opentelemetry/api@1.10.0': {}
 
   '@opentelemetry/configuration@0.301.2(@opentelemetry/api@1.10.0)':
@@ -9092,6 +9196,8 @@ snapshots:
 
   import-meta-resolve@4.2.0: {}
 
+  imurmurhash@0.1.4: {}
+
   indent-string@4.0.0: {}
 
   indent-string@5.0.0: {}
@@ -9192,6 +9298,8 @@ snapshots:
       argparse: 3.0.4
 
   jsesc@3.1.0: {}
+
+  json-logic-engine@5.0.7: {}
 
   json-parse-better-errors@1.0.2: {}
 
@@ -9761,6 +9869,8 @@ snapshots:
   npm@11.21.3: {}
 
   object-assign@4.1.1: {}
+
+  object-hash@3.0.0: {}
 
   obliterator@2.0.5: {}
 

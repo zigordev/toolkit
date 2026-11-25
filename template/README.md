@@ -6,19 +6,19 @@ A minimal product, kept inside `toolkit`. It is being built in slices, and this 
 
 A product on the platform is an API and a web app that is one of its clients. The template is the smallest product of that shape, wired with the shared packages of this repo.
 
-| Path                                 | What it holds                                                                                                                                      |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting and the notes, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
-| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                      |
-| `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                    |
-| `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                       |
-| `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check      |
-| `compose.local.yaml`                 | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                     |
-| `compose.production.yaml`            | What differs in production: the address, and that the deploy runs the migrate job itself                                                           |
-| `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                         |
-| `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                           |
-| `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                             |
-| `.github/workflows/ci.yml`           | The product's caller: the pipeline on every pull request, then publish and deploy on every merge to `main`                                         |
+| Path                                 | What it holds                                                                                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting behind a feature flag and the notes, its flags in `flags.json`, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
+| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                                                                       |
+| `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                                                                     |
+| `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                                                                        |
+| `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check                                                       |
+| `compose.local.yaml`                 | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                                                                      |
+| `compose.production.yaml`            | What differs in production: the address, and that the deploy runs the migrate job itself                                                                                                            |
+| `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                                                                          |
+| `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                                                                            |
+| `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                                                                              |
+| `.github/workflows/ci.yml`           | The product's caller: the pipeline on every pull request, then publish and deploy on every merge to `main`                                                                                          |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -114,19 +114,20 @@ The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. T
 
 ## The settings
 
-| Variable                      | Read by          | What it holds                                                                | When it is not set                      |
-| ----------------------------- | ---------------- | ---------------------------------------------------------------------------- | --------------------------------------- |
-| `OTEL_SERVICE_NAME`           | Both             | The app's one name                                                           | The app does not start                  |
-| `OTEL_SERVICE_VERSION`        | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                          |
-| `LOG_LEVEL`                   | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                  |
-| `PORT`                        | Both             | The port the app listens on                                                  | 3000                                    |
-| `HOST`                        | The API          | The address it listens on                                                    | `0.0.0.0`, every one                    |
-| `DATABASE_URL`                | The API, the job | The address of the app's database, as its own role                           | The app does not start                  |
-| `API_KEYS`                    | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401 |
-| `DATABASE_ADMIN_URL`          | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                   |
-| `API_URL`                     | The web          | Where the web app's server reaches the API                                   | The app does not start                  |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                 |
-| `OTEL_RESOURCE_ATTRIBUTES`    | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                          |
+| Variable                      | Read by          | What it holds                                                                | When it is not set                              |
+| ----------------------------- | ---------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
+| `OTEL_SERVICE_NAME`           | Both             | The app's one name                                                           | The app does not start                          |
+| `OTEL_SERVICE_VERSION`        | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                                  |
+| `LOG_LEVEL`                   | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                          |
+| `PORT`                        | Both             | The port the app listens on                                                  | 3000                                            |
+| `HOST`                        | The API          | The address it listens on                                                    | `0.0.0.0`, every one                            |
+| `DATABASE_URL`                | The API, the job | The address of the app's database, as its own role                           | The app does not start                          |
+| `API_KEYS`                    | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401         |
+| `FLAGS_FILE`                  | The API          | The path of its flags file                                                   | Its own `flags.json`, beside its `package.json` |
+| `DATABASE_ADMIN_URL`          | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                           |
+| `API_URL`                     | The web          | Where the web app's server reaches the API                                   | The app does not start                          |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                         |
+| `OTEL_RESOURCE_ATTRIBUTES`    | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                                  |
 
 The compose files set every one of them that a container needs. An app reads nothing but environment variables.
 
@@ -181,6 +182,16 @@ const { data, error } = await api.GET('/api/v1/notes', { params: { query: { stat
 ```
 
 After a change to `openapi.json`, write the types again with `pnpm --dir packages/template-api-client run generate`. A test fails while they differ from the file. The generator runs on TypeScript 5.9.3, because openapi-typescript does not run on TypeScript 7. [Record 0036](../docs/adr/0036-the-client-generator-runs-on-its-own-typescript-5.md) says why, and when that ends.
+
+## The feature flags
+
+The API keeps its flags in `apps/template-api/flags.json`, and reads them in the app through [`@zigordev/flags`](../packages/flags/README.md). Its image carries the file, so a flag changes through a pull request and takes effect with the deploy. No flag server runs.
+
+The template has one flag, `friendly-greeting`, and it is off. `GET /api/v1/hello` answers `Hello from template-api` while it is off, and `Hi there, from template-api` once a pull request sets its `defaultVariant` to `on`. It is the smallest example of a feature that ships switched off.
+
+Every flag carries a removal date in `metadata.removeBy`. The `flags` rule of `zigordev check` fails `pnpm check` on a flag past its date, so `friendly-greeting` has to go, or its date has to move, by 2027-11-30. A product made from the template removes it with its first real flag.
+
+A test sets a flag by pointing `FLAGS_FILE` at a file of its own, as the API's `app.test.ts` does for the friendly greeting.
 
 ## How each app starts
 
