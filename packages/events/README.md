@@ -207,6 +207,19 @@ app.addHook('onClose', () => events.stop());
 
 In tests, [`@zigordev/test/kafka`](../test/README.md) starts a real Kafka 4.4.0 with a signed-in user, the same way `@zigordev/test/postgres` starts PostgreSQL.
 
+That Kafka creates no topic by itself, the same as in production. `createTopics` from `@zigordev/events/testing` creates the topics a test needs, with one partition and one replica unless the options say more. It leaves a topic that exists, so two test files can ask for the same one, and it fails on a name that Kafka refuses. It is the one way a test creates topics, so a test never imports the Kafka client either:
+
+```ts
+import { deadLetterTopicOf } from '@zigordev/events';
+import { createTopics } from '@zigordev/events/testing';
+import { uniqueTopic, useKafka } from '@zigordev/test/kafka';
+
+const kafka = useKafka();
+const connection = { clientId: 'notes-api-test', ...kafka };
+const topic = uniqueTopic('notes.events');
+await createTopics(connection, [topic, deadLetterTopicOf(topic)]);
+```
+
 ## How to check that it works
 
 `pnpm exec vitest run --project events --project events:db` in `toolkit` runs this package's tests. The second project needs Docker, and runs every path above against a real Kafka and a real PostgreSQL: the send, the rollback, a duplicate, a retry, the dead-letter topic for a failure and for a message it cannot read, a stop during a pause, the trace across Kafka, the metrics and the health part.

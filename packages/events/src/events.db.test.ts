@@ -29,6 +29,7 @@ import { createProducer, type Events, startEvents } from './events.ts';
 import { addToOutbox, type Database } from './outbox.ts';
 import { clientOptions, type KafkaConnection } from './settings.ts';
 import { eventsOutbox, handledEvents } from './tables.ts';
+import { createTopics } from './testing.ts';
 
 const kafka = useKafka();
 const database = useTestDatabase();
@@ -119,10 +120,10 @@ function connection(overrides: Partial<KafkaConnection> = {}): KafkaConnection {
   };
 }
 
-async function createTopics(...topics: string[]): Promise<void> {
+async function existingTopics(): Promise<string[]> {
   const admin = new Admin(clientOptions(connection()));
   try {
-    await admin.createTopics({ topics, partitions: 1, replicas: 1 });
+    return await admin.listTopics();
   } finally {
     await admin.close();
   }
@@ -130,7 +131,7 @@ async function createTopics(...topics: string[]): Promise<void> {
 
 async function freshTopic(prefix: string): Promise<string> {
   const topic = uniqueTopic(prefix);
-  await createTopics(topic, deadLetterTopicOf(topic));
+  await createTopics(connection(), [topic, deadLetterTopicOf(topic)]);
   return topic;
 }
 
@@ -789,5 +790,26 @@ describe('the health component', () => {
         await expect(events.health.check()).rejects.toThrow();
       }
     );
+  });
+});
+
+describe('the topics a test needs', () => {
+  it('creates the topics that are missing and leaves the ones that exist', async () => {
+    const first = uniqueTopic('made');
+    const second = uniqueTopic('made');
+    await createTopics(connection(), [first]);
+    await createTopics(connection(), [first, second, second]);
+    expect(await existingTopics()).toEqual(expect.arrayContaining([first, second]));
+  });
+
+  it('creates a topic once when two tests ask for it at the same time', async () => {
+    const topic = uniqueTopic('shared');
+    await Promise.all([createTopics(connection(), [topic]), createTopics(connection(), [topic])]);
+    expect((await existingTopics()).filter((name) => name === topic)).toEqual([topic]);
+  });
+
+  it('does nothing for an empty list, and fails on a name that Kafka refuses', async () => {
+    await createTopics(connection(), []);
+    await expect(createTopics(connection(), ['not a topic!'])).rejects.toThrow();
   });
 });
