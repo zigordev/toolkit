@@ -13,6 +13,7 @@ It is written once, in `toolkit`, as the file `.github/workflows/check.yml`. Git
 | Dependencies | No package the pull request adds has a known flaw                                                                                                                      | Pull requests                                                    |
 | Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                                                                                                 | Every pull request and every merge                               |
 | Contract     | Each app of a product keeps promises 1 to 7 of [the contract](the-platform.md), on its built images, and its compose files keep the rules of the deploy and the backup | Every pull request and every merge, in a repo that has a product |
+| Stories      | The design system's stories pass as browser tests in Chromium, in light and in dark, with no accessibility finding, and cover 90% of its code                          | Every pull request and every merge, in a repo that has stories   |
 | `check`      | Every job above passed. It is the gate, and the one check that `main` requires                                                                                         | Every pull request and every merge                               |
 
 The gate sits in the caller, not in `check.yml`. It is the same few lines in every repo.
@@ -36,11 +37,13 @@ flowchart LR
   pipeline --> deps["Dependencies"]
   pipeline --> scan["Code scan"]
   pipeline --> contract["Contract"]
+  pipeline --> stories["Stories"]
   quality --> gate{check}
   title --> gate
   deps --> gate
   scan --> gate
   contract --> gate
+  stories --> gate
   gate -->|"green, and marked ready"| merge["Squash merge to main"]
   merge --> again["The same pipeline on main"]
 ```
@@ -48,6 +51,8 @@ flowchart LR
 On the laptop, `pnpm check` runs what the Quality job runs, and the push hook runs `pnpm check:quick` before a branch leaves. In a product's folder, `pnpm check:contract` runs what the Contract job runs, and it needs Docker running. The other three jobs need GitHub: they read the pull request, GitHub's list of known flaws, and GitHub's code scanner.
 
 The Contract job has a machine of its own, one of GitHub's arm64 runners, because an app's image is built for arm64 only. It builds the product's images from the pull request's code, starts them, and runs `zigordev contract`. [The developer setup](../../packages/dev/README.md) says what that command does for each promise. A repo without a product does not name a product folder, and the job is skipped there.
+
+The Stories job runs inside the official Playwright image, `mcr.microsoft.com/playwright`, on the same Ubuntu as every other job and pinned by its digest. The image already holds the browsers, so no run waits for a browser download, which hung November's pipeline for 30 minutes on 2026-11-20. Its Playwright version is the one the workspace installs, and a test of `@zigordev/ui` fails when the two differ. On the laptop, `pnpm test:stories` runs the same, after `pnpm exec playwright install chromium` once. A repo without a design system leaves `stories` out, and the job is skipped there.
 
 Nothing of the pipeline runs on the host. In a repo that publishes packages, the release follows a green `check` on `main`. In a product, two more reusable workflows follow it: `publish.yml` builds and attests the images, and `deploy.yml` asks the host to run them. [Delivery](delivery.md) explains both. They are files of their own, apart from `check.yml`, because GitHub checks every job of a called workflow against the caller's permissions when the run starts, even a job that would be skipped, and a pull request must never be granted the right to push an image.
 
@@ -92,6 +97,7 @@ A repo's own jobs, such as the gate in its caller, name their machine the same w
 | Dependencies | The dependency graph, switched on in the repo's settings. It is off in a new repo                                                 |
 | Code scan    | Nothing. It scans the JavaScript, the TypeScript and the workflows it finds                                                       |
 | Contract     | The folder of its product, named in the caller. In that folder: `compose.yaml`, and the script `check:contract` in `package.json` |
+| Stories      | `stories: true` in the caller, and the script `test:stories` in `package.json`, which runs the stories with coverage              |
 
 ## How to use it, with one worked example
 

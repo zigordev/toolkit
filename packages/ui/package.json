@@ -1,0 +1,68 @@
+{
+  "name": "@zigordev/ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The components of every zigordev app, built on Base UI and the design tokens, with one CSS file",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./ui.css": "./dist/ui.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node scripts/build-css.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "storybook": "storybook dev --port 6006 --no-open"
+  },
+  "dependencies": {
+    "@base-ui/react": "catalog:shipped",
+    "@zigordev/tokens": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@fontsource-variable/jetbrains-mono": "catalog:",
+    "@fontsource-variable/mona-sans": "catalog:",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/addon-vitest": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "lightningcss": "catalog:",
+    "playwright": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "storybook": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/ui"
+  }
+}

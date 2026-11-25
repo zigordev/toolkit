@@ -1,0 +1,73 @@
+{
+  "name": "zigordev design system",
+  "version": "2025.10",
+  "description": "One brand for every app. The base set is shared; mode is the only modifier.",
+  "sets": {
+    "base": {
+      "sources": [
+        {
+          "$ref": "base/typography.tokens.json"
+        },
+        {
+          "$ref": "base/space.tokens.json"
+        },
+        {
+          "$ref": "base/shape.tokens.json"
+        },
+        {
+          "$ref": "base/motion.tokens.json"
+        },
+        {
+          "$ref": "base/layout.tokens.json"
+        },
+        {
+          "$ref": "base/controls.tokens.json"
+        },
+        {
+          "$ref": "base/brand.tokens.json"
+        },
+        {
+          "$ref": "color/palette-brand.tokens.json"
+        },
+        {
+          "$ref": "color/palette-status.tokens.json"
+        },
+        {
+          "$ref": "base/roles.tokens.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "mode": {
+      "description": "Light or dark: which half of each ramp the scales use, the surfaces and the elevation.",
+      "contexts": {
+        "light": [
+          {
+            "$ref": "color/scale-light.tokens.json"
+          },
+          {
+            "$ref": "mode/light.tokens.json"
+          }
+        ],
+        "dark": [
+          {
+            "$ref": "color/scale-dark.tokens.json"
+          },
+          {
+            "$ref": "mode/dark.tokens.json"
+          }
+        ]
+      },
+      "default": "dark"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/mode"
+    }
+  ]
+}
