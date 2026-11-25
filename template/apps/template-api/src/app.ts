@@ -1,20 +1,32 @@
-import { addDatabase, addHealthComponent, createApi } from '@zigordev/api';
+import { type Authenticate, addDatabase, addHealthComponent, createApi } from '@zigordev/api';
+import { createAuth } from '@zigordev/auth';
+import { authenticateWith, serveAuth } from '@zigordev/auth/fastify';
 import { startFlags } from '@zigordev/flags';
 import type { Logger } from '@zigordev/otel';
-import type { Config } from './config.ts';
+import { type Config, signInOf } from './config.ts';
 import { notes as notesTable } from './db/schema.ts';
+import { account } from './features/account/routes.ts';
 import { hello } from './features/hello/routes.ts';
 import { notes } from './features/notes/routes.ts';
 import { apiKeys } from './plugins/api-keys.ts';
+import { anyOf, type HeldEmails, holdEmails } from './plugins/sign-in.ts';
 
 export interface AppOptions {
   readonly config: Config;
   readonly logger: Logger;
+  readonly heldEmails?: HeldEmails;
+}
+
+function productOf(service: string): { readonly name: string; readonly displayName: string } {
+  const name = service.replace(/-api$/, '');
+  return { name, displayName: `${name.charAt(0).toUpperCase()}${name.slice(1)}` };
 }
 
 export async function buildApp(options: AppOptions) {
   const { config, logger } = options;
   const service = config.OTEL_SERVICE_NAME;
+  const signIn = signInOf(config);
+  let sessions: Authenticate | undefined;
   const app = await createApi({
     service,
     logger,
@@ -25,16 +37,32 @@ export async function buildApp(options: AppOptions) {
       tags: [
         { name: 'hello', description: 'A greeting, to see that the API answers' },
         { name: 'notes', description: 'Notes to list, read, write and delete' },
+        { name: 'account', description: 'The person who is signed in' },
       ],
     },
-    authenticate: apiKeys(config.API_KEYS),
+    authenticate: anyOf(apiKeys(config.API_KEYS), (request) => sessions?.(request)),
   });
   const db = addDatabase(app, { url: config.DATABASE_URL, schema: { notes: notesTable } });
+  if (signIn !== undefined) {
+    const product = productOf(service);
+    const auth = createAuth({
+      appName: product.name,
+      displayName: product.displayName,
+      config: signIn.config,
+      methods: signIn.methods,
+      db,
+      logger,
+      sendEmail: (options.heldEmails ?? holdEmails(product.displayName, logger)).send,
+    });
+    sessions = authenticateWith(auth);
+    await serveAuth(app, auth);
+  }
   const flags = await startFlags({ app: service, file: config.FLAGS_FILE });
   addHealthComponent(app, flags.health);
   app.addHook('onClose', () => flags.stop());
   await app.register(hello, { prefix: '/api/v1', service, flags: flags.client });
   await app.register(notes, { prefix: '/api/v1/notes', db });
+  await app.register(account, { prefix: '/api/v1' });
   await app.ready();
   return app;
 }

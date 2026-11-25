@@ -95,3 +95,17 @@ describe('a path that no route matches', () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe('sign-in, while its settings are absent', () => {
+  it('serves no sign-in routes, and the account route answers 401', async () => {
+    const signIn = await app.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in/email',
+      payload: {},
+    });
+    const me = await app.inject({ method: 'GET', url: '/api/v1/me' });
+
+    expect(signIn.statusCode).toBe(404);
+    expect(me.statusCode).toBe(401);
+  });
+});

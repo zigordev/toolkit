@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import { ConfigError } from '@zigordev/config';
 import { describe, expect, it } from 'vitest';
-import { readConfig, readMigrateConfig } from './config.ts';
+import { readConfig, readMigrateConfig, signInOf } from './config.ts';
 
 const development = parseEnv(readFileSync(new URL('../.env.development', import.meta.url), 'utf8'));
 const database = 'postgresql://template_api@127.0.0.1:5433/template_api';
@@ -28,6 +28,7 @@ describe('readConfig', () => {
       DATABASE_URL: database,
       API_KEYS: [],
       FLAGS_FILE: fileURLToPath(new URL('../flags.json', import.meta.url)),
+      AUTH_EMAIL_HOLD: false,
     });
   });
 
@@ -78,6 +79,59 @@ describe('readConfig', () => {
   });
 });
 
+describe('the sign-in settings', () => {
+  const base = { OTEL_SERVICE_NAME: 'template-api', DATABASE_URL: database };
+  const secret = 'a-secret-that-is-at-least-thirty-two-characters-long';
+  const on = {
+    ...base,
+    AUTH_SECRET: secret,
+    AUTH_URL: 'http://template.localhost',
+    AUTH_EMAIL_HOLD: 'true',
+  };
+
+  it('leave sign-in off when there is no secret and no address', () => {
+    expect(signInOf(readConfig(base))).toBeUndefined();
+  });
+
+  it('turn sign-in on with a secret, an address and held emails, and Google only with both of its values', () => {
+    expect(signInOf(readConfig(on))?.methods).toEqual(['email', 'passkey']);
+    const google = signInOf(
+      readConfig({ ...on, AUTH_GOOGLE_CLIENT_ID: 'id', AUTH_GOOGLE_CLIENT_SECRET: 'secret' })
+    );
+    expect(google?.methods).toEqual(['email', 'passkey', 'google']);
+    expect(google?.config).toMatchObject({
+      AUTH_URL: 'http://template.localhost',
+      AUTH_GOOGLE_CLIENT_ID: 'id',
+    });
+  });
+
+  it('refuse half of the sign-in settings', () => {
+    expect(
+      issues(() => readConfig({ ...base, AUTH_SECRET: secret, AUTH_EMAIL_HOLD: 'true' }))
+    ).toEqual(['AUTH_URL']);
+    expect(
+      issues(() =>
+        readConfig({ ...base, AUTH_URL: 'http://template.localhost', AUTH_EMAIL_HOLD: 'true' })
+      )
+    ).toEqual(['AUTH_SECRET']);
+    expect(issues(() => readConfig({ ...on, AUTH_GOOGLE_CLIENT_ID: 'id' }))).toEqual([
+      'AUTH_GOOGLE_CLIENT_SECRET',
+    ]);
+    expect(issues(() => readConfig({ ...on, AUTH_GOOGLE_CLIENT_SECRET: 'secret' }))).toEqual([
+      'AUTH_GOOGLE_CLIENT_ID',
+    ]);
+  });
+
+  it('refuse sign-in that does not hold its emails, and held emails over https', () => {
+    expect(issues(() => readConfig({ ...on, AUTH_EMAIL_HOLD: 'false' }))).toEqual([
+      'AUTH_EMAIL_HOLD',
+    ]);
+    expect(issues(() => readConfig({ ...on, AUTH_URL: 'https://template.zigordev.com' }))).toEqual([
+      'AUTH_EMAIL_HOLD',
+    ]);
+  });
+});
+
 describe('readMigrateConfig', () => {
   it('takes the address of the app and, when there is one, the address of the superuser', () => {
     expect(
@@ -107,6 +161,13 @@ describe('the settings of pnpm dev', () => {
         /^postgresql:\/\/template_api:[^@]+@127\.0\.0\.1:5433\/template_api$/
       ),
     });
+  });
+
+  it('turn sign-in on for the web app on this Mac, with the emails held', () => {
+    const signIn = signInOf(readConfig(development));
+
+    expect(signIn?.config.AUTH_URL).toBe('http://localhost:3001');
+    expect(signIn?.methods).toEqual(['email', 'passkey']);
   });
 
   it('send the telemetry to the agent on this Mac, and give up on a send within a second', () => {

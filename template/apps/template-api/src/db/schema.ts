@@ -18,3 +18,5 @@ export const notes = pgTable(
     index('notes_created_at_id_idx').on(table.createdAt, table.id),
   ]
 );
+
+export * from '@zigordev/auth/drizzle';

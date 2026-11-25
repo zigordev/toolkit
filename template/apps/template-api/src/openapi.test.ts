@@ -9,7 +9,7 @@ describe('the committed OpenAPI file', () => {
     expect(committed).toEqual(JSON.parse(await renderOpenapi()));
   });
 
-  it('describes every endpoint of the notes, each with its operation id', async () => {
+  it('describes every endpoint, each with its operation id', async () => {
     const document = JSON.parse(await renderOpenapi()) as {
       paths: Record<string, Record<string, { operationId: string }>>;
     };
@@ -21,6 +21,7 @@ describe('the committed OpenAPI file', () => {
       'createNote',
       'deleteNote',
       'getHello',
+      'getMe',
       'getNote',
       'listNotes',
       'updateNote',
