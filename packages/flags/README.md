@@ -2,8 +2,6 @@
 
 Feature flags for the apps of the platform. A flag lets unfinished work ship switched off, and lets it be switched on later by a one-line change. Code asks for a flag through OpenFeature, and the answer comes from the app's own `flags.json`.
 
-The package is private until the owner publishes it for the first time.
-
 ## What it is
 
 | Export                      | What it is                                                                                                       |

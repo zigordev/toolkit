@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/tokens",
   "version": "0.0.0",
-  "private": true,
   "description": "The design tokens of every zigordev app: one brand, dark by default, built into CSS custom properties",
   "license": "UNLICENSED",
   "type": "module",

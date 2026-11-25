@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/flags",
   "version": "0.0.0",
-  "private": true,
   "description": "Feature flags for zigordev apps: OpenFeature, reading the app's own flags.json in the app through flagd's provider",
   "license": "UNLICENSED",
   "type": "module",
