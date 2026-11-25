@@ -371,6 +371,9 @@ export function runConsumer(options: RunConsumerOptions): RunningConsumer {
       if (!busy) {
         await stream?.close().catch(() => undefined);
       }
+      if (!connected) {
+        await consumer?.close(true).catch(() => undefined);
+      }
       await running;
       lagGauge.removeCallback(observeLag);
     },

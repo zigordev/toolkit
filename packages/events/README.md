@@ -79,7 +79,7 @@ The consumer handles one message at a time:
 
 The dead-letter topic of `notes.requests` is `notes.requests.dead-letter`. The message keeps its key, its bytes and its headers, and gains six headers that say why: `dead-letter.reason` (`invalid` or `failed`), `dead-letter.detail` (what was wrong, or the error's name), and the topic, partition, offset and group it came from. The detail never holds the error's message, which can hold an address.
 
-A stop waits for the message in hand, or ends a pause between tries without committing, so the message comes back after the restart. A consumer that loses Kafka starts again by itself, after a pause that doubles up to 30 seconds. Rows of `events_handled` older than 30 days are deleted every hour.
+A stop waits for the message in hand, or ends a pause between tries without committing, so the message comes back after the restart. A stop while the consumer is still connecting closes that connection, so a broker that does not answer holds the stop for one connection's timeout at most, 5 seconds, and never for its whole series of retries. A consumer that loses Kafka starts again by itself, after a pause that doubles up to 30 seconds. Rows of `events_handled` older than 30 days are deleted every hour.
 
 ### What it reports
 
