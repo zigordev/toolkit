@@ -1,3 +1,4 @@
+import { type AddressInfo, createServer } from 'node:net';
 import { context, metrics, propagation, SpanKind, trace } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
@@ -535,6 +536,38 @@ describe('the consumer', () => {
       const started = Date.now();
       await events.stop();
       expect(Date.now() - started).toBeLessThan(10_000);
+    }
+  });
+
+  it('stops at once while it is still connecting to a broker that does not answer', async () => {
+    const silent = createServer(() => undefined);
+    await new Promise<void>((resolve) => silent.listen(0, '127.0.0.1', resolve));
+    const { port } = silent.address() as AddressInfo;
+    const connections = (): Promise<number> =>
+      new Promise((resolve, reject) =>
+        silent.getConnections((error, count) => (error ? reject(error) : resolve(count)))
+      );
+    const events = startEvents({
+      connection: connection({ brokers: [`127.0.0.1:${port}`] }),
+      db,
+      logger,
+      relay: false,
+      consumers: [
+        defineConsumer({
+          group: uniqueTopic('group'),
+          topics: [uniqueTopic('notes')],
+          events: [noteCreated],
+          handle: async () => undefined,
+        }),
+      ],
+    });
+    try {
+      await waitFor(async () => (await connections()) > 0);
+    } finally {
+      const started = Date.now();
+      await events.stop();
+      expect(Date.now() - started).toBeLessThan(2_000);
+      silent.close();
     }
   });
 
