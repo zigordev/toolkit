@@ -10,7 +10,7 @@ Every repo proves its code with tests that a machine runs, on the laptop before 
 | API     | That every endpoint answers right: success, each error, and the error's body            | Vitest builds the app and sends it requests, on a real PostgreSQL | Phase 4 |
 | Browser | That a person can finish each critical path of a web app, with no accessibility finding | Playwright drives a browser against the production-shaped app     | Phase 6 |
 
-Vitest is the test runner. Testcontainers starts the real PostgreSQL. [`@zigordev/test`](../../packages/test/README.md) holds the helpers that every service shares: the database for each test file, and the harness that builds an app for its API tests.
+Vitest is the test runner. Testcontainers starts the real PostgreSQL, and the real Kafka for a service that sends or reads events. [`@zigordev/test`](../../packages/test/README.md) holds the helpers that every service shares: the database for each test file, the Kafka broker with its signed-in user, and the harness that builds an app for its API tests.
 
 ## Why we have it, and what we would lose without it
 

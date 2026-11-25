@@ -1,10 +1,10 @@
 # @zigordev/test
 
-Test helpers for the services of the platform. It starts a real PostgreSQL for a test run, gives every test file its own migrated copy of the database, and builds an app for the API tests.
+Test helpers for the services of the platform. It starts a real PostgreSQL for a test run, gives every test file its own migrated copy of the database, starts a real Kafka with a signed-in user, and builds an app for the API tests.
 
 ## What it is
 
-Two entry points. `@zigordev/test/postgres` gives a real database:
+Three entry points. `@zigordev/test/postgres` gives a real database:
 
 | Export                             | What it is                                                                                              |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -14,6 +14,16 @@ Two entry points. `@zigordev/test/postgres` gives a real database:
 | `createTestDatabase(templateUrl)`  | The same copy without Vitest: a `url` and a `drop()`                                                    |
 | `databaseUrl(serverUrl, database)` | The address of another database on the same server, with the same sign-in                               |
 | `postgresImage`                    | `postgres:18-alpine`, the image used when none is given                                                 |
+
+`@zigordev/test/kafka` gives a real Kafka broker, for a service that sends or reads events with [`@zigordev/events`](../events/README.md):
+
+| Export                       | What it is                                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `kafkaGlobalSetup(options?)` | The global setup of a Vitest project: one Kafka node for the whole run, with a test user signed in by SCRAM |
+| `useKafka()`                 | In a test file: the brokers' addresses, the user and the password                                           |
+| `uniqueTopic(prefix)`        | A topic name no other test uses, such as `notes.4c3f2b9e-…`. Each test makes its own topics                 |
+| `startKafka(options?)`       | The same start without Vitest: the addresses, the user, the password and a `stop()`                         |
+| `kafkaImage`                 | `apache/kafka:4.4.0`, pinned by its digest, the image used when none is given                               |
 
 `@zigordev/test/app` gives the harness for API tests:
 
@@ -54,6 +64,13 @@ flowchart LR
 - `prepare` receives the template's address, usually to run the migrations. After it, the template refuses new clients, and any client that `prepare` left open is closed, so a copy never waits.
 - `useTestDatabase` makes the copy in a `beforeAll` and drops it in an `afterAll`. The tests of one file share it, in order.
 - Tests that need a container sit in files named `*.db.test.ts`, in a Vitest project of their own, named `<name>:db`. `pnpm check` runs them. `pnpm check:quick`, which the push hook runs, leaves them out, so a push never waits for Docker.
+
+Kafka starts the way production runs it, as [record 0039](../../docs/adr/0039-apache-kafka-is-the-broker-one-node-on-the-host.md) and [record 0041](../../docs/adr/0041-each-app-signs-in-to-kafka-with-its-own-password.md) describe: the official image, one node that is broker and controller at once, and clients that sign in with SCRAM-SHA-512. Testcontainers' own Kafka module documents only Confluent's image, so the helper is ours:
+
+- Kafka has to tell clients the address they reach it at, and the port on this Mac is known only once the container runs. The container therefore waits for a start script, and the helper writes the script with that address.
+- Once the broker answers, the helper adds the user `test` with a random password, through a second listener that only the container itself can reach.
+- The broker never creates a topic on first use, as in production, so every test makes the topics it needs, with a name from `uniqueTopic`.
+- It runs with 512 MB of heap instead of the image's 1 GB, and starts in about five seconds once the image is on the machine.
 
 ## How to use it
 
@@ -138,9 +155,34 @@ it('answers 404 for a note that does not exist', async () => {
 - `expectProblem` checks the status, the media type `application/problem+json`, the code, and that the body holds exactly the fields of the platform's error format: `type`, `title`, `status`, `detail`, `instance`, `code` and `params`. It returns the body, for checks on `params`.
 - `startPostgres({ image })` takes another image. A product passes the one its `compose.yaml` runs.
 
+A service that uses Kafka starts both in its global setup, and each test file reads the broker's address:
+
+```ts
+import { kafkaGlobalSetup } from '@zigordev/test/kafka';
+import { postgresGlobalSetup } from '@zigordev/test/postgres';
+import type { TestProject } from 'vitest/node';
+import { migrate } from './src/db/migrate.ts';
+
+const postgres = postgresGlobalSetup({ prepare: migrate });
+const kafka = kafkaGlobalSetup();
+
+export async function setup(project: TestProject) {
+  const stops = await Promise.all([postgres(project), kafka(project)]);
+  return () => Promise.all(stops.map((stop) => stop()));
+}
+```
+
+```ts
+import { uniqueTopic, useKafka } from '@zigordev/test/kafka';
+
+const kafka = useKafka();
+const topic = uniqueTopic('notes');
+```
+
 ## How to check that it works
 
-- `pnpm exec vitest run --project test --project test:db` in `toolkit` runs this package's own tests. The database tests ask the server for its version, and fail on anything but PostgreSQL 18.
+- `pnpm exec vitest run --project test --project test:db` in `toolkit` runs this package's own tests. The database tests ask the server for its version, and fail on anything but PostgreSQL 18. The Kafka tests sign in as the test user, are refused with a wrong password, make a topic, are refused a topic that nobody made, and find nothing left after the stop.
+- A Kafka start that fails with `did not accept its test user in time` means the broker did not answer within two minutes, often because Docker has too little memory. Run the test again with `DEBUG='testcontainers*'`, and Testcontainers prints the broker's own log.
 - A database test that fails with `Could not find a working container runtime strategy` means Docker is not running. Start Docker Desktop and run it again.
 - A test that hangs in its `beforeAll` while it makes the copy usually holds a client open on the template. `prepare` has to close what it opens. The package closes what is left, but only once, right after `prepare`.
 - Containers that a crashed run left behind are removed by Testcontainers' own clean-up container, `testcontainers/ryuk`, within seconds.

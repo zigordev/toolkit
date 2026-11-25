@@ -1,0 +1,62 @@
+{
+  "name": "@zigordev/events",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Events between zigordev services over Kafka: typed events, the transactional outbox, the consumer with retries and a dead-letter topic, skipped duplicates, trace headers, health and metrics",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@platformatic/kafka": "catalog:shipped"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.10.0",
+    "@zigordev/otel": "workspace:^",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.0",
+    "zod": "^4.6.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/context-async-hooks": "catalog:",
+    "@opentelemetry/core": "catalog:shipped",
+    "@opentelemetry/sdk-metrics": "catalog:",
+    "@opentelemetry/sdk-trace": "catalog:shipped",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "@zigordev/api": "workspace:*",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "@zigordev/test": "workspace:*",
+    "drizzle-kit": "catalog:",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:shipped",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/events"
+  }
+}
