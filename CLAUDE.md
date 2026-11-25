@@ -13,6 +13,8 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, a real Kafka with a signed-in user, and the harness that builds an app for API tests                 |
 | `packages/api`          | `@zigordev/api`: the Fastify base of every API: the error format, paging, sign-in checks, the OpenAPI pages, the health route and a clean stop                                            |
 | `packages/events`       | `@zigordev/events`: events between services over Kafka, with the outbox, the consumer, the dead-letter topic, trace headers and metrics. It alone imports `@platformatic/kafka`           |
+| `packages/tokens`       | `@zigordev/tokens`: the design tokens, as JSON in the W3C format, built by Terrazzo into `tokens.css`. Dark by default                                                                    |
+| `packages/ui`           | `@zigordev/ui`: the components on Base UI, their CSS in `src/styles`, bundled into `ui.css`, and their stories, which are their browser tests                                             |
 | `template/`             | The product template. It, its apps and its packages are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root |
 | `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                                   |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, `publish.yml` and `deploy.yml` deliver a product, and `ci.yml` runs the first two here                    |
@@ -26,6 +28,8 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm install` installs the dependencies and the git hooks.
 - `pnpm check` runs what CI runs: lint, build, type check, and tests with coverage. It prints how long it took.
 - `pnpm check:quick` runs the same without coverage and without the tests that need a container. The push hook runs it.
+- `pnpm test:stories` runs the design system's stories in Chromium, in light and in dark, with axe and with coverage of `packages/ui/src`, which `pnpm check` leaves out. The pipeline's Stories job runs the same in the pinned Playwright image. It needs the tokens built, and Chromium once: `pnpm exec playwright install chromium`.
+- `pnpm --dir packages/ui run storybook` opens the showroom on this Mac.
 - A test that needs a container is named `*.db.test.ts` and belongs to the Vitest project `<name>:db`, from the `vitest.db.config.ts` beside the package's or the app's `vitest.config.ts`. Docker has to run for it.
 - `pnpm format` fixes the formatting, the import order and the Markdown problems that have a safe fix.
 - `pnpm exec vitest run <path>` runs one test file.
@@ -45,7 +49,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - A version lives once, as an exact version, in one of the two catalogs of `pnpm-workspace.yaml`. What a package under `packages/` lists under `dependencies` lives in the catalog named `shipped`, referred to as `catalog:shipped`. Everything else lives in the default catalog, referred to as `catalog:`. `packages/dev/src/workspace.test.ts` holds both.
 - A new rule of `zigordev check` comes with a test that breaks it, and with a line in `packages/dev/README.md` and in the table of the core rules.
 - The job named `check` is the required check in every repo. Renaming it, or a job inside `check.yml`, breaks merging everywhere, so say it in the pull request.
-- Coverage counts every package's `src`, its root `.js` files, the hook scripts and the `src` of the template's apps, with a floor of 90%.
+- Coverage counts every package's `src`, its root `.js` files, the hook scripts and the `src` of the template's apps, with a floor of 90%. `pnpm test:stories` counts `packages/ui/src`, against the same floor.
 - The test for the guard hook is `packages/dev/guard.test.js`. A new case for the guard starts there.
 - A new package starts with `"private": true`. It goes public only after the owner has run `zigordev first-publish` for it, which a session never runs without `--dry-run`: it signs in to npm as the owner.
 - A decision gets a record in `docs/adr/`, written with the `write-decision-record` skill, and a row in the index there.

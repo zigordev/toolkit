@@ -70,7 +70,14 @@ describe('the machines of the pipeline', () => {
   const arm = new Set(['contract', 'image']);
 
   it('reads every job of the five workflows', () => {
-    expect(jobs(workflow)).toEqual(['quality', 'contract', 'title', 'dependencies', 'scan']);
+    expect(jobs(workflow)).toEqual([
+      'quality',
+      'contract',
+      'stories',
+      'title',
+      'dependencies',
+      'scan',
+    ]);
     expect(jobs(release)).toEqual(['version', 'pack', 'publish']);
     expect(jobs(publish)).toEqual(['plan', 'image']);
     expect(jobs(deploy)).toEqual(['deploy']);
@@ -295,6 +302,39 @@ describe('the Contract job', () => {
     expect(template.scripts['check:contract']).toBe(
       'docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only zigordev contract'
     );
+  });
+});
+
+describe('the Stories job', () => {
+  it('runs only for a repo that says it has stories', () => {
+    expect(workflow).toContain('      stories:\n');
+    expect(workflow).toContain('        type: boolean\n        default: false\n');
+    expect(job(workflow, 'stories')).toContain('if: inputs.stories');
+  });
+
+  it('runs in the official Playwright image, pinned by its digest, which already holds the browsers', () => {
+    expect(job(workflow, 'stories')).toMatch(
+      /^ {4}container:\n {6}image: mcr\.microsoft\.com\/playwright:v[\d.]+-resolute@sha256:[0-9a-f]{64}$/m
+    );
+  });
+
+  it('may read the repo, and nothing else', () => {
+    expect(job(workflow, 'stories')).toContain('    permissions:\n      contents: read\n');
+    expect(job(workflow, 'stories')).not.toContain('write');
+    expect(job(workflow, 'stories')).toContain('persist-credentials: false');
+  });
+
+  it('installs only Node.js and pnpm, builds, and runs the stories', () => {
+    const steps = job(workflow, 'stories');
+
+    expect(steps).toContain('          install_args: node pnpm\n');
+    expect(steps).toContain('        run: pnpm run build\n');
+    expect(steps).toContain('        run: pnpm run test:stories\n');
+  });
+
+  it('is asked for by this repo, which holds the design system', () => {
+    expect(job(caller, 'pipeline')).toContain('      stories: true\n');
+    expect(job(product, 'pipeline')).not.toContain('stories');
   });
 });
 

@@ -1,0 +1,44 @@
+{
+  "name": "@zigordev/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The design tokens of every zigordev app: one brand, dark by default, built into CSS custom properties",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./dist/tokens.css"
+  },
+  "scripts": {
+    "build": "terrazzo build --quiet && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@terrazzo/cli": "catalog:",
+    "@terrazzo/plugin-css": "catalog:",
+    "@types/node": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/tokens"
+  }
+}

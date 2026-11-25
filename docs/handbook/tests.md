@@ -4,11 +4,11 @@
 
 Every repo proves its code with tests that a machine runs, on the laptop before a push and in the pipeline before a merge. There are three layers:
 
-| Layer   | What it proves                                                                          | How it runs                                                       | From    |
-| ------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------- |
-| Unit    | That one function or one module does what it says                                       | Vitest, in a `*.test.ts` file beside the code                     | Phase 1 |
-| API     | That every endpoint answers right: success, each error, and the error's body            | Vitest builds the app and sends it requests, on a real PostgreSQL | Phase 4 |
-| Browser | That a person can finish each critical path of a web app, with no accessibility finding | Playwright drives a browser against the production-shaped app     | Phase 6 |
+| Layer   | What it proves                                                                                                                              | How it runs                                                                                              | From    |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------- |
+| Unit    | That one function or one module does what it says                                                                                           | Vitest, in a `*.test.ts` file beside the code                                                            | Phase 1 |
+| API     | That every endpoint answers right: success, each error, and the error's body                                                                | Vitest builds the app and sends it requests, on a real PostgreSQL                                        | Phase 4 |
+| Browser | That a person can finish each critical path of a web app, and that each component of the design system works, with no accessibility finding | Playwright drives Chromium: through the stories of `@zigordev/ui`, and against the production-shaped app | Phase 6 |
 
 Vitest is the test runner. Testcontainers starts the real PostgreSQL, and the real Kafka for a service that sends or reads events. [`@zigordev/test`](../../packages/test/README.md) holds the helpers that every service shares: the database for each test file, the Kafka broker with its signed-in user, and the harness that builds an app for its API tests.
 
@@ -22,10 +22,11 @@ The API tests run on a real PostgreSQL because a stand-in for the database hides
 
 Two commands run the tests, and each says what it covers:
 
-| Command            | Runs                                                                    | Who runs it                          |
-| ------------------ | ----------------------------------------------------------------------- | ------------------------------------ |
-| `pnpm check`       | Everything, with coverage against a floor of 90%                        | You, before a push, and the pipeline |
-| `pnpm check:quick` | Everything that needs no container, without coverage, in about a minute | The push hook, before every push     |
+| Command             | Runs                                                                                                             | Who runs it                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `pnpm check`        | Everything, with coverage against a floor of 90%                                                                 | You, before a push, and the pipeline                               |
+| `pnpm check:quick`  | Everything that needs no container, without coverage, in about a minute                                          | The push hook, before every push                                   |
+| `pnpm test:stories` | The design system's stories in Chromium, in light and in dark, with axe and with coverage against the same floor | You, after a change to a component, and the pipeline's Stories job |
 
 A test that needs a container sits in a file named `*.db.test.ts`. Those files belong to a Vitest project of their own, named after the app or package with `:db` at the end, and that project's global setup starts the container. `check:quick` leaves out every project whose name ends in `:db`, so a push never waits for Docker.
 

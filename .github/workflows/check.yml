@@ -7,6 +7,10 @@ on:
         description: The folder that holds a product's compose.yaml. Its images are built and held to the platform contract. A repo without apps leaves it out.
         type: string
         default: ""
+      stories:
+        description: Whether the repo has a design system whose stories run as browser tests, in light and in dark, with an accessibility check. They run in the pinned Playwright image, which holds the browsers.
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -59,6 +63,35 @@ jobs:
         env:
           PRODUCT_FOLDER: ${{ inputs.product-folder }}
         run: pnpm --dir "$PRODUCT_FOLDER" run check:contract
+
+  stories:
+    name: Stories
+    if: inputs.stories
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.1-resolute@sha256:dcf385f7a31aa1cbb0a7a0c97a539142bf70480b661f89f26a774ec1fe2edd1d
+    permissions:
+      contents: read
+    env:
+      LEFTHOOK: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          install_args: node pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Run the stories in light and in dark
+        run: pnpm run test:stories
 
   title:
     name: Title

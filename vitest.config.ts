@@ -22,7 +22,7 @@ export default defineConfig({
         'packages/*/*.js',
         'packages/*/shared/.claude/hooks/*.mjs',
       ],
-      exclude: ['**/*.test.{js,ts,tsx}', '**/*.d.ts', '**/src/generated/**'],
+      exclude: ['**/*.test.{js,ts,tsx}', '**/*.d.ts', '**/src/generated/**', 'packages/ui/src/**'],
       reporter: ['text'],
       thresholds: {
         lines: floor,
