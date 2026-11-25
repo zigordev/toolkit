@@ -57,7 +57,7 @@ A product starts as a copy of `template/` in toolkit at one release, with every 
 1. **Open it.** Commit with the message in a file and `git commit -F`. commitlint refuses a body line longer than 100 characters. Push with `git push -u origin <branch>`, and open the pull request as a draft with `--repo` and `--head`. Put the contract's output in it.
 2. **Wait for the platform's apply.** It has landed when `gh api repos/zigordev/<name>/rules/branches/main` names `check` and `gh api repos/zigordev/<name>/dependency-graph/sbom` answers. Then edit the description, which runs the pipeline again, because a run started by hand waits for the owner.
 3. **Merge on green:** `gh pr ready`, then `gh pr merge --auto --squash`. Never poll the pipeline. Read the pull request once when you come back to it.
-4. **After the merge,** `gh api users/zigordev/packages/container/<name>-api --jq .visibility` prints `public`. If it does not, the owner makes the image public before the first deploy. Renovate opens its Dependency Dashboard issue within minutes. If it does not, the owner checks the Renovate app's access to the repo.
+4. **After the merge,** `gh api users/zigordev/packages/container/<name>-api --jq .visibility` prints `public`. If it does not, the owner makes the image public before the first deploy. Renovate finds the new repo by itself: within minutes it opens its Dependency Dashboard issue and its first pull requests, among them the `zigordev` group's. If none comes, say so in the report.
 
 The deploy target, its secrets and the Deploy job come later, in a step with the platform session.
 
