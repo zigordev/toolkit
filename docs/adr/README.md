@@ -28,7 +28,7 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0018](0018-secrets-in-aws-parameter-store.md)                                 | Production secrets live in AWS Parameter Store                           | 2026-11-21 | accepted           |
 | [0019](0019-email-through-the-notifications-service.md)                        | Email goes through the notifications service                             | 2026-11-21 | superseded by 0042 |
 | [0020](0020-sign-in-with-email-passkeys-and-google.md)                         | Sign-in offers email, passkeys, two-factor and Google                    | 2026-11-21 | accepted           |
-| [0021](0021-one-flagd-per-product.md)                                          | One flagd per product                                                    | 2026-11-21 | accepted           |
+| [0021](0021-one-flagd-per-product.md)                                          | One flagd per product                                                    | 2026-11-21 | superseded by 0046 |
 | [0022](0022-design-system-starts-small-with-storybook.md)                      | The design system starts with the colours and a Button, with Storybook   | 2026-11-21 | accepted           |
 | [0023](0023-hourly-backups-and-a-monthly-restore-test.md)                      | Hourly backups, a monthly restore test and a copy outside AWS            | 2026-11-21 | accepted           |
 | [0024](0024-alerts-reach-the-phone-through-grafana.md)                         | Alerts reach the phone through Grafana, with email as the fallback       | 2026-11-21 | accepted           |
@@ -53,3 +53,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0043](0043-the-host-steps-up-to-a-t4g-medium-when-the-broker-arrives.md)      | The host steps up to a t4g.medium when the broker arrives                | 2026-11-25 | accepted           |
 | [0044](0044-live-updates-reach-pages-as-server-sent-events.md)                 | Live updates reach pages as Server-Sent Events                           | 2026-11-25 | accepted           |
 | [0045](0045-mobile-apps-are-built-with-expo-beside-the-web-app.md)             | Mobile apps are built with Expo, beside the web app                      | 2026-11-25 | accepted           |
+| [0046](0046-each-app-reads-its-own-flags-in-the-app.md)                        | Each app reads its own flags in the app, through OpenFeature             | 2026-11-25 | accepted           |

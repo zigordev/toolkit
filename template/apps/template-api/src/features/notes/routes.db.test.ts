@@ -346,7 +346,7 @@ describe('GET /health', () => {
       status: 'ok',
       service: 'template-api',
       version: '1f3a9c2',
-      components: { db: { status: 'up' } },
+      components: { db: { status: 'up' }, flags: { status: 'up' } },
     });
   });
 });

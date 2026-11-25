@@ -3,6 +3,7 @@ import { actions } from './actions.ts';
 import { attribution } from './attribution.ts';
 import { comments } from './comments.ts';
 import { docs } from './docs.ts';
+import { flags } from './flags.ts';
 import { identity } from './identity.ts';
 import { links } from './links.ts';
 import { migrations } from './migrations.ts';
@@ -15,6 +16,7 @@ export function rulesWith(source: string): readonly Rule[] {
     attribution,
     comments,
     docs,
+    flags,
     identity,
     links,
     migrations,
