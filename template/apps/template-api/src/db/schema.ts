@@ -20,3 +20,4 @@ export const notes = pgTable(
 );
 
 export * from '@zigordev/auth/drizzle';
+export { eventsOutbox, handledEvents } from '@zigordev/events';

@@ -9,7 +9,10 @@ import {
   resetPassword,
   verifyEmail,
 } from '@zigordev/email';
+import { addToOutbox, type Database } from '@zigordev/events';
+import { type EmailRequest, emailRequested } from '@zigordev/notifications-events';
 import type { Logger } from '@zigordev/otel';
+import { recipientOf, requestIdOf } from './emails.ts';
 
 export function anyOf(...ways: readonly Authenticate[]): Authenticate {
   return async (request) => {
@@ -46,26 +49,34 @@ export function emailOf(message: AuthEmail, product: string): Email {
   }
 }
 
-export interface HeldEmail {
-  readonly message: AuthEmail;
-  readonly email: Email;
-}
-
-export interface HeldEmails {
-  readonly emails: readonly HeldEmail[];
-  readonly send: AuthEmailSender;
-}
-
-export const heldEmailsKept = 50;
-
-export function holdEmails(product: string, logger: Logger): HeldEmails {
-  const emails: HeldEmail[] = [];
+export function authEmailRequest(message: AuthEmail, product: string): EmailRequest {
+  const email = emailOf(message, product);
   return {
-    emails,
-    send: async (message) => {
-      emails.push({ message, email: emailOf(message, product) });
-      emails.splice(0, Math.max(0, emails.length - heldEmailsKept));
-      logger.info({ event: 'auth.email_held', kind: message.kind });
-    },
+    to: recipientOf(message.to, message.name),
+    subject: email.subject,
+    html: email.html,
+    text: email.text,
+    tags: { template: message.kind, locale: languageOf(message.request) },
+  };
+}
+
+export interface AuthEmailsOptions {
+  readonly db: Database;
+  readonly app: string;
+  readonly topic: string;
+  readonly product: string;
+  readonly logger: Logger;
+}
+
+export function sendAuthEmails(options: AuthEmailsOptions): AuthEmailSender {
+  const { db, app, topic, product, logger } = options;
+  return async (message) => {
+    const request = await addToOutbox(db, {
+      topic,
+      event: emailRequested,
+      data: authEmailRequest(message, product),
+      id: requestIdOf(app, message.idempotencyKey),
+    });
+    logger.info({ event: 'email.requested', requestId: request.id, template: message.kind });
   };
 }

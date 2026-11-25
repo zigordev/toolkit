@@ -255,9 +255,12 @@ catalogs:
     '@vitest/coverage-v8':
       specifier: 5.1.1
       version: 5.1.1
+    '@zigordev/notifications-events':
+      specifier: 1.0.0
+      version: 1.0.0
     '@zigordev/stack':
-      specifier: 1.4.0
-      version: 1.4.0
+      specifier: 1.7.0
+      version: 1.7.0
     drizzle-kit:
       specifier: 0.31.11
       version: 0.31.11
@@ -932,7 +935,7 @@ importers:
         version: link:../packages/dev
       '@zigordev/stack':
         specifier: 'catalog:'
-        version: 1.4.0
+        version: 1.7.0
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -963,9 +966,15 @@ importers:
       '@zigordev/email':
         specifier: workspace:*
         version: link:../../../packages/email
+      '@zigordev/events':
+        specifier: workspace:*
+        version: link:../../../packages/events
       '@zigordev/flags':
         specifier: workspace:*
         version: link:../../../packages/flags
+      '@zigordev/notifications-events':
+        specifier: 'catalog:'
+        version: 1.0.0(@zigordev/events@packages+events)(zod@4.6.7)
       '@zigordev/otel':
         specifier: workspace:*
         version: link:../../../packages/otel
@@ -3527,8 +3536,15 @@ packages:
   '@webcontainer/env@1.1.1':
     resolution: {integrity: sha512-6aN99yL695Hi9SuIk1oC88l9o0gmxL1nGWWQ/kNy81HigJ0FoaoTXpytCj6ItzgyCEwA9kF1wixsTuv5cjsgng==}
 
-  '@zigordev/stack@1.4.0':
-    resolution: {integrity: sha512-5sxN76ENFdOOvd06eORc+xc0QSgjqkz2r3AZSPjzUrah5WaviW0X9KINswA2qc1maF9YkZwW9sNeyOUDwyjgyA==}
+  '@zigordev/notifications-events@1.0.0':
+    resolution: {integrity: sha512-h7ojigLKeurc5GIiss4tuQ6d5895Shr7r0xPF4uGAgxmwZ02xYOZHZ1NJDr4v3B3qqOJPF7PYVaNg4ztyl8IrQ==}
+    engines: {node: '>=26'}
+    peerDependencies:
+      '@zigordev/events': ^1.26.0
+      zod: ^4.6.0
+
+  '@zigordev/stack@1.7.0':
+    resolution: {integrity: sha512-G8KjognezsUPGXqoMMbYSDUWc+oHuNdIE4iYqmVtoi+vywF0qxQTpCS/Kc0cGktsNP7TQsGnrznpqVurJPJR7A==}
     engines: {node: '>=26'}
     hasBin: true
 
@@ -9078,7 +9094,12 @@ snapshots:
 
   '@webcontainer/env@1.1.1': {}
 
-  '@zigordev/stack@1.4.0': {}
+  '@zigordev/notifications-events@1.0.0(@zigordev/events@packages+events)(zod@4.6.7)':
+    dependencies:
+      '@zigordev/events': link:packages/events
+      zod: 4.6.7
+
+  '@zigordev/stack@1.7.0': {}
 
   abort-controller@3.0.0:
     dependencies:

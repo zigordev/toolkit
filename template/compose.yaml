@@ -19,6 +19,9 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       DATABASE_URL: postgresql://template_api:${TEMPLATE_API_DATABASE_PASSWORD:-}@template-postgres:5432/template_api
       API_KEYS: ${TEMPLATE_API_KEYS:-}
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_USERNAME: template-api
+      KAFKA_PASSWORD: ${KAFKA_PASSWORD:-}
     depends_on:
       template-api-migrate:
         condition: service_completed_successfully

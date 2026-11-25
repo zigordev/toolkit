@@ -7,30 +7,112 @@ import {
   startGoogleStandIn,
   totpCode,
 } from '@zigordev/auth/testing';
-import { createLogger } from '@zigordev/otel';
-import { captureLogs, expectProblem, useApp } from '@zigordev/test/app';
+import {
+  addToOutbox,
+  type Database,
+  deadLetterTopicOf,
+  defineConsumer,
+  startEvents,
+} from '@zigordev/events';
+import { createTopics } from '@zigordev/events/testing';
+import {
+  type EmailRequestedEvent,
+  emailFailed,
+  emailRequested,
+  emailSent,
+} from '@zigordev/notifications-events';
+import { createLogger, type Logger } from '@zigordev/otel';
+import { captureLogs, expectProblem, type LogLine, useApp } from '@zigordev/test/app';
+import { uniqueTopic, useKafka } from '@zigordev/test/kafka';
 import { useTestDatabase } from '@zigordev/test/postgres';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import type { LightMyRequestResponse } from 'fastify';
+import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.ts';
 import { readConfig } from '../../config.ts';
 import { hashKey } from '../../plugins/api-keys.ts';
-import { type HeldEmail, holdEmails } from '../../plugins/sign-in.ts';
+import type { EmailTopics } from '../../plugins/emails.ts';
 
 const appUrl = 'http://template.localhost';
 const password = 'correct horse battery staple';
 const reader = randomUUID();
+const refused = '@refused.example.com';
 const database = useTestDatabase();
+const kafka = useKafka();
 const logs = captureLogs();
 const logger = createLogger({ service: 'template-api', destination: logs });
-const held = holdEmails('Template', logger);
+const topics: EmailTopics = {
+  requests: uniqueTopic('notifications.requests.template-api'),
+  outcomes: uniqueTopic('notifications.outcomes.template-api'),
+  outcomesGroup: uniqueTopic('template-api.email-outcomes'),
+};
 let google: GoogleStandIn;
+let pool: pg.Pool;
+let notifications: NotificationsStandIn;
+
+interface NotificationsStandIn {
+  readonly requests: readonly EmailRequestedEvent[];
+  stop(): Promise<void>;
+}
+
+async function answer(tx: Database, request: EmailRequestedEvent): Promise<void> {
+  const at = new Date().toISOString();
+  if (request.data.to.email.endsWith(refused)) {
+    await addToOutbox(tx, {
+      topic: topics.outcomes,
+      event: emailFailed,
+      data: { requestId: request.id, failedAt: at, attempts: 1, reason: 'rejected', smtpCode: 550 },
+    });
+    return;
+  }
+  await addToOutbox(tx, {
+    topic: topics.outcomes,
+    event: emailSent,
+    data: { requestId: request.id, sentAt: at, attempts: 1 },
+  });
+}
+
+function startNotificationsStandIn(db: Database, quiet: Logger): NotificationsStandIn {
+  const requests: EmailRequestedEvent[] = [];
+  const events = startEvents({
+    connection: { clientId: 'notifications-api', ...kafka },
+    db,
+    logger: quiet,
+    relay: false,
+    consumers: [
+      defineConsumer({
+        group: uniqueTopic('notifications-api.requests'),
+        topics: [topics.requests],
+        events: [emailRequested],
+        handle: async (request, { tx }) => {
+          requests.push(request);
+          await answer(tx, request);
+        },
+      }),
+    ],
+  });
+  return { requests, stop: () => events.stop() };
+}
 
 beforeAll(async () => {
   google = await startGoogleStandIn();
+  await createTopics({ clientId: 'template-api-test', ...kafka }, [
+    topics.requests,
+    topics.outcomes,
+    deadLetterTopicOf(topics.requests),
+    deadLetterTopicOf(topics.outcomes),
+  ]);
+  pool = new pg.Pool({ connectionString: database.url, max: 3 });
+  notifications = startNotificationsStandIn(
+    drizzle({ client: pool, casing: 'snake_case' }),
+    createLogger({ service: 'notifications-api', destination: captureLogs() })
+  );
 });
 
 afterAll(async () => {
+  await notifications.stop();
+  await pool.end();
   await google.close();
 });
 
@@ -44,13 +126,15 @@ const server = useApp(() =>
       ]),
       AUTH_SECRET: 'a-test-secret-that-is-long-enough-for-better-auth',
       AUTH_URL: appUrl,
-      AUTH_EMAIL_HOLD: 'true',
       AUTH_GOOGLE_CLIENT_ID: google.clientId,
       AUTH_GOOGLE_CLIENT_SECRET: google.clientSecret,
       AUTH_GOOGLE_STAND_IN_URL: google.url,
+      KAFKA_BROKERS: kafka.brokers.join(','),
+      KAFKA_USERNAME: kafka.username,
+      KAFKA_PASSWORD: kafka.password,
     }),
     logger,
-    heldEmails: held,
+    emails: { topics, relayInterval: 100 },
   })
 );
 
@@ -102,25 +186,38 @@ class Browser {
   }
 }
 
-async function heldFor(kind: HeldEmail['message']['kind'], to: string): Promise<HeldEmail> {
-  const deadline = Date.now() + 10_000;
+async function eventually<T>(what: string, find: () => T | undefined): Promise<T> {
+  const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
-    const found = held.emails.findLast(
-      (candidate) => candidate.message.kind === kind && candidate.message.to === to
-    );
+    const found = find();
     if (found !== undefined) {
       return found;
     }
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  throw new Error(`no ${kind} email was held for ${to}`);
+  throw new Error(`${what} did not come within 20 seconds`);
 }
 
-function linkOf(email: HeldEmail): string {
-  if (email.message.kind === 'account-exists') {
-    throw new Error('the notice of a second sign-up carries no link');
+function requestFor(template: string, to: string): Promise<EmailRequestedEvent> {
+  return eventually(`the ${template} request to ${to}`, () =>
+    notifications.requests.findLast(
+      (request) => request.data.tags.template === template && request.data.to.email === to
+    )
+  );
+}
+
+function logOf(event: string, requestId: string): Promise<LogLine> {
+  return eventually(`the log line ${event} of ${requestId}`, () =>
+    logs.find(event).find((line) => line.requestId === requestId)
+  );
+}
+
+function linkOf(request: EmailRequestedEvent): string {
+  const link = request.data.text?.match(/https?:\/\/\S+/)?.[0];
+  if (link === undefined) {
+    throw new Error(`the ${request.data.tags.template} email carries no link`);
   }
-  return email.message.url;
+  return link;
 }
 
 async function signUp(address: string): Promise<Browser> {
@@ -131,12 +228,12 @@ async function signUp(address: string): Promise<Browser> {
     name: 'Ada Lovelace',
   });
   expect(response.statusCode).toBe(200);
-  await browser.get(linkOf(await heldFor('verify-email', address)));
+  await browser.get(linkOf(await requestFor('verify-email', address)));
   return browser;
 }
 
 describe('sign-in with email and a password', () => {
-  it('holds the verification email, and its link signs the person in', async () => {
+  it('sends the verification email to notifications, and its link signs the person in', async () => {
     const browser = await signUp('ada@example.com');
 
     const me = await browser.get('/api/v1/me');
@@ -147,8 +244,12 @@ describe('sign-in with email and a password', () => {
       email: 'ada@example.com',
       emailVerified: true,
     });
-    const email = await heldFor('verify-email', 'ada@example.com');
-    expect(email.email.subject).toBe('Confirm your email address for Template');
+    const request = await requestFor('verify-email', 'ada@example.com');
+    expect(request.data).toMatchObject({
+      to: { email: 'ada@example.com', name: 'Ada Lovelace' },
+      subject: 'Confirm your email address for Template',
+      tags: { template: 'verify-email', locale: 'en' },
+    });
   });
 
   it('signs in with the password once the address is verified', async () => {
@@ -176,14 +277,16 @@ describe('sign-in with email and a password', () => {
     expectProblem(response, { status: 403, code: 'auth.forbidden' });
   });
 
-  it('sets a new password through the held reset email', async () => {
+  it('sets a new password through the reset email', async () => {
     await signUp('grace@example.com');
     const visitor = new Browser();
     await visitor.post('/api/auth/request-password-reset', {
       email: 'grace@example.com',
       redirectTo: '/reset-password',
     });
-    const landing = await visitor.get(linkOf(await heldFor('reset-password', 'grace@example.com')));
+    const landing = await visitor.get(
+      linkOf(await requestFor('reset-password', 'grace@example.com'))
+    );
     const token = new URL(String(landing.headers.location)).searchParams.get('token');
 
     const reset = await visitor.post('/api/auth/reset-password', {
@@ -208,8 +311,43 @@ describe('sign-in with email and a password', () => {
       name: 'Someone Else',
     });
 
-    const notice = await heldFor('account-exists', 'mary@example.com');
-    expect(notice.email.subject).toBe('Someone tried to sign up to Template with your address');
+    const notice = await requestFor('account-exists', 'mary@example.com');
+    expect(notice.data.subject).toBe('Someone tried to sign up to Template with your address');
+  });
+
+  it('sends that notice once in ten minutes, however often someone tries', async () => {
+    await signUp('rosalind@example.com');
+    const window = 10 * 60 * 1000;
+    const left = window - (Date.now() % window);
+    if (left < 15_000) {
+      await new Promise((resolve) => setTimeout(resolve, left + 100));
+    }
+    const before = logs.find('email.requested').length;
+
+    for (const name of ['Someone Else', 'Someone Else Again']) {
+      await new Browser().post('/api/auth/sign-up/email', {
+        email: 'rosalind@example.com',
+        password,
+        name,
+      });
+    }
+    const saved = await eventually('two notices in the outbox', () => {
+      const lines = logs
+        .find('email.requested')
+        .slice(before)
+        .filter((line) => line.template === 'account-exists');
+      return lines.length === 2 ? lines : undefined;
+    });
+    await signUp('marker@example.com');
+
+    expect(saved[0]?.requestId).toBe(saved[1]?.requestId);
+    expect(
+      notifications.requests.filter(
+        (request) =>
+          request.data.tags.template === 'account-exists' &&
+          request.data.to.email === 'rosalind@example.com'
+      )
+    ).toHaveLength(1);
   });
 });
 
@@ -283,12 +421,12 @@ describe('two-factor', () => {
 });
 
 describe('account deletion', () => {
-  it('deletes the account through the held confirmation link, opened while signed in', async () => {
+  it('deletes the account through the confirmation link, opened while signed in', async () => {
     const owner = await signUp('barbara@example.com');
     await owner.post('/api/auth/delete-user', {});
-    const email = await heldFor('delete-account', 'barbara@example.com');
+    const request = await requestFor('delete-account', 'barbara@example.com');
 
-    await owner.get(linkOf(email));
+    await owner.get(linkOf(request));
 
     expect((await owner.get('/api/v1/me')).statusCode).toBe(401);
     const again = await new Browser().post('/api/auth/sign-in/email', {
@@ -299,14 +437,35 @@ describe('account deletion', () => {
   });
 });
 
-describe('the held emails', () => {
-  it('log only their kind, never the address or the link', () => {
-    const lines = logs.lines.filter((line) => line.event === 'auth.email_held');
+describe('the outcomes', () => {
+  it('logs the email that notifications sent, and the one it could not send, with its reason', async () => {
+    await signUp('lin@example.com');
+    const sent = await requestFor('verify-email', 'lin@example.com');
+    await new Browser().post('/api/auth/sign-up/email', {
+      email: `nobody${refused}`,
+      password,
+      name: 'Nobody',
+    });
+    const failed = await requestFor('verify-email', `nobody${refused}`);
+
+    expect(await logOf('email.sent', sent.id)).toMatchObject({ level: 'info', attempts: 1 });
+    expect(await logOf('email.failed', failed.id)).toMatchObject({
+      level: 'warn',
+      reason: 'rejected',
+      smtpCode: 550,
+    });
+  });
+});
+
+describe('the logs of the emails', () => {
+  it('carry the request and its kind, never the address or the link', () => {
+    const lines = logs.lines.filter((line) => String(line.event).startsWith('email.'));
 
     expect(lines.length).toBeGreaterThan(0);
     for (const line of lines) {
       expect(Object.keys(line)).not.toContain('to');
       expect(JSON.stringify(line)).not.toMatch(/@example\.com|token=/);
     }
+    expect(logs.find('auth.email_failed')).toEqual([]);
   });
 });

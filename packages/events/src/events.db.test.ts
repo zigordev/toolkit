@@ -274,6 +274,25 @@ describe('an event saved with a change', () => {
 
     expect((await outboxRows(topic)).map((row) => row.key)).toEqual([envelope.id, noteId]);
   });
+
+  it('takes the id it is given, and refuses one that is not a UUID', async () => {
+    const topic = await freshTopic('notes');
+    const id = '3f2a9c1e-5b7d-8e4f-9a6b-1c2d3e4f5a6b';
+
+    const envelope = await addToOutbox(db, {
+      topic,
+      event: noteCreated,
+      data: { noteId, title: 'x' },
+      id,
+    });
+
+    expect(envelope.id).toBe(id);
+    expect((await outboxRows(topic)).map((row) => row.key)).toEqual([id]);
+    await expect(
+      addToOutbox(db, { topic, event: noteCreated, data: { noteId, title: 'y' }, id: 'note-1' })
+    ).rejects.toThrow();
+    expect(await outboxRows(topic)).toHaveLength(1);
+  });
 });
 
 describe('the consumer', () => {

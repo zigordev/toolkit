@@ -1,9 +1,11 @@
 import type { AuthEmail } from '@zigordev/auth';
+import type { Database } from '@zigordev/events';
 import { createLogger } from '@zigordev/otel';
 import { captureLogs } from '@zigordev/test/app';
 import type { FastifyRequest } from 'fastify';
 import { describe, expect, it } from 'vitest';
-import { anyOf, emailOf, heldEmailsKept, holdEmails, languageOf } from './sign-in.ts';
+import { requestIdOf } from './emails.ts';
+import { anyOf, authEmailRequest, emailOf, languageOf, sendAuthEmails } from './sign-in.ts';
 
 const request = {} as FastifyRequest;
 
@@ -70,19 +72,87 @@ describe('emailOf', () => {
   });
 });
 
-describe('holdEmails', () => {
-  it('keeps the newest emails, and logs only their kind', async () => {
-    const logs = captureLogs();
-    const held = holdEmails('Template', createLogger({ service: 'test', destination: logs }));
+describe('authEmailRequest', () => {
+  it('asks for the email as rendered, to the person by name, labelled with its kind and language', () => {
+    const request = authEmailRequest(message('reset-password', 'es'), 'Template');
 
-    for (let index = 0; index <= heldEmailsKept; index += 1) {
-      await held.send(message('verify-email'));
+    expect(request).toEqual({
+      to: { email: 'ada@example.com', name: 'Ada' },
+      subject: 'Elige una contraseña nueva para Template',
+      html: expect.stringContaining('token=abc'),
+      text: expect.stringContaining('token=abc'),
+      tags: { template: 'reset-password', locale: 'es' },
+    });
+  });
+
+  it('leaves out a name that an address header cannot carry', () => {
+    for (const name of ['', '   ', 'Ada\nBcc: eve@example.com', 'a'.repeat(201)]) {
+      expect(authEmailRequest({ ...message('account-exists'), name }, 'Template').to).toEqual({
+        email: 'ada@example.com',
+      });
     }
-    await held.send(message('delete-account'));
+  });
+});
 
-    expect(held.emails).toHaveLength(heldEmailsKept);
-    expect(held.emails.at(-1)?.message.kind).toBe('delete-account');
-    expect(logs.find('auth.email_held').at(-1)).toMatchObject({ kind: 'delete-account' });
+interface SavedRow {
+  readonly topic: string;
+  readonly key: string;
+  readonly value: { readonly id: string; readonly type: string; readonly data: unknown };
+}
+
+function outbox(): { readonly db: Database; readonly rows: SavedRow[] } {
+  const rows: SavedRow[] = [];
+  const db = {
+    insert: () => ({
+      values: async (row: SavedRow) => {
+        rows.push(row);
+      },
+    }),
+  } as unknown as Database;
+  return { db, rows };
+}
+
+describe('sendAuthEmails', () => {
+  it('saves a request event in the outbox, with an id that its key decides, and logs no address', async () => {
+    const logs = captureLogs();
+    const { db, rows } = outbox();
+    const send = sendAuthEmails({
+      db,
+      app: 'template-api',
+      topic: 'notifications.requests.template-api',
+      product: 'Template',
+      logger: createLogger({ service: 'test', destination: logs }),
+    });
+
+    await send(message('verify-email'));
+    await send(message('verify-email'));
+
+    const id = requestIdOf('template-api', 'key');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      topic: 'notifications.requests.template-api',
+      key: id,
+      value: { id, type: 'email.requested', data: { to: { email: 'ada@example.com' } } },
+    });
+    expect(rows[1]?.value.id).toBe(id);
+    expect(logs.find('email.requested')).toEqual([
+      expect.objectContaining({ requestId: id, template: 'verify-email' }),
+      expect.objectContaining({ requestId: id, template: 'verify-email' }),
+    ]);
     expect(JSON.stringify(logs.lines)).not.toMatch(/ada@example\.com|token=abc/);
+  });
+
+  it('fails, and saves nothing, when the address is no address', async () => {
+    const { db, rows } = outbox();
+    const send = sendAuthEmails({
+      db,
+      app: 'template-api',
+      topic: 'notifications.requests.template-api',
+      product: 'Template',
+      logger: createLogger({ service: 'test', destination: captureLogs() }),
+    });
+
+    await expect(send({ ...message('verify-email'), to: 'not an address' })).rejects.toThrow();
+    expect(rows).toEqual([]);
   });
 });

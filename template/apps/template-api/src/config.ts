@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { type AuthConfig, type AuthMethod, authConfigShape } from '@zigordev/auth';
 import { type Env, loadConfig } from '@zigordev/config';
+import { type KafkaConnection, kafkaSettings } from '@zigordev/events';
 import { flagsSettings } from '@zigordev/flags';
 import * as z from 'zod';
 import { apiKeysSchema } from './plugins/api-keys.ts';
@@ -20,19 +21,44 @@ const signIn = {
   AUTH_GOOGLE_CLIENT_ID: auth.AUTH_GOOGLE_CLIENT_ID,
   AUTH_GOOGLE_CLIENT_SECRET: auth.AUTH_GOOGLE_CLIENT_SECRET,
   AUTH_GOOGLE_STAND_IN_URL: auth.AUTH_GOOGLE_STAND_IN_URL,
-  AUTH_EMAIL_HOLD: z.stringbool().default(false),
 };
 
-interface SignInSettings {
+const kafka = {
+  KAFKA_BROKERS: kafkaSettings.KAFKA_BROKERS.optional(),
+  KAFKA_USERNAME: kafkaSettings.KAFKA_USERNAME.optional(),
+  KAFKA_PASSWORD: kafkaSettings.KAFKA_PASSWORD.optional(),
+};
+
+const kafkaVariables = ['KAFKA_BROKERS', 'KAFKA_USERNAME', 'KAFKA_PASSWORD'] as const;
+
+interface Settings {
   readonly AUTH_SECRET?: string | undefined;
   readonly AUTH_URL?: string | undefined;
   readonly AUTH_GOOGLE_CLIENT_ID?: string | undefined;
   readonly AUTH_GOOGLE_CLIENT_SECRET?: string | undefined;
-  readonly AUTH_EMAIL_HOLD: boolean;
+  readonly KAFKA_BROKERS?: readonly string[] | undefined;
+  readonly KAFKA_USERNAME?: string | undefined;
+  readonly KAFKA_PASSWORD?: string | undefined;
 }
 
-function checkSignIn(settings: SignInSettings, context: z.core.$RefinementCtx): void {
-  const issue = (variable: string, message: string) =>
+type Issue = (variable: string, message: string) => void;
+
+function checkKafka(settings: Settings, signIn: boolean, issue: Issue): void {
+  const given = kafkaVariables.filter((variable) => settings[variable] !== undefined);
+  for (const variable of kafkaVariables) {
+    if (settings[variable] !== undefined) {
+      continue;
+    }
+    if (given.length > 0) {
+      issue(variable, `is needed with ${given.join(' and ')}, to reach Kafka`);
+    } else if (signIn) {
+      issue(variable, 'is needed with sign-in, so that its emails reach the notifications service');
+    }
+  }
+}
+
+function checkSettings(settings: Settings, context: z.core.$RefinementCtx): void {
+  const issue: Issue = (variable, message) =>
     context.addIssue({ code: 'custom', path: [variable], message });
   const on = settings.AUTH_SECRET !== undefined || settings.AUTH_URL !== undefined;
   if (on && settings.AUTH_SECRET === undefined) {
@@ -53,21 +79,14 @@ function checkSignIn(settings: SignInSettings, context: z.core.$RefinementCtx): 
   ) {
     issue('AUTH_GOOGLE_CLIENT_ID', 'is needed with AUTH_GOOGLE_CLIENT_SECRET');
   }
-  if (on && !settings.AUTH_EMAIL_HOLD) {
-    issue(
-      'AUTH_EMAIL_HOLD',
-      'has to be true while sign-in emails cannot reach the notifications service'
-    );
-  }
-  if (settings.AUTH_EMAIL_HOLD && settings.AUTH_URL?.startsWith('https:') === true) {
-    issue('AUTH_EMAIL_HOLD', 'holds emails only on the laptop, over http, never in production');
-  }
+  checkKafka(settings, on, issue);
 }
 
 const schema = z
   .object({
     ...service,
     ...signIn,
+    ...kafka,
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     HOST: z.string().min(1).default('0.0.0.0'),
     FLAGS_FILE: flagsSettings.FLAGS_FILE.default(
@@ -86,7 +105,7 @@ const schema = z
       })
       .pipe(apiKeysSchema),
   })
-  .superRefine(checkSignIn);
+  .superRefine(checkSettings);
 
 const migrateSchema = z.object({
   ...service,
@@ -117,6 +136,23 @@ export function signInOf(config: Config): SignIn | undefined {
     },
   };
 }
+
+export function kafkaOf(config: Config): KafkaConnection | undefined {
+  if (
+    config.KAFKA_BROKERS === undefined ||
+    config.KAFKA_USERNAME === undefined ||
+    config.KAFKA_PASSWORD === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    clientId: config.OTEL_SERVICE_NAME,
+    brokers: config.KAFKA_BROKERS,
+    username: config.KAFKA_USERNAME,
+    password: config.KAFKA_PASSWORD,
+  };
+}
+
 export type MigrateConfig = z.output<typeof migrateSchema>;
 
 export function readConfig(env: Env = process.env): Config {
