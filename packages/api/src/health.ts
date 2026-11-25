@@ -18,7 +18,11 @@ export function serveHealth(
     { config: { public: true, rateLimit: false }, schema: { hide: true } },
     async (_request, reply) => {
       const report = await checkHealth({ service, components: app.healthComponents });
-      return reply.code(report.statusCode).serializer(JSON.stringify).send(report.body);
+      return reply
+        .code(report.statusCode)
+        .type('application/json; charset=utf-8')
+        .serializer(JSON.stringify)
+        .send(report.body);
     }
   );
 }
