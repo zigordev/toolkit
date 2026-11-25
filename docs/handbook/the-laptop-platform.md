@@ -97,6 +97,8 @@ A service that is not an app says what it is with a label of the platform, and t
 | `com.zigordev.job: migrate`     | `<app>-migrate`, a one-shot job on the app's own image | On the laptop, the app waits for it with `depends_on`, so `pnpm local:up` migrates before the app starts. In production the deploy runs it once, before the new version, and stops if it fails |
 | `com.zigordev.backup: postgres` | The product's PostgreSQL                               | The hourly backup on the host dumps every database in it, from inside the container                                                                                                            |
 
+Since 2026-11-25, `zigordev contract` refuses a product whose service on the `postgres` image lacks `com.zigordev.backup: postgres`, so no database goes without its backup.
+
 The dump runs inside the PostgreSQL container, so the container's memory limit is set higher than the database needs at rest, to leave room for it. `compose.production.yaml` resets the app's `depends_on` on the job with `depends_on: !reset []`, because there the deploy runs the job itself, once per version.
 
 ### Two ways to run a product

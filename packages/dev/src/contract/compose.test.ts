@@ -80,6 +80,7 @@ describe('judgeCompose', () => {
         'gpool-api and gpool-web drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout',
         '.env.production.example names 2 secrets, with no value, and the compose files use no other',
         'compose.production.yaml routes gpool-api and gpool-web to gpool.zigordev.com',
+        'gpool-postgres carries the label com.zigordev.backup: postgres, so the backup on the host finds it',
       ].map((detail) => ({ promise: 7, kept: true, detail }))
     );
   });
@@ -338,6 +339,62 @@ describe('judgeCompose', () => {
     });
 
     expect(broken(found)).toEqual([detail]);
+  });
+
+  it.each([
+    `postgres:18.7-alpine3.24@${digest}`,
+    `docker.io/library/postgres:18.7-alpine3.24@${digest}`,
+    `library/postgres:18.7@${digest}`,
+  ])('refuses %s without the label that the backup looks for', (image) => {
+    const found = files((all) => {
+      all['gpool-postgres'] = { ...all['gpool-postgres'], image, labels: {} };
+    });
+
+    expect(broken(found)).toEqual([
+      'gpool-postgres runs PostgreSQL without the label com.zigordev.backup: postgres, so the backup on the host would never find it',
+    ]);
+  });
+
+  it.each(['mysql', ''])('refuses the label of the backup with the kind %j', (kind) => {
+    const found = files((all) => {
+      all['gpool-postgres'] = {
+        ...all['gpool-postgres'],
+        labels: { 'com.zigordev.backup': kind },
+      };
+    });
+
+    expect(broken(found)).toEqual([
+      `gpool-postgres has the label com.zigordev.backup: "${kind}", but the backup knows only the kind postgres`,
+    ]);
+  });
+
+  it('takes a store on another image that carries the label, and names every store it finds', () => {
+    const found = files((all) => {
+      all['gpool-vectors'] = {
+        ...all['gpool-postgres'],
+        image: `pgvector/pgvector:0.8.1-pg18@${digest}`,
+      };
+    });
+
+    expect(judgeCompose(found).at(-1)).toEqual({
+      promise: 7,
+      kept: true,
+      detail:
+        'gpool-postgres and gpool-vectors carry the label com.zigordev.backup: postgres, so the backup on the host finds them',
+    });
+  });
+
+  it('takes a product without a database, where the backup has nothing to dump', () => {
+    const found = files((all) => {
+      delete all['gpool-postgres'];
+    });
+
+    expect(judgeCompose(found).at(-1)).toEqual({
+      promise: 7,
+      kept: true,
+      detail:
+        'no service runs postgres or carries the label com.zigordev.backup, so the backup has nothing to dump',
+    });
   });
 });
 

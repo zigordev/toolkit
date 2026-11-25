@@ -77,7 +77,7 @@ A repo's own `release.config.js` passes these settings on in one line. semantic-
 
 ### The contract command
 
-Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves. It also checks promise 7, that the product describes itself in its compose files, as far as the deploy depends on it: the rules that [Delivery](../../docs/handbook/delivery.md) lists, and that each app the ingress routes drains before it stops.
+Every app on the platform keeps twelve promises, and [The platform](../../docs/handbook/the-platform.md) lists them. The first six are about how an app behaves while it runs, so no reading of its code can show them. `zigordev contract` checks those six on the images themselves. It also checks promise 7, that the product describes itself in its compose files, as far as the deploy and the backup depend on it: the rules that [Delivery](../../docs/handbook/delivery.md) lists, and that each app the ingress routes drains before it stops.
 
 It runs in the folder of a product, where `compose.yaml` is. An app is a service whose image begins with `ghcr.io/zigordev/`, and its image has to be built already. A service with the label `com.zigordev.job`, such as a migration job on the app's own image, is a job and not an app: it runs once and ends. [Record 0035](../../docs/adr/0035-labels-tell-the-platform-what-a-service-is.md) sets the label.
 
@@ -106,6 +106,7 @@ The rules of the compose files are read without starting anything, from `compose
 | A routed service can drain                 | No `container_name` and no `ports`. Its health check names `/tmp/drain`, `/tmp` is in memory, and the label `docker-rollout.pre-stop-hook` waits long enough             |
 | The secrets are named, and only named      | Each line of `.env.production.example` is `NAME=`, and every variable of the compose files is one of them, but `VERSION` and `DOCKER_SOCKET_GROUP`, which the host gives |
 | Production has its address                 | Every routed service has a router rule with ``Host(`<product>.zigordev.com`)`` in `compose.production.yaml`                                                              |
+| The backup finds every database            | Every service on the official `postgres` image has the label `com.zigordev.backup: postgres`, and no service names another kind in that label                            |
 
 It prints one line for each rule of the compose files, then one for each promise of each app, with what it saw:
 
@@ -124,7 +125,7 @@ template-api
 zigordev contract: 1 app keeps promises 1 to 7, and the compose files keep promise 7
 ```
 
-The example leaves out five of the seven lines of the compose files.
+The example leaves out six of the eight lines of the compose files.
 
 A job keeps two promises of its own, and gets the same kind of lines under its name:
 
