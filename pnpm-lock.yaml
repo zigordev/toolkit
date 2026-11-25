@@ -220,8 +220,8 @@ catalogs:
       specifier: 5.1.1
       version: 5.1.1
     '@zigordev/stack':
-      specifier: 1.1.0
-      version: 1.1.0
+      specifier: 1.2.1
+      version: 1.2.1
     drizzle-kit:
       specifier: 0.31.11
       version: 0.31.11
@@ -567,7 +567,7 @@ importers:
         version: link:../packages/dev
       '@zigordev/stack':
         specifier: 'catalog:'
-        version: 1.1.0
+        version: 1.2.1
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -2219,8 +2219,8 @@ packages:
   '@vitest/spy@5.1.1':
     resolution: {integrity: sha512-6K8C6alQG1/Yc8/ZI22iJS7JEsxPdVzqtqDq+/xM4Z0mGVykemMVjLhqMy/q6/IHYG3kKD8hKSwRen/ZdyI9vQ==}
 
-  '@zigordev/stack@1.1.0':
-    resolution: {integrity: sha512-dGB4i1dK+AzCnXtoqCxbM/ya4KPj6wUFmFC6FOoMEDP1M0sOSi9Ja1R4PGFd2Sjg2yDKj3FamWv6qehnwadDnQ==}
+  '@zigordev/stack@1.2.1':
+    resolution: {integrity: sha512-C4Q4dTC1lvIMyGlE7hhs4Ov2uYFchaqbl5VdwMTqQi9b7mbW0SOktWtFe+hMNu1xMRElt4OiwipPYMllMOU/5Q==}
     engines: {node: '>=26'}
     hasBin: true
 
@@ -6020,7 +6020,7 @@ snapshots:
 
   '@vitest/spy@5.1.1': {}
 
-  '@zigordev/stack@1.1.0': {}
+  '@zigordev/stack@1.2.1': {}
 
   abort-controller@3.0.0:
     dependencies:
