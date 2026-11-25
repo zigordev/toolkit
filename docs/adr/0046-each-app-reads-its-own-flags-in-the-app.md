@@ -1,6 +1,6 @@
 # 0046. Each app reads its own flags in the app, through OpenFeature
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: [0021](0021-one-flagd-per-product.md)
 
@@ -12,7 +12,7 @@ Building step 6.4 on 2026-11-25 showed a gap: the host reads only three files of
 
 OpenFeature's provider for flagd, `@openfeature/flagd-provider`, can also read a flags file inside the app, with flagd's own rules, in what it calls its offline mode. It is at 0.18.0, released on 2026-10-22, under Apache-2.0. The rule "stable versions only" kept `@fastify/sse` out for being below 1.0. OpenFeature's server SDK is stable, at 1.23.0.
 
-The owner took two decisions on 2026-11-25. On the provider, in their words: "Allow the providers (Recommended)". On where flags are read: "Read in the app (Recommended)".
+The owner took two decisions on 2026-11-25. On the provider, in their words: "Allow the providers (Recommended)". On where flags are read: "Read in the app (Recommended)". The owner accepted this record the same day, in their words: "Accept 0046 (Recommended)".
 
 ## Decision
 
