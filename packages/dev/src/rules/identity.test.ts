@@ -105,3 +105,31 @@ describe('the identity rule', () => {
     ]);
   });
 });
+
+describe('a text changed in Fink', () => {
+  const translator = 'Ada Lovelace <ada@example.com>';
+
+  function textCommit(paths: readonly string[]): void {
+    box.commit('feat: base');
+    box.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    for (const path of paths) {
+      box.write(path, '{ "greeting": "Hola" }\n');
+      box.git('add', path);
+    }
+    box.commit('Update texts', translator, github);
+  }
+
+  it("accepts a translator's commit that changes only texts in messages/", () => {
+    start();
+    textCommit(['apps/notes-web/messages/es.json', 'messages/en.json']);
+
+    expect(run()).toEqual([]);
+  });
+
+  it("reports a translator's commit that changes anything else as well", () => {
+    start();
+    textCommit(['apps/notes-web/messages/es.json', 'apps/notes-web/messages/notes.ts']);
+
+    expect(run()).toEqual([`commit: the author is "${translator}", not "${owner}"`]);
+  });
+});
