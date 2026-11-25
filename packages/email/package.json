@@ -1,0 +1,66 @@
+{
+  "name": "@zigordev/email",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The emails of zigordev apps: messages rendered with React Email on the design tokens when an app builds, and filled in at send time",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./build": {
+      "types": "./dist/build.d.ts",
+      "default": "./dist/build.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "generate": "node scripts/generate-theme.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-email": "^6.11.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "react-email": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/tokens": "workspace:*",
+    "lightningcss": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-email": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/email"
+  }
+}
