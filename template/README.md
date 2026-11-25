@@ -250,7 +250,7 @@ Every app on the platform keeps twelve promises, and [the platform page](../docs
 pnpm check:contract
 ```
 
-It builds both images, starts them once more under the name `template-contract`, on a network of their own, and holds each app to the promises with `zigordev contract`. It first reads `compose.yaml` and `compose.production.yaml` together, as the host does, and checks the rules of the deploy that [Delivery](../docs/handbook/delivery.md) lists. A product that already runs at `template.localhost` is not touched. It takes about half a minute once the images are built, and it needs Docker running, but not the shared services. This is its output on 2026-11-24:
+It builds both images, starts them once more under the name `template-contract`, on a network of their own, and holds each app to the promises with `zigordev contract`. It first reads `compose.yaml` and `compose.production.yaml` together, as the host does, and checks the rules of the deploy and the backup that [Delivery](../docs/handbook/delivery.md) lists. A product that already runs at `template.localhost` is not touched. It takes about half a minute once the images are built, and it needs Docker running, but not the shared services. This is its output on 2026-11-25:
 
 ```text
 the compose files
@@ -261,6 +261,7 @@ the compose files
   kept    7  template-api and template-web drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout
   kept    7  .env.production.example names 3 secrets, with no value, and the compose files use no other
   kept    7  compose.production.yaml routes template-api and template-web to template.zigordev.com
+  kept    7  template-postgres carries the label com.zigordev.backup: postgres, so the backup on the host finds it
 template-api
   kept    1  an arm64 image that runs as the user 1000:1000
   kept    2  without its settings it stops at once, with code 1

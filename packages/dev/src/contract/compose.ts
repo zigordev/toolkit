@@ -35,6 +35,9 @@ export const drainLabel = 'docker-rollout.pre-stop-hook';
 export const version = `\${VERSION:-local}`;
 const given = new Set(['VERSION', 'DOCKER_SOCKET_GROUP']);
 const pinned = /^[^@\s]+:[^@\s]+@sha256:[0-9a-f]{64}$/;
+const backupLabel = 'com.zigordev.backup';
+const backupKinds = new Set(['postgres']);
+const postgresImages = new Set(['postgres', 'library/postgres', 'docker.io/library/postgres']);
 
 function kept(detail: string): Verdict {
   return { promise: 7, kept: true, detail };
@@ -255,6 +258,46 @@ function addressRule(services: [string, RawService][], product: string): Verdict
   );
 }
 
+function repositoryOf(image: string | undefined): string {
+  const reference = image?.split('@')[0] ?? '';
+  const tag = reference.lastIndexOf(':');
+  return tag > reference.lastIndexOf('/') ? reference.slice(0, tag) : reference;
+}
+
+function backupRule(services: [string, RawService][]): Verdict {
+  const unknown = services.find(([, service]) => {
+    const kind = labelsOf(service)[backupLabel];
+    return kind !== undefined && !backupKinds.has(kind);
+  });
+  if (unknown !== undefined) {
+    return broken(
+      `${unknown[0]} has the label ${backupLabel}: "${labelsOf(unknown[1])[backupLabel]}", but the backup knows only the kind postgres`
+    );
+  }
+  const missing = services.find(
+    ([, service]) =>
+      postgresImages.has(repositoryOf(service.image)) &&
+      labelsOf(service)[backupLabel] === undefined
+  );
+  if (missing !== undefined) {
+    return broken(
+      `${missing[0]} runs PostgreSQL without the label ${backupLabel}: postgres, so the backup on the host would never find it`
+    );
+  }
+  const stores = services
+    .filter(([, service]) => labelsOf(service)[backupLabel] !== undefined)
+    .map(([name]) => name);
+  if (stores.length === 0) {
+    return kept(
+      `no service runs postgres or carries the label ${backupLabel}, so the backup has nothing to dump`
+    );
+  }
+  const one = stores.length === 1;
+  return kept(
+    `${list(stores)} ${one ? 'carries' : 'carry'} the label ${backupLabel}: postgres, so the backup on the host finds ${one ? 'it' : 'them'}`
+  );
+}
+
 export function judgeCompose(files: DeployFiles): Verdict[] {
   const product = named(files.compose ?? '');
   const verdicts = [nameRule(product)];
@@ -280,5 +323,6 @@ export function judgeCompose(files: DeployFiles): Verdict[] {
     drainRule(services),
     secretsRule(files.example, files.model),
     ...address,
+    backupRule(services),
   ];
 }
