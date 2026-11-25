@@ -411,7 +411,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                                                                     | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
 | 3, sign-in | Sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails, and the web app's pages                                             | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
-| 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#PULL                                                            |
+| 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
 Slice 5, the notes pages, is not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
