@@ -1,6 +1,6 @@
 # 0047. Emails are rendered when an app builds, and filled in when it sends
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-25
 - Supersedes: none
 
@@ -10,7 +10,7 @@ The plan renders each product's emails with React Email, on the design tokens, i
 
 Building step 6.2 on 2026-11-25 showed the cost. React Email 6.11.16 is one package that also carries its preview tool, and its separate small packages are deprecated. Importing it into a service took about 46 MB of memory and 176 ms, measured on this Mac. An API container is limited to 256 MB.
 
-The owner chose on 2026-11-25, in their words: "At build, filled in at send (Recommended)".
+The owner chose on 2026-11-25, in their words: "At build, filled in at send (Recommended)". The owner accepted this record the same day: "Accept 0047 (Recommended)".
 
 ## Decision
 
