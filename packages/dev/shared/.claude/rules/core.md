@@ -1,6 +1,6 @@
 # Core rules
 
-These rules hold in every zigordev repo and in every session. `toolkit` owns this file. Every other repo holds a copy, `zigordev sync` updates it, and `pnpm check` fails when a copy differs. A repo's own `CLAUDE.md` adds detail. When the two disagree, stop and ask.
+These rules hold in every zigordev repo and in every session. `toolkit` owns this file. Every other repo reaches it through a link to its installed `@zigordev/dev`, which `zigordev sync` writes, and `pnpm check` fails when the link is missing or leads elsewhere. A repo's own `CLAUDE.md` adds detail. When the two disagree, stop and ask.
 
 ## The rules
 

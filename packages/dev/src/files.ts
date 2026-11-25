@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const skipped = new Set(['.git', 'node_modules', 'dist', 'coverage']);
@@ -36,5 +36,7 @@ export function repoFiles(root: string): string[] {
   const listed = git(root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard']);
   const files =
     listed === undefined ? walk(root, '') : listed.split('\0').filter((path) => path !== '');
-  return files.filter((path) => existsSync(join(root, path))).sort();
+  return files
+    .filter((path) => existsSync(join(root, path)) && statSync(join(root, path)).isFile())
+    .sort();
 }

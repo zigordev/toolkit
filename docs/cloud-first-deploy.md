@@ -4,13 +4,13 @@
 
 ## What leaves this repo
 
-| What                                         | How it travels                                                                           | State on 2026-11-22                                                                |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                        | `platform` calls it since 2026-11-22, pinned to the commit of version 1.1.0        |
-| Delivery, `publish.yml` and `deploy.yml`     | A product's workflow calls them after `check` on `main`, pinned to the same commit       | Written on 2026-11-24. `platform` deploys the shared services through them first   |
-| The shared files in `packages/dev/shared`    | `zigordev sync` copies them into a repo, and the `shared` rule fails when a copy differs | Used by this repo, by `platform` and by the workspace folder on the owner's laptop |
-| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run   | Used by this repo and by `platform`                                                |
-| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                     | `@zigordev/dev` is published since 2026-11-22. Every later package starts private  |
+| What                                         | How it travels                                                                                                                         | State on 2026-11-22                                                                |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| The pipeline, `.github/workflows/check.yml`  | Another repo's workflow calls it, pinned to a commit of this repo                                                                      | `platform` calls it since 2026-11-22, pinned to the commit of version 1.1.0        |
+| Delivery, `publish.yml` and `deploy.yml`     | A product's workflow calls them after `check` on `main`, pinned to the same commit                                                     | Written on 2026-11-24. `platform` deploys the shared services through them first   |
+| The shared files in `packages/dev/shared`    | `zigordev sync` links the rules and skills into a repo and copies the rest, and the `shared` rule fails when a link or a copy is wrong | Used by this repo, by `platform` and by the workspace folder on the owner's laptop |
+| The Renovate preset, `renovate/default.json` | Every repo's `renovate.json` extends it, and Renovate reads it from `main` on each run                                                 | Used by this repo and by `platform`                                                |
+| The packages, `@zigordev/*`                  | Published to the public npm registry on every merge that changes one                                                                   | `@zigordev/dev` is published since 2026-11-22. Every later package starts private  |
 
 ## The path of a change
 

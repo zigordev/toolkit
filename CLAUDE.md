@@ -7,7 +7,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | Path                    | What it holds                                                                                                                                                                                                                      |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/dev`          | `@zigordev/dev`: the `zigordev` command, the shared configs and the shared files                                                                                                                                                   |
-| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` copies them to the root of a repo                                                                                                                            |
+| `packages/dev/shared`   | The one true copy of every file that all repos share. `zigordev sync` links the rules and skills into the root of a repo and copies the rest there                                                                                 |
 | `packages/config`       | `@zigordev/config`: an app's settings, read from the environment once through a Zod schema                                                                                                                                         |
 | `packages/otel`         | `@zigordev/otel`: a service's traces, metrics, log lines and health answer                                                                                                                                                         |
 | `packages/test`         | `@zigordev/test`: a real PostgreSQL for tests, with one migrated copy per test file, a real Kafka with a signed-in user, and the harness that builds an app for API tests                                                          |
@@ -18,7 +18,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 | `packages/tokens`       | `@zigordev/tokens`: the design tokens, as JSON in the W3C format, built by Terrazzo into `tokens.css`. Dark by default                                                                                                             |
 | `packages/ui`           | `@zigordev/ui`: the components on Base UI, their CSS in `src/styles`, bundled into `ui.css`, and their stories, which are their browser tests                                                                                      |
 | `template/`             | The product template. It, its apps and its packages are members of this workspace, and use the packages through `workspace:*`. Its compose files and Dockerfiles build from the repo root                                          |
-| `.claude/`              | This repo's own copy of the shared rules, skills, hooks and permissions                                                                                                                                                            |
+| `.claude/`              | Links to the shared rules and skills in `packages/dev/shared`, and this repo's copy of the shared hooks and permissions                                                                                                            |
 | `.github/workflows`     | `check.yml` is the pipeline every repo calls, `release.yml` tags and publishes, `publish.yml` and `deploy.yml` deliver a product, and `ci.yml` runs the first two here                                                             |
 | `renovate/default.json` | The Renovate preset that every repo extends. `packages/dev/src/renovate.test.ts` holds the decided values                                                                                                                          |
 | `docs/`                 | The standard docs, the handbook in `docs/handbook/`, and the decision records in `docs/adr/`                                                                                                                                       |
@@ -41,12 +41,12 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm --dir template/packages/template-api-client run generate` writes the client's types from the API's `openapi.json`. A test fails while they differ. The generator alone runs on TypeScript 5.9.3, as record 0036 says.
 - `pnpm --dir template run check:contract` builds the template's images and holds both apps to the platform contract. It needs Docker running, and the pipeline's Contract job runs the same.
 - `pnpm exec zigordev check [rule...] [file...]` runs the rules a machine can check, all of them or the ones named.
-- `pnpm exec zigordev sync` copies the shared files from `packages/dev/shared` to the root of this repo.
+- `pnpm exec zigordev sync` links `.claude/rules` and `.claude/skills` to `packages/dev/shared`, and copies the other shared files from there to the root of this repo.
 - `pnpm exec zigordev release plan` says which public packages npm lacks at the latest tagged version. It changes nothing.
 
 ## Rules of this repo
 
-- A shared file is edited in `packages/dev/shared`, never at the root. Run `pnpm exec zigordev sync` afterwards and commit both copies, or `pnpm check` fails.
+- A shared file is edited in `packages/dev/shared`, never at the root. The rules and skills reach the root through links. For any other shared file, run `pnpm exec zigordev sync` afterwards and commit both copies, or `pnpm check` fails.
 - A change under `packages/dev/shared/.claude` changes how every session works in every repo. Its pull request says which behaviour changes, and it stays a draft until the owner has read it.
 - A version lives once, as an exact version, in one of the two catalogs of `pnpm-workspace.yaml`. What a package under `packages/` lists under `dependencies` lives in the catalog named `shipped`, referred to as `catalog:shipped`. Everything else lives in the default catalog, referred to as `catalog:`. `packages/dev/src/workspace.test.ts` holds both.
 - A new rule of `zigordev check` comes with a test that breaks it, and with a line in `packages/dev/README.md` and in the table of the core rules.

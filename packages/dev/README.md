@@ -6,18 +6,18 @@ The developer setup that every zigordev repo shares: the `zigordev` command, one
 
 One command and a handful of files that a repo refers to instead of writing its own.
 
-| Part                    | What it holds                                                                                                                        | A repo refers to it as                    |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| `zigordev`              | The command that checks a repo against the standards, copies the shared files, and holds a product's images to the platform contract | `pnpm exec zigordev`                      |
-| `shared/`               | The files that are the same in every repo                                                                                            | Copied into the repo by `zigordev sync`   |
-| `biome.json`            | The lint and format rules                                                                                                            | `@zigordev/dev/biome`                     |
-| `tsconfig/base.json`    | The strict TypeScript options                                                                                                        | `@zigordev/dev/tsconfig/base.json`        |
-| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                                                                      | `@zigordev/dev/tsconfig/node.json`        |
-| `tsconfig/library.json` | The same, for a package that is compiled before it ships                                                                             | `@zigordev/dev/tsconfig/library.json`     |
-| `tsconfig/next.json`    | The base, for a Next.js app                                                                                                          | `@zigordev/dev/tsconfig/next.json`        |
-| `lefthook.yml`          | The git hooks                                                                                                                        | `node_modules/@zigordev/dev/lefthook.yml` |
-| `commitlint.js`         | The commit rules                                                                                                                     | `@zigordev/dev/commitlint`                |
-| `semantic-release.js`   | The release settings, for a repo that publishes packages                                                                             | `@zigordev/dev/semantic-release`          |
+| Part                    | What it holds                                                                                                                                  | A repo refers to it as                            |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `zigordev`              | The command that checks a repo against the standards, links and copies the shared files, and holds a product's images to the platform contract | `pnpm exec zigordev`                              |
+| `shared/`               | The files that are the same in every repo                                                                                                      | Linked or copied into the repo by `zigordev sync` |
+| `biome.json`            | The lint and format rules                                                                                                                      | `@zigordev/dev/biome`                             |
+| `tsconfig/base.json`    | The strict TypeScript options                                                                                                                  | `@zigordev/dev/tsconfig/base.json`                |
+| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                                                                                | `@zigordev/dev/tsconfig/node.json`                |
+| `tsconfig/library.json` | The same, for a package that is compiled before it ships                                                                                       | `@zigordev/dev/tsconfig/library.json`             |
+| `tsconfig/next.json`    | The base, for a Next.js app                                                                                                                    | `@zigordev/dev/tsconfig/next.json`                |
+| `lefthook.yml`          | The git hooks                                                                                                                                  | `node_modules/@zigordev/dev/lefthook.yml`         |
+| `commitlint.js`         | The commit rules                                                                                                                               | `@zigordev/dev/commitlint`                        |
+| `semantic-release.js`   | The release settings, for a repo that publishes packages                                                                                       | `@zigordev/dev/semantic-release`                  |
 
 ## Why we have it
 
@@ -42,7 +42,7 @@ The command exists for the rules that no ready-made tool checks. A rule that onl
 | `links`       | Every link from one Markdown file to another file leads somewhere                                                                                                             |
 | `migrations`  | A migration that a pull request adds and that deletes data waits for the owner's label `destructive-migration`. In CI it fails without the label. On the laptop it only warns |
 | `scripts`     | `package.json` has the standard scripts, and the local stack scripts too when the repo has a `compose.yaml`                                                                   |
-| `shared`      | Every shared file in the repo matches the copy in this package                                                                                                                |
+| `shared`      | The shared rules and skills are links to this package, and every other shared file matches its copy here                                                                      |
 
 The `migrations` rule reads each SQL file in a `drizzle/` folder that is new: one that the pull request adds in CI, or one that `origin/main` lacks on the laptop. It finds the statements that delete data: `DROP TABLE`, `DROP COLUMN`, `DROP SCHEMA`, `DROP DATABASE`, `TRUNCATE`, `DELETE` and a change of a column's type. `DROP INDEX`, `DROP CONSTRAINT`, `DROP DEFAULT` and `DROP NOT NULL` lose no data, so they pass. In a pull request it fails until the pull request has the label `destructive-migration`, which only the owner adds, and the pipeline runs again when a label changes. In a pull request it reads the merge commit against its first parent, so it needs the merge of the pull request and the whole history, and it fails when the checkout lacks them. On the laptop it cannot see labels, so it prints a warning and does not stop the commit. [Record 0037](../../docs/adr/0037-a-migration-that-deletes-data-waits-for-the-owners-label.md) holds the decision.
 
@@ -56,7 +56,10 @@ The `identity` rule accepts two more names: Renovate as the author of its own up
 
 The `attribution` rule accepts one line, and only on a commit whose author is Renovate: `Co-authored-by: renovate[bot] <29139614+renovate[bot]@users.noreply.github.com>`. GitHub adds that line by itself when it squashes a pull request that Renovate opened, and nothing can take it out of a commit that is on `main`. The line has to read exactly so. The same line on a commit of anyone else, any other co-author on a commit of Renovate, and that line in a pull request's title or description are findings as before.
 
-`zigordev sync` copies the shared files from this package into the repo and says which ones it changed. They are the files that must read the same everywhere: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc`, `renovate.json`, the pull request template under `.github/` and the session rules under `.claude/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
+`zigordev sync` sets up the shared files of this package in the repo and says which ones it changed. They are the files that must read the same everywhere.
+
+- `.claude/rules` and `.claude/skills` become links into this package in `node_modules`, such as `../node_modules/@zigordev/dev/shared/.claude/rules`. An update of the package therefore brings new rules and skills with no change in the repo, and Renovate's pull request stays green, as [record 0049](../../docs/adr/0049-shared-rules-and-skills-are-links-to-the-installed-package.md) says. In toolkit the links lead to `packages/dev/shared` itself. A folder of old copies is replaced by its link, unless it holds a file that is not shared: then sync names that file and changes nothing.
+- The other files are copies, because they must work before an install or are read from git: `lefthook.yml`, `.commitlintrc.json`, `.markdownlint-cli2.jsonc`, `renovate.json`, the pull request template under `.github/`, and `.claude/settings.json` with the guard under `.claude/hooks/`. When this package changes one of them, the `shared` rule fails in every repo until `zigordev sync` has run there, so no copy can fall behind unnoticed.
 
 The root `biome.json` is not among them. Biome refuses a second root config anywhere in a repo, so this package cannot hold a copy of it.
 
@@ -152,7 +155,7 @@ It ends with code 0 when every promise is kept and with code 1 when one is broke
 
 ### The session rules
 
-Claude Code does the building in every repo, and `shared/.claude/` holds what it works under. `zigordev sync` copies the folder into each repo, so a session finds the same rules everywhere, in a cloud session too.
+Claude Code does the building in every repo, and `shared/.claude/` holds what it works under. `zigordev sync` links its rules and skills into each repo and copies its settings and hooks, so a session finds the same rules everywhere, in a cloud session too once it has installed.
 
 | Part                                                                                   | What it holds                                                                                                                                   | When a session reads it                                                            |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
