@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readlinkSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -13,9 +13,11 @@ let output = '';
 function run(
   args: readonly string[],
   files: Record<string, string> = {},
-  shared = 'node_modules/shared'
+  shared = 'node_modules/shared',
+  prepare: (root: string) => void = () => {}
 ): number {
   box = sandbox(files);
+  prepare(box.root);
   output = '';
   return main(args, {
     cwd: box.root,
@@ -141,6 +143,41 @@ describe('the zigordev command', () => {
   it('fails on an argument that is neither a rule nor a file', () => {
     expect(run(['check', 'comments', 'missing.ts'])).toBe(2);
     expect(output).toContain('"missing.ts" is neither a rule nor a file');
+  });
+
+  it('skips a link to a folder among the files it is given, as the commit hook passes one', () => {
+    const files = { 'a.ts': '// one\n', 'folder/b.md': 'b\n' };
+    const link = (root: string) => symlinkSync('folder', join(root, 'linked'));
+    expect(run(['check', 'comments', 'a.ts', 'linked'], files, undefined, link)).toBe(1);
+    expect(output).toBe(
+      'a.ts:1  comments  a comment: "one"\nzigordev check: 1 finding (comments)\n'
+    );
+    box.remove();
+    expect(run(['check', 'comments', 'linked'], files, undefined, link)).toBe(0);
+    expect(output).toBe('zigordev check: no findings (comments)\n');
+  });
+
+  it('links the shared rules to the installed package and says so', () => {
+    const store = 'node_modules/.pnpm/d/node_modules/@zigordev/dev';
+    const install = (root: string) => {
+      mkdirSync(join(root, 'node_modules/@zigordev'), { recursive: true });
+      symlinkSync(
+        '../.pnpm/d/node_modules/@zigordev/dev',
+        join(root, 'node_modules/@zigordev/dev')
+      );
+    };
+    const files = { [`${store}/shared/.claude/rules/core.md`]: 'core' };
+    expect(run(['sync'], files, `${store}/shared`, install)).toBe(0);
+    expect(output).toBe('updated  .claude/rules\nzigordev sync: 1 file updated\n');
+    expect(readlinkSync(join(box.root, '.claude/rules'))).toBe(
+      '../node_modules/@zigordev/dev/shared/.claude/rules'
+    );
+    box.remove();
+    const own = { ...files, '.claude/rules/mine.md': 'mine' };
+    expect(run(['sync'], own, `${store}/shared`, install)).toBe(1);
+    expect(output).toBe(
+      'zigordev sync: .claude/rules holds files that are not shared: .claude/rules/mine.md. Move them out of it, then run "zigordev sync" again\n'
+    );
   });
 
   it('copies the shared files and says which ones changed', () => {

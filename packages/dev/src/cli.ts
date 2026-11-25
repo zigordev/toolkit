@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, lstatSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
 import { contract } from './contract/run.ts';
 import { repoFiles } from './files.ts';
@@ -32,7 +32,8 @@ function usage(rules: readonly Rule[]): string {
     '       zigordev contract',
     '',
     'check          With no rule, every rule runs. With files, the rules that read files read only those.',
-    'sync           Copies the shared files of @zigordev/dev into this repo.',
+    'sync           Links the shared rules and skills of @zigordev/dev into this repo, and copies',
+    '               its other shared files.',
     'release        plan says which public packages are missing on npm at the latest tagged version.',
     '               With --settle it first gives npm that long to show a version it is still working on.',
     '               pack writes the tarballs of the missing ones into a folder, at the version given.',
@@ -55,10 +56,15 @@ function isFile(path: string): boolean {
   return existsSync(path) && statSync(path).isFile();
 }
 
+function isLinkedFolder(path: string): boolean {
+  return existsSync(path) && lstatSync(path).isSymbolicLink() && statSync(path).isDirectory();
+}
+
 function check(args: readonly string[], rules: readonly Rule[], io: Io): number {
   const names = new Set(rules.map((rule) => rule.name));
   const chosen = args.filter((arg) => names.has(arg));
-  const paths = args.filter((arg) => !names.has(arg));
+  const given = args.filter((arg) => !names.has(arg));
+  const paths = given.filter((path) => !isLinkedFolder(resolve(io.cwd, path)));
   const unknown = paths.find((path) => !isFile(resolve(io.cwd, path)));
   if (unknown !== undefined) {
     io.write(`zigordev check: "${unknown}" is neither a rule nor a file\n\n${usage(rules)}`);
@@ -66,7 +72,7 @@ function check(args: readonly string[], rules: readonly Rule[], io: Io): number 
   }
   const active = chosen.length === 0 ? rules : rules.filter((rule) => chosen.includes(rule.name));
   const files =
-    paths.length === 0
+    given.length === 0
       ? repoFiles(io.cwd)
       : paths.map((path) => relative(io.cwd, resolve(io.cwd, path)));
   const findings = active
@@ -98,7 +104,13 @@ function copy(io: Io): number {
     io.write(`zigordev sync: the package holds no shared files in ${io.shared}\n`);
     return 1;
   }
-  const written = sync(io.cwd, io.shared);
+  let written: string[];
+  try {
+    written = sync(io.cwd, io.shared);
+  } catch (error) {
+    io.write(`zigordev sync: ${(error as Error).message}\n`);
+    return 1;
+  }
   for (const path of written) {
     io.write(`updated  ${path}\n`);
   }

@@ -25,7 +25,7 @@ pnpm exec zigordev check
 pnpm check
 ```
 
-The first copies the shared files into the repo. The second checks the repo against every rule a machine can check. The third runs the whole check, as the pipeline does.
+The first links the shared rules and skills into the repo and copies the other shared files. The second checks the repo against every rule a machine can check. The third runs the whole check, as the pipeline does.
 
 The pull request template is one of the shared files. A pull request opened on GitHub's site therefore starts with the same six sections in every repo: What, Why, How it was tested, Observability, Docs and Follow-ups.
 
@@ -46,11 +46,11 @@ Each package's README says how an app uses it: [`@zigordev/config`](../packages/
 
 ## The session rules
 
-`zigordev sync` also copies `.claude/` into the repo: the core rules, the seven area rules, the three skills, the permission rules and the guard hook. A session started in the repo then works under them at once.
+`zigordev sync` also sets up `.claude/` in the repo. `.claude/rules` and `.claude/skills` become links into the installed `@zigordev/dev`: the core rules, the seven area rules and the six skills. The permission rules and the guard hook are copied, so that they work before any install. A session started in the repo then works under them at once. An update of `@zigordev/dev` brings new rules and skills through the links, with no change in the repo, as [record 0049](adr/0049-shared-rules-and-skills-are-links-to-the-installed-package.md) says.
 
 A repo writes one file itself, `CLAUDE.md`, of under 100 lines: what the repo is, its commands, where things live and its own rules. [This repo's file](../CLAUDE.md) is the model.
 
-The rules are changed in `toolkit` only. A copy that was edited in another repo fails that repo's check.
+The rules are changed in `toolkit` only. In another repo they live in `node_modules`, so an edit there is lost at the next install, and a copied file that was edited fails that repo's check.
 
 ## The pipeline
 
