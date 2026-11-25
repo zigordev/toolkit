@@ -10,7 +10,9 @@ export interface EmailTemplate {
 
 export type Email = EmailTemplate;
 
-export type StandardTemplates = Record<'verifyEmail', Record<Language, EmailTemplate>>;
+export type StandardMessage = 'verifyEmail' | 'resetPassword' | 'accountExists' | 'deleteAccount';
+
+export type StandardTemplates = Record<StandardMessage, Record<Language, EmailTemplate>>;
 
 const placeholder = /\{\{([a-z][a-zA-Z0-9]*)\}\}/g;
 

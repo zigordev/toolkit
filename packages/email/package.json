@@ -23,7 +23,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json",
-    "generate": "node scripts/generate-theme.ts"
+    "generate": "node scripts/generate.ts"
   },
   "peerDependencies": {
     "react": "^19.3.0",

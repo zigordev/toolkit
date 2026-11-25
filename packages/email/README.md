@@ -6,10 +6,10 @@ The emails of the platform's apps: messages built with React Email on the design
 
 Two entries, for two moments:
 
-| Entry                   | When it runs        | What it holds                                                                                                                |
-| ----------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `@zigordev/email/build` | When the app builds | `EmailLayout`, `EmailHeading`, `EmailText`, `EmailButton` and `EmailFooter` on the tokens, `theme`, and `renderTemplate`     |
-| `@zigordev/email`       | When the app sends  | `fillEmail(template, values)`, and the standard messages ready to fill, starting with `verifyEmail({ lang, product, link })` |
+| Entry                   | When it runs        | What it holds                                                                                                            |
+| ----------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `@zigordev/email/build` | When the app builds | `EmailLayout`, `EmailHeading`, `EmailText`, `EmailButton` and `EmailFooter` on the tokens, `theme`, and `renderTemplate` |
+| `@zigordev/email`       | When the app sends  | `fillEmail(template, values)`, and the four standard messages of sign-in, ready to fill                                  |
 
 A template is a subject, the HTML and the plain text of one message in one language, with places to fill written as `{{name}}`. React Email is a library that writes emails as React components and turns them into the old-fashioned HTML that mail clients read.
 
@@ -37,6 +37,15 @@ flowchart LR
 Nothing differs between the laptop and production: the same saved templates are filled in both.
 
 ## How to use it
+
+The standard messages are the four that sign-in sends, in English and in Spanish:
+
+| Function                                 | The message                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------- |
+| `verifyEmail({ lang, product, link })`   | Confirm your email address, to finish signing up                          |
+| `resetPassword({ lang, product, link })` | Choose a new password. The link works for one hour                        |
+| `accountExists({ lang, product })`       | Someone tried to sign up with your address, which has an account. No link |
+| `deleteAccount({ lang, product, link })` | Confirm, while signed in, that the account goes for good                  |
 
 Sending a standard message takes the send entry only:
 
