@@ -297,6 +297,46 @@ zigordev contract: 2 apps keep promises 1 to 7, the compose files keep promise 7
 
 The pipeline runs the same script on every pull request, in a job named Contract, on an arm64 machine. [The developer setup](../packages/dev/README.md) says what the command does to see each promise.
 
+## Making a product from it
+
+A product starts as a copy of the template at one release of toolkit, with every `template` renamed to the product's name. The copy takes the `@zigordev` packages from npm, at that release, instead of from this checkout. `zigordev/playground` and `zigordev/notifications` were made this way, on 2026-11-24 and 2026-11-25.
+
+### Every package on npm first
+
+Each `@zigordev` package that the copied apps import needs a real version on npm at that release. A package that toolkit still marks `"private": true` is not on npm, and a first publish puts only an empty 0.0.0 there, so read the version, not only the name:
+
+```bash
+npm view @zigordev/flags version
+```
+
+A missing package waits for the owner's first publish and the pull request that makes it public, as [Packages](../docs/handbook/packages.md) says. That takes minutes, so ask for it first. Only when the product cannot wait, it leaves out the slice that needs the package.
+
+### The slices, and how to leave one out
+
+Each slice arrived in one pull request. To leave one out, put the files of that pull request back to the release before it, in the exported copy, and delete the files it added.
+
+| Slice    | What it adds                                                                        | Packages it needs                                     | Arrived in                                                        |
+| -------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- |
+| 1, hello | Both apps answer `/health` and send their telemetry, and the API says hello         | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                 |
+| 2, notes | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                 |
+| 4, flags | The API's `flags.json` and the flag `friendly-greeting`                             | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0 |
+
+Slices 3, sign-in, and 5, the notes pages, are not built yet.
+
+### A product with only an API
+
+A product without pages, such as `notifications`, drops the web app. Beyond the copy and the rename, it changes these by hand:
+
+| File                                                            | What changes                                                                                                                                                                                                                                                       |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/<name>-web`                                               | Not copied                                                                                                                                                                                                                                                         |
+| `compose.yaml`, `compose.local.yaml`, `compose.production.yaml` | The web service goes. The API's rule becomes the product's host alone, without `PathPrefix(/api)`, so `/health` at the product's address is the API's own: the deploy's outside check asks that address, and the contract needs only that each rule names the host |
+| `.github/workflows/ci.yml`                                      | No Deploy job until `platform` has the product's deploy target. Publish stays                                                                                                                                                                                      |
+| `package.json`                                                  | The description, and the hint of `pnpm dev`, which names only `api`                                                                                                                                                                                                |
+| `compose.test.ts`                                               | The list of apps, the web image's block, the rules, the number of `tmpfs` mounts, and the sorted list of secrets                                                                                                                                                   |
+
+Without the web app's code, the coverage of branches comes close to the floor of 90%: notifications started at 91.2%. [notifications#1](https://github.com/zigordev/notifications/pull/1) shows every change.
+
 ## What is left for later
 
 - **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
