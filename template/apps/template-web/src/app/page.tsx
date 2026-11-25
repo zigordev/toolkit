@@ -10,6 +10,9 @@ export default async function Home() {
     <main>
       <h1>Template</h1>
       <p>{greeting ?? 'The API does not answer.'}</p>
+      <p>
+        <a href="/account">Your account</a>
+      </p>
     </main>
   );
 }

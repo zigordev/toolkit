@@ -1009,6 +1009,9 @@ importers:
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
+      '@zigordev/auth':
+        specifier: workspace:*
+        version: link:../../../packages/auth
       '@zigordev/config':
         specifier: workspace:*
         version: link:../../../packages/config

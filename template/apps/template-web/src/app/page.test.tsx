@@ -32,12 +32,16 @@ describe('the home page', () => {
   it('shows what the API says', async () => {
     const html = await render(`http://127.0.0.1:${(server.address() as AddressInfo).port}`);
 
-    expect(html).toBe('<main><h1>Template</h1><p>Hello from the stand-in</p></main>');
+    expect(html).toBe(
+      '<main><h1>Template</h1><p>Hello from the stand-in</p><p><a href="/account">Your account</a></p></main>'
+    );
   });
 
   it('still renders when the API does not answer', async () => {
     const html = await render('http://127.0.0.1:9');
 
-    expect(html).toBe('<main><h1>Template</h1><p>The API does not answer.</p></main>');
+    expect(html).toBe(
+      '<main><h1>Template</h1><p>The API does not answer.</p><p><a href="/account">Your account</a></p></main>'
+    );
   });
 });

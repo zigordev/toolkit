@@ -191,10 +191,20 @@ After a change to `openapi.json`, write the types again with `pnpm --dir package
 People sign in through [`@zigordev/auth`](../packages/auth/README.md), with email and a password, passkeys, optional two-factor and Google, as [record 0050](../docs/adr/0050-sign-in-carries-over-novembers-design.md) says. Better Auth runs in the API, which serves `/api/auth/*`, keeps users and sessions in the API's own database, and answers `GET /api/v1/me` with the person who is signed in. Every other route takes a session or an API key: the notes still need a key with its scopes.
 
 - **On this Mac, in containers:** sign-in is on at `http://template.localhost`, as `compose.local.yaml` sets.
-- **With the dev servers:** `pnpm dev api` has sign-in on for the web app at `http://localhost:3001`, from `apps/template-api/.env.development`. The API also reads an untracked `.env.local` beside it, which is where the Google client's two values go. Git ignores every `.env*.local` file.
+- **With the dev servers:** run `pnpm dev api`, and `API_URL=http://127.0.0.1:3000 pnpm dev web` as [hot reload](#while-you-edit-one-app-hot-reload) shows, then open `http://localhost:3001`. The web app forwards `/api/auth/*` to the API on its own origin, and the API has sign-in on for that origin, from `apps/template-api/.env.development`. The API also reads an untracked `.env.local` beside it, which is where the Google client's two values go. Git ignores every `.env*.local` file.
 - **In production:** sign-in is off, because its emails cannot reach the notifications service yet.
 
 Sign-in sends four emails: verify an address, choose a new password, someone tried to sign up with your address, and confirm a deletion. The API builds each with [`@zigordev/email`](../packages/email/README.md), in the language the browser asks for. Until the template's Kafka slice sends them to the notifications service, the API holds them: it logs `auth.email_held` with their kind only, and keeps the last 50 in memory, where the tests read them. `AUTH_EMAIL_HOLD=true` turns that on, and an `https` origin refuses it, so held emails never reach production. On this Mac, email sign-up cannot be finished by hand until then, so sign in with Google or a passkey.
+
+The web app has the pages: `/sign-in` with a password, Google or a passkey, `/sign-up`, `/two-factor` for the authenticator's code or a backup code, and `/account` to add a passkey, turn on two-factor, sign out or delete the account. They use `@zigordev/auth/client`, and are plain HTML until the interface step brings the design system. `/sign-in` sends a person who is signed in on to `next`, only a path on this site, and `/account` sends a person who is not to `/sign-in` and back.
+
+### Google on this Mac
+
+The owner's client `template on this Mac`, in the Google Cloud project `zigordev`, sends people back to `http://localhost:3001/api/auth/callback/google`, because Google accepts plain http only for `localhost`. So Google works with the dev servers, not at `template.localhost`:
+
+1. Put `AUTH_GOOGLE_CLIENT_ID` and `AUTH_GOOGLE_CLIENT_SECRET` in `apps/template-api/.env.local`.
+2. With the product up, run `pnpm dev api`, and `API_URL=http://127.0.0.1:3000 pnpm dev web`.
+3. Open `http://localhost:3001/sign-in` and choose "Continue with Google".
 
 ## The feature flags
 
@@ -328,14 +338,14 @@ A missing package waits for the owner's first publish and the pull request that 
 
 Each slice arrived in one pull request. To leave one out, put the files of that pull request back to the release before it, in the exported copy, and delete the files it added.
 
-| Slice      | What it adds                                                                                       | Packages it needs                                     | Arrived in                                                              |
-| ---------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
-| 1, hello   | Both apps answer `/health` and send their telemetry, and the API says hello                        | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                       |
-| 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
-| 3, sign-in | The API's half: sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
-| 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                            | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
+| Slice      | What it adds                                                                                                | Packages it needs                                     | Arrived in                                                              |
+| ---------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1, hello   | Both apps answer `/health` and send their telemetry, and the API says hello                                 | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                       |
+| 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                         | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
+| 3, sign-in | Sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails, and the web app's pages | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
+| 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                     | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 
-The web half of slice 3 and slice 5, the notes pages, are not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+Slice 5, the notes pages, is not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 ### A product with only an API
 
@@ -354,7 +364,6 @@ Without the web app's code, the coverage of branches comes close to the floor of
 ## What is left for later
 
 - **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
-- **Sign-in in the web app:** the sign-in, sign-up and account pages, and the web app's forwarding of `/api/auth/*` to the API. They arrive with the web half of the third slice.
 - **Sign-in's emails through notifications:** the API holds them until the template's Kafka slice, which waits for the broker in `@zigordev/stack`.
 
 ## Known limits
