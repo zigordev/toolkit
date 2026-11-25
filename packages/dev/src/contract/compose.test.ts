@@ -85,6 +85,16 @@ describe('judgeCompose', () => {
     );
   });
 
+  it('says that one app drains before it stops, for a product with only an API', () => {
+    const apiOnly = files((all) => {
+      delete all['gpool-web'];
+    });
+
+    expect(judgeCompose(apiOnly).map((verdict) => verdict.detail)).toContain(
+      'gpool-api drains before it stops: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout'
+    );
+  });
+
   it('reads the lists of KEY=value that Compose prints when it leaves the variables as written', () => {
     const asLists = files((all) => {
       for (const [name, service] of Object.entries(all)) {
