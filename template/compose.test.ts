@@ -364,11 +364,31 @@ describe('template-postgres, the store', () => {
   });
 });
 
+describe('template-api and the broker', () => {
+  const api = 'template-api';
+  const development = parseEnv(readFileSync(`${folder}apps/${api}/.env.development`, 'utf8'));
+
+  it('sends its email requests to the broker on the shared network, as its own Kafka user', () => {
+    expect(everywhere.services[api]?.environment).toMatchObject({
+      KAFKA_BROKERS: 'kafka:9092',
+      KAFKA_USERNAME: api,
+    });
+    expect(development).toMatchObject({ KAFKA_BROKERS: 'localhost:9094', KAFKA_USERNAME: api });
+  });
+
+  it('signs in to Kafka with a throwaway password on the laptop, and with its secret in production', () => {
+    expect(laptop.services[api]?.environment?.KAFKA_PASSWORD).toBe('local-only-template-api');
+    expect(development.KAFKA_PASSWORD).toBe('local-only-template-api');
+    expect(production.services[api]?.environment?.KAFKA_PASSWORD).toBe('');
+  });
+});
+
 describe('the secrets of production', () => {
   it('are named in .env.production.example, and only named', () => {
     const example = parseEnv(readFileSync(`${folder}.env.production.example`, 'utf8'));
 
     expect(Object.keys(example).sort()).toEqual([
+      'KAFKA_PASSWORD',
       'POSTGRES_PASSWORD',
       'TEMPLATE_API_DATABASE_PASSWORD',
       'TEMPLATE_API_KEYS',

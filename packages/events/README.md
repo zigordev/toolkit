@@ -202,6 +202,7 @@ app.addHook('onClose', () => events.stop());
 
 - The handler's type knows every event the consumer lists, so `event.data.noteId` is typed.
 - The handler does its work through `tx`, so its work and the mark that the event was handled commit together.
+- `addToOutbox` gives each event a random id, and returns the event. `id` gives it one instead, which has to be a UUID. Every reader skips an id it has handled, so two events saved with the same id count as one: a key that makes a retry safe can become the id.
 - `relay: false` leaves the relay out, for an app that only reads. `relay: { interval, batchSize }` changes how often it polls and how much it takes.
 - `retryDelays` changes the pauses between tries, and `deadLetterTopicOf` names the dead-letter topic.
 

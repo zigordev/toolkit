@@ -1,24 +1,24 @@
 # The product template
 
-A minimal product, kept inside `toolkit`. It is being built in slices, and this page describes what exists on 2026-11-23: the API and the web app, their images, and the compose files that run both as containers behind the shared services.
+A minimal product, kept inside `toolkit`. It is being built in slices, and this page describes what exists on 2026-11-25: the API and the web app, their images, the compose files that run both as containers behind the shared services, sign-in, and the emails that sign-in sends through the notifications service.
 
 ## What it is
 
 A product on the platform is an API and a web app that is one of its clients. The template is the smallest product of that shape, wired with the shared packages of this repo.
 
-| Path                                 | What it holds                                                                                                                                                                                       |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting behind a feature flag and the notes, its flags in `flags.json`, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
-| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                                                                       |
-| `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                                                                     |
-| `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                                                                        |
-| `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check                                                       |
-| `compose.local.yaml`                 | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                                                                      |
-| `compose.production.yaml`            | What differs in production: the address, and that the deploy runs the migrate job itself                                                                                                            |
-| `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                                                                          |
-| `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                                                                            |
-| `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                                                                              |
-| `.github/workflows/ci.yml`           | The product's caller: the pipeline on every pull request, then publish and deploy on every merge to `main`                                                                                          |
+| Path                                 | What it holds                                                                                                                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting behind a feature flag, the notes and sign-in, whose emails it sends to the notifications service over Kafka. Its flags in `flags.json`, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
+| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                                                                                                                                               |
+| `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                                                                                                                                             |
+| `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                                                                                                                                                |
+| `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check                                                                                                                               |
+| `compose.local.yaml`                 | What differs on the laptop: the images are built here, and the address is `template.localhost`                                                                                                                                                                              |
+| `compose.production.yaml`            | What differs in production: the address, and that the deploy runs the migrate job itself                                                                                                                                                                                    |
+| `compose.test.ts`                    | The test that holds the three compose files and the two Dockerfiles to the container rules                                                                                                                                                                                  |
+| `package.json`                       | The scripts `local:up`, `local:down`, `local:reset` and `check:contract`                                                                                                                                                                                                    |
+| `.env.production.example`            | The names of the secrets that production needs. Only the names: the values live in AWS Parameter Store                                                                                                                                                                      |
+| `.github/workflows/ci.yml`           | The product's caller: the pipeline on every pull request, then publish and deploy on every merge to `main`                                                                                                                                                                  |
 
 Its product name is `template`, so its apps are `template-api` and `template-web`. Every app has one name, in its folder, its package, its compose service, its image and its telemetry.
 
@@ -33,21 +33,23 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 
 ## What it is built with
 
-| Tool               | What it does here                                                                                        |
-| ------------------ | -------------------------------------------------------------------------------------------------------- |
-| Node.js 26         | Runs both apps. The API's TypeScript files run directly, with no build step                              |
-| Fastify 5          | Serves the API's routes                                                                                  |
-| Next.js 16         | Builds the web app, and renders its page on the server at each request                                   |
-| React 19           | The web app's page                                                                                       |
-| `@zigordev/config` | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
-| `@zigordev/otel`   | Each app's traces, metrics and log lines, and the answer of its health route                             |
-| `@zigordev/api`    | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop   |
-| PostgreSQL 18      | The product's database, in a container of its own on a network of its own                                |
-| Drizzle            | The API's queries, and with drizzle-kit the SQL of each migration                                        |
-| `@zigordev/test`   | A real PostgreSQL for the API's tests, with one migrated copy per test file                              |
-| Docker Compose     | Runs the product as one project of two containers, on the network of the shared services                 |
-| The Node.js image  | The official image on Alpine Linux, at the same Node.js version as `mise.toml`. Both images are built on |
-| Vitest 5           | Tests the routes and the page, each app once as a real process, and the compose files                    |
+| Tool                             | What it does here                                                                                        |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Node.js 26                       | Runs both apps. The API's TypeScript files run directly, with no build step                              |
+| Fastify 5                        | Serves the API's routes                                                                                  |
+| Next.js 16                       | Builds the web app, and renders its page on the server at each request                                   |
+| React 19                         | The web app's page                                                                                       |
+| `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
+| `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                             |
+| `@zigordev/api`                  | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop   |
+| PostgreSQL 18                    | The product's database, in a container of its own on a network of its own                                |
+| Drizzle                          | The API's queries, and with drizzle-kit the SQL of each migration                                        |
+| `@zigordev/test`                 | A real PostgreSQL for the API's tests, with one migrated copy per test file, and a real Kafka            |
+| `@zigordev/events`               | Saves each email request in the API's own database, sends it on to Kafka, and reads what became of it    |
+| `@zigordev/notifications-events` | The request and outcome events of the notifications service, and the names of their topics               |
+| Docker Compose                   | Runs the product as one project of two containers, on the network of the shared services                 |
+| The Node.js image                | The official image on Alpine Linux, at the same Node.js version as `mise.toml`. Both images are built on |
+| Vitest 5                         | Tests the routes and the page, each app once as a real process, and the compose files                    |
 
 ## Quick start
 
@@ -63,12 +65,13 @@ pnpm local:up
 
 The script has two halves. `zigordev-stack up` starts the shared services and waits until each one is healthy. When they already run, it changes nothing. `docker compose up` then builds both images, starts both containers, and returns when both are healthy. The first build takes a few minutes, most of them downloads.
 
-| Address                                  | Answers                                                                                           |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `http://template.localhost`              | The page. It reads "Hello from template-api"                                                      |
-| `http://template.localhost/api/v1/hello` | The API, at the same address as the page: `{"message":"Hello from template-api"}`                 |
-| `http://template.localhost/health`       | The web app's health: `ok` while the API is up, and `degraded` while it is down                   |
-| `http://grafana.localhost`               | Grafana. The dashboard named App, in the folder zigordev, lists `template-api` and `template-web` |
+| Address                                  | Answers                                                                                                                                     |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http://template.localhost`              | The page. It reads "Hello from template-api"                                                                                                |
+| `http://template.localhost/api/v1/hello` | The API, at the same address as the page: `{"message":"Hello from template-api"}`                                                           |
+| `http://template.localhost/health`       | The web app's health: `ok` while the API is up, and `degraded` while it is down                                                             |
+| `http://grafana.localhost`               | Grafana. The dashboard named App, in the folder zigordev, lists `template-api` and `template-web`                                           |
+| `http://mail.localhost`                  | Mailpit, with the emails that sign-in sent, once the notifications service runs too, as [the emails](#the-emails-through-notifications) say |
 
 `pnpm local:down` stops and removes the two containers, and leaves the shared services running, because other products use them. `pnpm local:reset` does the same, removes the product's volumes, and starts it again.
 
@@ -116,23 +119,23 @@ The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. T
 
 ## The settings
 
-| Variable                                             | Read by          | What it holds                                                                | When it is not set                              |
-| ---------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
-| `OTEL_SERVICE_NAME`                                  | Both             | The app's one name                                                           | The app does not start                          |
-| `OTEL_SERVICE_VERSION`                               | Both             | The version that runs, shown in its logs, traces and metrics                 | It is left out                                  |
-| `LOG_LEVEL`                                          | Both             | `debug`, `info`, `warn` or `error`                                           | `info`                                          |
-| `PORT`                                               | Both             | The port the app listens on                                                  | 3000                                            |
-| `HOST`                                               | The API          | The address it listens on                                                    | `0.0.0.0`, every one                            |
-| `DATABASE_URL`                                       | The API, the job | The address of the app's database, as its own role                           | The app does not start                          |
-| `API_KEYS`                                           | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes | Nobody, so every notes request gets 401         |
-| `FLAGS_FILE`                                         | The API          | The path of its flags file                                                   | Its own `flags.json`, beside its `package.json` |
-| `AUTH_SECRET`, `AUTH_URL`                            | The API          | Sign-in's secret of at least 32 characters, and the origin browsers use      | Sign-in is off: no `/api/auth/*`, only API keys |
-| `AUTH_EMAIL_HOLD`                                    | The API          | `true` holds sign-in's emails in the API, which only an http origin allows   | `false`, which refuses sign-in for now          |
-| `AUTH_GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_CLIENT_SECRET` | The API          | A Google OAuth client, to offer Google                                       | Sign-in offers email and passkeys only          |
-| `DATABASE_ADMIN_URL`                                 | The job          | The superuser's address, to make the app's role and database                 | The job only migrates                           |
-| `API_URL`                                            | The web          | Where the web app's server reaches the API                                   | The app does not start                          |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`                        | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                   | `http://localhost:4318`                         |
-| `OTEL_RESOURCE_ATTRIBUTES`                           | OpenTelemetry    | The environment the app runs in, as `local` or `production`                  | It is left out                                  |
+| Variable                                             | Read by          | What it holds                                                                        | When it is not set                              |
+| ---------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `OTEL_SERVICE_NAME`                                  | Both             | The app's one name                                                                   | The app does not start                          |
+| `OTEL_SERVICE_VERSION`                               | Both             | The version that runs, shown in its logs, traces and metrics                         | It is left out                                  |
+| `LOG_LEVEL`                                          | Both             | `debug`, `info`, `warn` or `error`                                                   | `info`                                          |
+| `PORT`                                               | Both             | The port the app listens on                                                          | 3000                                            |
+| `HOST`                                               | The API          | The address it listens on                                                            | `0.0.0.0`, every one                            |
+| `DATABASE_URL`                                       | The API, the job | The address of the app's database, as its own role                                   | The app does not start                          |
+| `API_KEYS`                                           | The API          | The callers it knows, as JSON: a name, the SHA-256 of the key and the scopes         | Nobody, so every notes request gets 401         |
+| `FLAGS_FILE`                                         | The API          | The path of its flags file                                                           | Its own `flags.json`, beside its `package.json` |
+| `AUTH_SECRET`, `AUTH_URL`                            | The API          | Sign-in's secret of at least 32 characters, and the origin browsers use              | Sign-in is off: no `/api/auth/*`, only API keys |
+| `AUTH_GOOGLE_CLIENT_ID`, `AUTH_GOOGLE_CLIENT_SECRET` | The API          | A Google OAuth client, to offer Google                                               | Sign-in offers email and passkeys only          |
+| `KAFKA_BROKERS`, `KAFKA_USERNAME`, `KAFKA_PASSWORD`  | The API          | The broker as `host:port`, and the API's Kafka user and password. All three, or none | Kafka is off, and sign-in cannot be turned on   |
+| `DATABASE_ADMIN_URL`                                 | The job          | The superuser's address, to make the app's role and database                         | The job only migrates                           |
+| `API_URL`                                            | The web          | Where the web app's server reaches the API                                           | The app does not start                          |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`                        | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                           | `http://localhost:4318`                         |
+| `OTEL_RESOURCE_ATTRIBUTES`                           | OpenTelemetry    | The environment the app runs in, as `local` or `production`                          | It is left out                                  |
 
 The compose files set every one of them that a container needs. An app reads nothing but environment variables.
 
@@ -194,9 +197,9 @@ People sign in through [`@zigordev/auth`](../packages/auth/README.md), with emai
 
 - **On this Mac, in containers:** sign-in is on at `http://template.localhost`, as `compose.local.yaml` sets.
 - **With the dev servers:** run `pnpm dev api`, and `API_URL=http://127.0.0.1:3000 pnpm dev web` as [hot reload](#while-you-edit-one-app-hot-reload) shows, then open `http://localhost:3001`. The web app forwards `/api/auth/*` to the API on its own origin, and the API has sign-in on for that origin, from `apps/template-api/.env.development`. The API also reads an untracked `.env.local` beside it, which is where the Google client's two values go. Git ignores every `.env*.local` file.
-- **In production:** sign-in is off, because its emails cannot reach the notifications service yet.
+- **In production:** sign-in is off, because the template never deploys. A product turns it on with `AUTH_SECRET` and `AUTH_URL`, once its emails can reach the notifications service, as [the emails](#the-emails-through-notifications) say.
 
-Sign-in sends four emails: verify an address, choose a new password, someone tried to sign up with your address, and confirm a deletion. The API builds each with [`@zigordev/email`](../packages/email/README.md), in the language the browser asks for. Until the template's Kafka slice sends them to the notifications service, the API holds them: it logs `auth.email_held` with their kind only, and keeps the last 50 in memory, where the tests read them. `AUTH_EMAIL_HOLD=true` turns that on, and an `https` origin refuses it, so held emails never reach production. On this Mac, email sign-up cannot be finished by hand until then, so sign in with Google or a passkey.
+Sign-in sends four emails: verify an address, choose a new password, someone tried to sign up with your address, and confirm a deletion. The API builds each with [`@zigordev/email`](../packages/email/README.md), in the language the browser asks for, and the notifications service delivers it, as the next section says.
 
 The web app has the pages: `/sign-in` with a password, Google or a passkey, `/sign-up`, `/two-factor` for the authenticator's code or a backup code, and `/account` to add a passkey, turn on two-factor, sign out or delete the account. They use `@zigordev/auth/client`, and are plain HTML until the interface step brings the design system. `/sign-in` sends a person who is signed in on to `next`, only a path on this site, and `/account` sends a person who is not to `/sign-in` and back.
 
@@ -207,6 +210,68 @@ The owner's client `template on this Mac`, in the Google Cloud project `zigordev
 1. Put `AUTH_GOOGLE_CLIENT_ID` and `AUTH_GOOGLE_CLIENT_SECRET` in `apps/template-api/.env.local`.
 2. With the product up, run `pnpm dev api`, and `API_URL=http://127.0.0.1:3000 pnpm dev web`.
 3. Open `http://localhost:3001/sign-in` and choose "Continue with Google".
+
+## The emails through notifications
+
+The API never sends mail itself. It hands each email to the notifications service as a request event over Kafka, and reads what became of it, as [record 0042](../docs/adr/0042-notifications-takes-requests-and-gives-outcomes-over-kafka.md) says. Kafka is reached only through [`@zigordev/events`](../packages/events/README.md), and the events themselves come from [`@zigordev/notifications-events`](https://github.com/zigordev/notifications/blob/main/packages/notifications-events/README.md), which the notifications repo publishes.
+
+```mermaid
+flowchart LR
+  signUp["A sign-up"] --> outbox["events_outbox in the API's database"]
+  outbox --> relay["The relay, every second"]
+  relay --> requests["notifications.requests.template-api"]
+  requests --> service["The notifications service: Mailpit or SES"]
+  service --> outcomes["notifications.outcomes.template-api"]
+  outcomes --> consumer["The API's consumer logs email.sent or email.failed"]
+```
+
+1. Sign-in calls the API's sender, which saves the email as an `email.requested` event in the table `events_outbox`, in the API's own database. The request holds the address, the subject and both bodies, and the labels `template` and `locale`.
+2. The relay of `@zigordev/events` sends the saved events to the topic `notifications.requests.template-api` within a second. While Kafka is down they wait in the table, and sign-up keeps working.
+3. The notifications service delivers the email, from `no-reply@zigordev.com`, the first sender of `template-api` in its `producers.json`. On this Mac the email lands in Mailpit.
+4. The service answers on `notifications.outcomes.template-api`, and the API's consumer, in the group `template-api.email-outcomes`, logs the answer.
+
+The request's id comes from the key that sign-in gives each email: it is the SHA-256 of the app's name and the key, written as a UUID of version 8. The notifications service accepts an id once, so a retry never sends twice, and the notice that someone tried to sign up with an address goes out at most once in each ten-minute window, as `@zigordev/auth` promises.
+
+| Log event         | Level | Fields                                        | Written when                                           |
+| ----------------- | ----- | --------------------------------------------- | ------------------------------------------------------ |
+| `email.requested` | info  | `requestId`, `template`                       | The request is saved in the outbox                     |
+| `email.sent`      | info  | `requestId`, `attempts`                       | The notifications service says the mail server took it |
+| `email.failed`    | warn  | `requestId`, `attempts`, `reason`, `smtpCode` | The notifications service says it will never send it   |
+
+No line carries an address, a subject or a link. `@zigordev/events` adds the numbers of the outbox, the consumer's lag and the dead letters, and `/health` names a `kafka` part, which turns the answer to `degraded`, not `error`, while Kafka is down.
+
+Kafka is optional. The three `KAFKA_` settings come all together or not at all, and sign-in needs them. Without them the API starts no relay and no consumer.
+
+### What the broker and the service need first
+
+| What                                                                                                                                            | Where                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| The Kafka user `template-api`, the two topics with their dead-letter topics, and the rules that let it write its requests and read its outcomes | `platform`, in `KAFKA_SETUP_LAPTOP`, so on the laptop only, with the password `local-only-template-api` |
+| The entry of `template-api` in `apps/notifications-api/producers.json`                                                                          | `notifications`                                                                                         |
+
+A product made from the template needs the same under its own name, in production as well. Its password lives once, at `/<product>/KAFKA_PASSWORD` in Parameter Store: the product reads it as `KAFKA_PASSWORD`, a name in its `.env.production.example` without the app's name in front, and the shared services read the same parameter to make its Kafka user, as `platform`'s record 0028 says.
+
+### Try it on this Mac
+
+Start the shared services and the template, from this folder:
+
+```bash
+pnpm local:up
+```
+
+Then start the notifications service in its containers, from the `notifications` folder. It has to run in a container, because Mailpit takes mail only on the shared network: its port for mail is not published on this Mac. Start only its own project, because its `pnpm local:up` would first run `zigordev-stack up` from the `@zigordev/stack` that notifications holds, which can be older than the template's:
+
+```bash
+docker compose --file compose.yaml --file compose.local.yaml up --build --detach --wait
+```
+
+Sign up at `http://template.localhost/sign-up`, or at `http://localhost:3001/sign-up` with the dev servers of [hot reload](#while-you-edit-one-app-hot-reload). The email arrives in Mailpit at `http://mail.localhost` within a few seconds, from `no-reply@zigordev.com`, and its button confirms the address and signs the person in. The API's `email.requested` and `email.sent`, and the service's `email.accepted` and `email.sent`, carry the same trace.
+
+`pnpm dev api` reaches the broker at `localhost:9094`, the port that the shared services publish for apps outside a container, with the settings in `apps/template-api/.env.development`.
+
+### How the tests check it
+
+`src/features/account/sign-in.db.test.ts` runs every sign-in path against a real PostgreSQL and a real Kafka, which the API tests' global setup starts. The file makes topics of its own with `createTopics` from `@zigordev/events/testing`, and runs a stand-in for the notifications service on them: it reads each request, keeps it, and answers `email.sent`, or `email.failed` for an address at `refused.example.com`. The tests follow the links in the requests' plain text, and check the logs of both answers, the one notice in ten minutes, and that no log line carries an address or a link.
 
 ## The feature flags
 
@@ -295,7 +360,7 @@ the compose files
   kept    7  every other image is pinned by its digest: postgres
   kept    7  every long-running service restarts unless stopped, and a job never does
   kept    7  template-api and template-web drain before they stop: no fixed name or port, /tmp in memory, and the pre-stop hook of docker-rollout
-  kept    7  .env.production.example names 3 secrets, with no value, and the compose files use no other
+  kept    7  .env.production.example names 4 secrets, with no value, and the compose files use no other
   kept    7  compose.production.yaml routes template-api and template-web to template.zigordev.com
   kept    7  template-postgres carries the label com.zigordev.backup: postgres, so the backup on the host finds it
 template-api
@@ -304,7 +369,7 @@ template-api
   kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local
   kept    4  7 lines, all JSON, with nothing a visitor sent
   kept    5  traces and metrics reached the agent under the name template-api
-  kept    6  it stopped 1.4 s after a SIGTERM with code 0, and answered the request it had begun
+  kept    6  it stopped 6.7 s after a SIGTERM with code 0, and answered the request it had begun
   kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone
 template-web
   kept    1  an arm64 image that runs as the user 1000:1000
@@ -312,7 +377,7 @@ template-web
   kept    3  it listens on the port in PORT, and answers GET /health with 200 and its version local
   kept    4  6 lines, all JSON, with nothing a visitor sent
   kept    5  traces and metrics reached the agent under the name template-web
-  kept    6  it stopped 1.4 s after a SIGTERM with code 143, and answered the request it had begun
+  kept    6  it stopped 6.4 s after a SIGTERM with code 143, and answered the request it had begun
   kept    7  its health check fails while /tmp/drain exists, and passes again once it is gone
 template-api-migrate, a job
   kept    1  it ended with code 0 before template-api started
@@ -340,14 +405,17 @@ A missing package waits for the owner's first publish and the pull request that 
 
 Each slice arrived in one pull request. To leave one out, put the files of that pull request back to the release before it, in the exported copy, and delete the files it added.
 
-| Slice      | What it adds                                                                                                | Packages it needs                                     | Arrived in                                                              |
-| ---------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
-| 1, hello   | Both apps answer `/health` and send their telemetry, and the API says hello                                 | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                       |
-| 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                         | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
-| 3, sign-in | Sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails, and the web app's pages | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
-| 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                     | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
+| Slice      | What it adds                                                                                                                                            | Packages it needs                                     | Arrived in                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1, hello   | Both apps answer `/health` and send their telemetry, and the API says hello                                                                             | `@zigordev/config`, `@zigordev/otel`, `@zigordev/api` | toolkit's phase 2                                                       |
+| 2, notes   | The notes API on its own PostgreSQL, its migrate job, `openapi.json` and the client                                                                     | `@zigordev/api`, `@zigordev/test`                     | toolkit's phase 4                                                       |
+| 3, sign-in | Sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails, and the web app's pages                                             | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3. `@zigordev/auth` is private until its first publish |
+| 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
+| 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
 Slice 5, the notes pages, is not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+
+Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
 ### A product with only an API
 
@@ -366,7 +434,7 @@ Without the web app's code, the coverage of branches comes close to the floor of
 ## What is left for later
 
 - **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
-- **Sign-in's emails through notifications:** the API holds them until the template's Kafka slice, which waits for the broker in `@zigordev/stack`.
+- **What a failed email changes:** the API logs `email.failed`, and nothing more. Telling the person, such as on `/account`, is left to the product.
 
 ## Known limits
 

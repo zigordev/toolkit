@@ -29,7 +29,8 @@ catalog:
   "@vitejs/plugin-react": 6.3.0
   "@vitest/browser-playwright": 5.1.1
   "@vitest/coverage-v8": 5.1.1
-  "@zigordev/stack": 1.4.0
+  "@zigordev/notifications-events": 1.0.0
+  "@zigordev/stack": 1.7.0
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4
   fastify: 5.12.8
@@ -87,6 +88,10 @@ overrides:
   "@joshwooding/vite-plugin-react-docgen-typescript>glob": 14.0.6
   archiver-utils>glob: 14.0.6
   katex: 0.19.1
+
+peerDependencyRules:
+  allowedVersions:
+    "@zigordev/notifications-events>@zigordev/events": 0.0.0
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:

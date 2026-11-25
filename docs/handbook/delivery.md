@@ -217,6 +217,8 @@ Before its first deploy, a product needs four things, and none of them is in the
 3. Each name in its `.env.production.example`, with its value, in Parameter Store under `/<product>/<NAME>`. The owner sets them.
 4. Its image packages made public, once, after the first publish.
 
+A product that sends email, as one made from the template does once sign-in is on, also needs its Kafka user, its topics and their rules in `platform`, and its line in the `producers.json` of the notifications service, as [the template's README](../../template/README.md#what-the-broker-and-the-service-need-first) says. Its Kafka password is one of the names in step 3: `KAFKA_PASSWORD`, at `/<product>/KAFKA_PASSWORD`, which the shared services read as well.
+
 `platform` deploys the shared services through the same workflow, with no images of its own and no outside check:
 
 ```yaml

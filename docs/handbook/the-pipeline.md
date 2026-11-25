@@ -164,10 +164,10 @@ with:
   product-folder: .
 ```
 
-`toolkit` names `template`, where the product template lives. The script that the job runs builds the images and runs the command. A product with a database gives the run throwaway passwords, because the contract starts the product from `compose.yaml` alone, where the passwords of production are left empty:
+`toolkit` names `template`, where the product template lives. The script that the job runs builds the images and runs the command. A product with a database or a Kafka user gives the run throwaway passwords, because the contract starts the product from `compose.yaml` alone, where the passwords of production are left empty:
 
 ```json
-"check:contract": "docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only zigordev contract"
+"check:contract": "docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only KAFKA_PASSWORD=contract-only zigordev contract"
 ```
 
 To add a check for every repo, add a job to `check.yml` in `toolkit`. It reaches the others with the next version. A check that a laptop can run belongs inside `pnpm check` instead, where the Quality job already runs it.

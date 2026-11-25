@@ -300,7 +300,7 @@ describe('the Contract job', () => {
 
   it('finds, in the template, the script that builds the images and holds them to the contract', () => {
     expect(template.scripts['check:contract']).toBe(
-      'docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only zigordev contract'
+      'docker compose --file compose.yaml --file compose.local.yaml build && POSTGRES_PASSWORD=contract-only TEMPLATE_API_DATABASE_PASSWORD=contract-only KAFKA_PASSWORD=contract-only zigordev contract'
     );
   });
 });

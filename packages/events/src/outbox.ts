@@ -3,6 +3,7 @@ import type { Producer } from '@platformatic/kafka';
 import type { Logger } from '@zigordev/otel';
 import { asc, inArray } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import * as z from 'zod';
 import { createEnvelope, type DataOf, type EventDefinition, type EventOf } from './event.ts';
 import { eventsOutbox } from './tables.ts';
 import {
@@ -22,13 +23,20 @@ export interface OutboxMessage<Definition extends EventDefinition> {
   readonly event: Definition;
   readonly data: DataOf<Definition>;
   readonly key?: string;
+  readonly id?: string;
 }
+
+const eventIdSchema = z.uuid();
 
 export async function addToOutbox<Definition extends EventDefinition>(
   db: Database,
   message: OutboxMessage<Definition>
 ): Promise<EventOf<Definition>> {
-  const envelope = createEnvelope(message.event, message.data);
+  const envelope = createEnvelope(
+    message.event,
+    message.data,
+    message.id === undefined ? {} : { id: eventIdSchema.parse(message.id) }
+  );
   await db.insert(eventsOutbox).values({
     topic: message.topic,
     key: message.key ?? envelope.id,
