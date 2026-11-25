@@ -38,7 +38,9 @@ These rules apply to every Fastify service and to `@zigordev/api`.
 - Every route has a `summary`, `tags` and a stable camelCase `operationId`, such as `listPools`.
 - The service serves Swagger UI at `GET /api/v1/docs` and the OpenAPI 3.1 document at `GET /api/v1/openapi.json`.
 - The generated document is committed as `openapi.json` beside the app. CI fails when it drifts from the code, and the clients are regenerated from it in the same pull request.
-- A service calls another service only over HTTP, through the client generated from that service's document, and keeps working when the other one is down.
+- Services talk in two ways, and no other. Pick by when the caller needs the result.
+  - A call whose answer the caller needs before it can answer its own request goes over HTTP, through the client generated from the other service's document, with a timeout. The caller keeps working when the other one is down.
+  - Work that may finish after the caller has answered, and news that other services act on, go as events through `@zigordev/events`, never through a Kafka client. The event is saved in the caller's outbox in the same transaction as its change, the reader skips an event it has already handled, by its id, and the event's schema lives in a package that both sides import. A request for an email and its outcome are such events.
 
 ## Telemetry
 
