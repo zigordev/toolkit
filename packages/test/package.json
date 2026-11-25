@@ -1,7 +1,7 @@
 {
   "name": "@zigordev/test",
   "version": "0.0.0",
-  "description": "Test helpers for zigordev services: a real PostgreSQL with one migrated copy per test file, and the harness that builds an app for API tests",
+  "description": "Test helpers for zigordev services: a real PostgreSQL with one migrated copy per test file, a real Kafka with a signed-in test user, and the harness that builds an app for API tests",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
@@ -18,6 +18,10 @@
     "./app": {
       "types": "./dist/app.d.ts",
       "default": "./dist/app.js"
+    },
+    "./kafka": {
+      "types": "./dist/kafka.d.ts",
+      "default": "./dist/kafka.js"
     }
   },
   "scripts": {
@@ -26,12 +30,14 @@
   },
   "dependencies": {
     "@testcontainers/postgresql": "catalog:shipped",
-    "pg": "catalog:shipped"
+    "pg": "catalog:shipped",
+    "testcontainers": "catalog:shipped"
   },
   "peerDependencies": {
     "vitest": "^5.1.0"
   },
   "devDependencies": {
+    "@platformatic/kafka": "catalog:shipped",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "@zigordev/dev": "workspace:*",
