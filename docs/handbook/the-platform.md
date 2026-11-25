@@ -81,20 +81,20 @@ When two tools could do a job, these pick one.
 
 Any app runs on the platform if it keeps twelve promises, whatever language it is written in. TypeScript apps get most of them from the shared packages.
 
-| #   | The app promises to                                                                          | Why                                                                               |
-| --- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1   | Ship as a container image for arm64 that runs as a non-root user                             | The host and the laptop are both arm64, and a broken app must not own the machine |
-| 2   | Read all its settings from environment variables, checked once at start                      | The same image runs everywhere, and a missing setting fails at once               |
-| 3   | Listen on the port named in `PORT` and answer `GET /health`                                  | The ingress, the deploy and the monitors all ask the same question                |
-| 4   | Write its logs as JSON lines to stdout, with no personal data                                | One agent collects every app's logs the same way                                  |
-| 5   | Send traces and metrics over OTLP to the address it is given, under its own name             | Every language has an OpenTelemetry library                                       |
-| 6   | Stop cleanly within 30 seconds of a SIGTERM                                                  | A deploy never cuts a request in half                                             |
-| 7   | Describe itself in `compose.yaml`: health check, memory and CPU limit, route and data stores | Nothing about an app is configured anywhere else                                  |
-| 8   | Keep state only in the data stores it declares                                               | The backup knows exactly what to save                                             |
-| 9   | Change its database only forward, in steps the previous version can live with                | For a moment, a deploy runs the old and the new version side by side              |
-| 10  | Call other apps only over HTTP with a generated client, and keep working when they are down  | No app can take another one down                                                  |
-| 11  | Use one name everywhere: `<product>-<part>`                                                  | Logs, dashboards and alerts line up without a mapping                             |
-| 12  | Explain itself in a README and the four standard docs                                        | A reader learns what it is and how to run it                                      |
+| #   | The app promises to                                                                                                       | Why                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1   | Ship as a container image for arm64 that runs as a non-root user                                                          | The host and the laptop are both arm64, and a broken app must not own the machine |
+| 2   | Read all its settings from environment variables, checked once at start                                                   | The same image runs everywhere, and a missing setting fails at once               |
+| 3   | Listen on the port named in `PORT` and answer `GET /health`                                                               | The ingress, the deploy and the monitors all ask the same question                |
+| 4   | Write its logs as JSON lines to stdout, with no personal data                                                             | One agent collects every app's logs the same way                                  |
+| 5   | Send traces and metrics over OTLP to the address it is given, under its own name                                          | Every language has an OpenTelemetry library                                       |
+| 6   | Stop cleanly within 30 seconds of a SIGTERM                                                                               | A deploy never cuts a request in half                                             |
+| 7   | Describe itself in `compose.yaml`: health check, memory and CPU limit, route and data stores                              | Nothing about an app is configured anywhere else                                  |
+| 8   | Keep state only in the data stores it declares                                                                            | The backup knows exactly what to save                                             |
+| 9   | Change its database only forward, in steps the previous version can live with                                             | For a moment, a deploy runs the old and the new version side by side              |
+| 10  | Talk to other apps over HTTP with a generated client, or with events over the broker, and keep working when they are down | No app can take another one down                                                  |
+| 11  | Use one name everywhere: `<product>-<part>`                                                                               | Logs, dashboards and alerts line up without a mapping                             |
+| 12  | Explain itself in a README and the four standard docs                                                                     | A reader learns what it is and how to run it                                      |
 
 The command `zigordev contract` is the contract test: it starts a product's built images and checks promises 1 to 6 on each app. It checks promise 7 as far as the deploy and the backup depend on it: the rules of the compose files that [Delivery](delivery.md) lists, and that each app the ingress routes drains before it stops. [The developer setup](../../packages/dev/README.md) says what it does for each promise, and [the pipeline](the-pipeline.md) runs it on every pull request of a repo that has a product.
 
