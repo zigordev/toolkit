@@ -1,5 +1,15 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "root": true,
-  "extends": ["@zigordev/dev/biome"]
+  "extends": ["@zigordev/dev/biome"],
+  "overrides": [
+    {
+      "includes": ["packages/auth/**"],
+      "linter": {
+        "domains": {
+          "react": "none"
+        }
+      }
+    }
+  ]
 }

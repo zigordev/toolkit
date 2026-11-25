@@ -57,3 +57,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0047](0047-emails-are-rendered-at-build-and-filled-in-at-send.md)             | Emails are rendered when an app builds, and filled in when it sends      | 2026-11-25 | accepted           |
 | [0048](0048-a-text-changed-in-fink-keeps-its-translator-as-author.md)          | A text changed in Fink keeps its translator as author                    | 2026-11-25 | accepted           |
 | [0049](0049-shared-rules-and-skills-are-links-to-the-installed-package.md)     | Shared rules and skills are links to the installed package               | 2026-11-25 | accepted           |
+| [0050](0050-sign-in-carries-over-novembers-design.md)                          | Sign-in carries over November's design, with emails as events            | 2026-11-25 | accepted           |
