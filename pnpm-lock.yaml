@@ -369,8 +369,8 @@ catalogs:
       specifier: 3.1.1
       version: 3.1.1
     '@platformatic/kafka':
-      specifier: 2.18.0
-      version: 2.18.0
+      specifier: 2.19.0
+      version: 2.19.0
     '@testcontainers/postgresql':
       specifier: 12.2.2
       version: 12.2.2
@@ -533,7 +533,7 @@ importers:
     dependencies:
       '@platformatic/kafka':
         specifier: catalog:shipped
-        version: 2.18.0(supports-color@10.2.2)
+        version: 2.19.0(supports-color@10.2.2)
     devDependencies:
       '@opentelemetry/api':
         specifier: 'catalog:'
@@ -696,7 +696,7 @@ importers:
     devDependencies:
       '@platformatic/kafka':
         specifier: catalog:shipped
-        version: 2.18.0(supports-color@7.2.0)
+        version: 2.19.0(supports-color@7.2.0)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -2555,16 +2555,16 @@ packages:
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
 
-  '@platformatic/dynamic-buffer@0.5.0':
-    resolution: {integrity: sha512-iUyF211Jr1WzpwWHp+M/Kh2UWCOpqhizRijIvQwvK/XXTbmtSw05NJH3q53RkHmTWLXfTE+M1IZ6ROlAI/CW+Q==}
+  '@platformatic/dynamic-buffer@0.6.0':
+    resolution: {integrity: sha512-EhSFuWB7UJ5rRu0BWHo7p/fkiNbPAR4WMTtxoLLy24LsjT4Zae3Z6q/rY+TT0sqhr8OKaveTbEwsceJobD2FOQ==}
     engines: {node: '>= 22.19.0'}
 
-  '@platformatic/kafka@2.18.0':
-    resolution: {integrity: sha512-76TaXi1YCpAuuM2Sncacz23hULZ/jGWrsTBf/pV0WDDrTNZh+1pceHEH1TvlmBZxKhV1zxJPilv49PyiaS6/SQ==}
+  '@platformatic/kafka@2.19.0':
+    resolution: {integrity: sha512-XhPm9zXLNdhSPqX3+g3h4f1j1Qr1tShLTiJRsUZyDTpWprZcMn60yrF882f3zuTE91XxxyppzqjQrFGnVN+QQw==}
     engines: {node: '>= 22.22.0 || >= 24.6.0'}
 
-  '@platformatic/wasm-utils@0.4.0':
-    resolution: {integrity: sha512-q/Ezc4ZxVm8ZaEYIk8uS/fDsryJIiLAu/FQTgCy0yHgEVmUtWzQYg/F1KnFRRiJrjqLSkEnA28PS3TjrGiSmnA==}
+  '@platformatic/wasm-utils@0.5.0':
+    resolution: {integrity: sha512-u3AYabIiZDvkxeP0IJw/bDqwH32+mFzDc7rwWYmywGakKM2Pez0MLTd+Eq1RHAQKc4sixZxmlSh0TDj80nnCsA==}
     engines: {node: '>= 22.19.0'}
 
   '@pnpm/config.env-replace@1.1.0':
@@ -7506,12 +7506,14 @@ snapshots:
 
   '@pinojs/redact@0.4.0': {}
 
-  '@platformatic/dynamic-buffer@0.5.0': {}
-
-  '@platformatic/kafka@2.18.0(supports-color@10.2.2)':
+  '@platformatic/dynamic-buffer@0.6.0':
     dependencies:
-      '@platformatic/dynamic-buffer': 0.5.0
-      '@platformatic/wasm-utils': 0.4.0
+      buffer: 6.0.3
+
+  '@platformatic/kafka@2.19.0(supports-color@10.2.2)':
+    dependencies:
+      '@platformatic/dynamic-buffer': 0.6.0
+      '@platformatic/wasm-utils': 0.5.0
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
       avsc: 5.7.9
@@ -7525,10 +7527,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@platformatic/kafka@2.18.0(supports-color@7.2.0)':
+  '@platformatic/kafka@2.19.0(supports-color@7.2.0)':
     dependencies:
-      '@platformatic/dynamic-buffer': 0.5.0
-      '@platformatic/wasm-utils': 0.4.0
+      '@platformatic/dynamic-buffer': 0.6.0
+      '@platformatic/wasm-utils': 0.5.0
       ajv: 8.20.0
       ajv-draft-04: 1.0.0(ajv@8.20.0)
       avsc: 5.7.9
@@ -7542,9 +7544,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@platformatic/wasm-utils@0.4.0':
+  '@platformatic/wasm-utils@0.5.0':
     dependencies:
-      '@platformatic/dynamic-buffer': 0.5.0
+      '@platformatic/dynamic-buffer': 0.6.0
 
   '@pnpm/config.env-replace@1.1.0': {}
 

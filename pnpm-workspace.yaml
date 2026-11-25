@@ -70,7 +70,7 @@ catalogs:
     "@opentelemetry/resources": 3.1.1
     "@opentelemetry/sdk-node": 0.301.2
     "@opentelemetry/sdk-trace": 3.1.1
-    "@platformatic/kafka": 2.18.0
+    "@platformatic/kafka": 2.19.0
     "@testcontainers/postgresql": 12.2.2
     fastify-type-provider-zod: 7.0.0
     pg: 8.23.1
