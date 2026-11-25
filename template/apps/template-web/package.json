@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@opentelemetry/api": "catalog:",
+    "@zigordev/auth": "workspace:*",
     "@zigordev/config": "workspace:*",
     "@zigordev/otel": "workspace:*",
     "next": "catalog:",
