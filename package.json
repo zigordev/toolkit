@@ -15,6 +15,7 @@
     "build": "pnpm -r --if-present run build",
     "test": "vitest run --coverage",
     "test:stories": "vitest run --config packages/ui/vitest.stories.config.ts --coverage",
+    "test:pages": "vitest run --config template/apps/template-web/vitest.browser.config.ts",
     "check:quick": "pnpm run lint && pnpm run build && pnpm run typecheck && vitest run --project '!*:db'",
     "check": "start=$(date +%s); pnpm run lint && pnpm run build && pnpm run typecheck && pnpm run test; code=$?; echo \"check took $(( $(date +%s) - start )) s\"; exit $code"
   },

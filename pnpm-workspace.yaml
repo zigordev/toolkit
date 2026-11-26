@@ -5,6 +5,7 @@ packages:
   - template/packages/*
 
 catalog:
+  "@axe-core/playwright": 4.14.1
   "@biomejs/biome": 2.6.9
   "@commitlint/cli": 21.2.4
   "@commitlint/lint": 21.2.4
@@ -29,10 +30,10 @@ catalog:
   "@types/react": 19.3.2
   "@types/react-dom": 19.3.0
   "@vitejs/plugin-react": 6.3.0
-  "@vitest/browser-playwright": 5.1.1
-  "@vitest/coverage-v8": 5.1.1
-  "@zigordev/notifications-events": 1.1.0
-  "@zigordev/stack": 1.8.1
+  "@vitest/browser-playwright": 5.1.2
+  "@vitest/coverage-v8": 5.1.2
+  "@zigordev/notifications-events": 1.4.0
+  "@zigordev/stack": 1.9.0
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4
   fastify: 5.12.8
@@ -47,11 +48,12 @@ catalog:
   react: 19.3.1
   react-dom: 19.3.1
   react-email: 6.11.16
+  react-hook-form: 7.92.0
   semantic-release: 25.0.9
   storybook: 10.6.9
   typescript: 7.0.2
   vite: 8.3.8
-  vitest: 5.1.1
+  vitest: 5.1.2
   zod: 4.6.7
 
 catalogs:

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { asHtml, textsIn } from '../../../test/texts.ts';
 import { messagesOf } from '../../i18n/messages.ts';
 
 const request = vi.hoisted(() => ({ cookie: '' }));
@@ -32,6 +33,8 @@ const session = {
 };
 
 let server: Server;
+const t = textsIn('en');
+const text = (value: string) => asHtml(value);
 
 function render(page: ReactNode): string {
   return renderToStaticMarkup(
@@ -66,10 +69,10 @@ describe('the sign-in page', () => {
 
     const html = render(await SignIn({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain('<h1>Sign in</h1>');
+    expect(html).toContain(`<h1>${text(t('signIn.title'))}</h1>`);
     expect(html).toContain('name="email"');
-    expect(html).toContain('Continue with Google');
-    expect(html).toContain('Sign in with a passkey');
+    expect(html).toContain(text(t('signIn.google')));
+    expect(html).toContain(text(t('signIn.passkey')));
     expect(html).toContain('href="/sign-up"');
   });
 
@@ -92,11 +95,13 @@ describe('the account page', () => {
 
     const html = render(await Account());
 
-    expect(html).toContain('Ada Lovelace, ada@example.com');
-    expect(html).toContain('Add a passkey');
-    expect(html).toContain('Turn on two-factor');
-    expect(html).toContain('Sign out');
-    expect(html).toContain('Delete my account');
+    expect(html).toContain(
+      text(t('account.who', { name: 'Ada Lovelace', email: 'ada@example.com' }))
+    );
+    expect(html).toContain(text(t('account.addPasskey')));
+    expect(html).toContain(text(t('account.turnOn')));
+    expect(html).toContain(text(t('account.signOut')));
+    expect(html).toContain(text(t('account.delete')));
   });
 
   it('sends a person who is not signed in to the sign-in page, and back afterwards', async () => {
@@ -115,7 +120,7 @@ describe('the sign-up and two-factor pages', () => {
     const html = render(await SignUp());
 
     expect(html).toContain('name="name"');
-    expect(html).toContain('Password, 15 to 128 characters');
+    expect(html).toContain(text(t('signUp.passwordHint', { min: 15, max: 128 })));
     expect(html).toContain('minLength="15"');
     expect(html).toContain('maxLength="128"');
     expect(html).toContain('href="/sign-in"');
@@ -127,6 +132,6 @@ describe('the sign-up and two-factor pages', () => {
     const html = render(await TwoFactor());
 
     expect(html).toContain('name="code"');
-    expect(html).toContain('Trust this device for 30 days');
+    expect(html).toContain(text(t('twoFactor.trust', { days: 30 })));
   });
 });

@@ -32,6 +32,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm check` runs what CI runs: lint, build, type check, and tests with coverage. It prints how long it took.
 - `pnpm check:quick` runs the same without coverage and without the tests that need a container. The push hook runs it.
 - `pnpm test:stories` runs the design system's stories in Chromium, in light and in dark, with axe and with coverage of `packages/ui/src`, which `pnpm check` leaves out. The pipeline's Stories job runs the same in the pinned Playwright image. It needs the tokens built, and Chromium once: `pnpm exec playwright install chromium`.
+- `pnpm test:pages` starts the template's web app from its build, with a stand-in for the API, and checks every page in Chromium: in English and in Spanish, in light and in dark, with axe, under its content security policy. The pipeline's Stories job runs it after the stories. It needs `pnpm build` first.
 - `pnpm --dir packages/ui run storybook` opens the showroom on this Mac.
 - A test that needs a container is named `*.db.test.ts` and belongs to the Vitest project `<name>:db`, from the `vitest.db.config.ts` beside the package's or the app's `vitest.config.ts`. Docker has to run for it.
 - `pnpm format` fixes the formatting, the import order and the Markdown problems that have a safe fix.

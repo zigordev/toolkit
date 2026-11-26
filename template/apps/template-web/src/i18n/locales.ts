@@ -6,6 +6,8 @@ export const defaultLocale: Locale = 'en';
 
 export const localeCookie = 'template.locale';
 
+export const timeZone = 'UTC';
+
 export function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (locales as readonly string[]).includes(value);
 }

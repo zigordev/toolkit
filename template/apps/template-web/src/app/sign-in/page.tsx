@@ -1,7 +1,10 @@
+import { LinkButton } from '@zigordev/ui';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../lib/auth.ts';
 import { localPath } from '../../lib/paths.ts';
+import styles from '../layout.module.css';
 import { SignInForm } from './sign-in-form.tsx';
 
 export const dynamic = 'force-dynamic';
@@ -17,12 +20,15 @@ export default async function SignIn({ searchParams }: SignInProps) {
   }
   const t = await getTranslations('signIn');
   return (
-    <main>
+    <>
       <h1>{t('title')}</h1>
       <SignInForm next={next} />
-      <p>
-        {t('noAccount')} <a href="/sign-up">{t('signUp')}</a>
+      <p className={styles.actions}>
+        {t('noAccount')}
+        <LinkButton render={<Link href="/sign-up" />} variant="ghost" size="sm">
+          {t('signUp')}
+        </LinkButton>
       </p>
-    </main>
+    </>
   );
 }
