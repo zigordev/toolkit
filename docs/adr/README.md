@@ -62,3 +62,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0052](0052-each-image-is-also-tagged-main-so-a-laptop-can-follow-it.md)              | Each image is also tagged main, so a laptop can follow it                | 2026-11-26 | accepted                            |
 | [0053](0053-a-missing-topic-fails-the-health-check-and-an-outage-only-degrades-it.md) | A missing topic fails the health check, and an outage only degrades it   | 2026-11-26 | accepted                            |
 | [0054](0054-a-signed-in-person-reaches-only-the-notes-they-wrote.md)                  | A signed-in person reaches only the notes they wrote                     | 2026-11-26 | accepted                            |
+| [0055](0055-browser-monitoring-carries-over-novembers-rum.md)                         | Browser monitoring carries over November's @zigordev/rum                 | 2026-11-26 | accepted                            |

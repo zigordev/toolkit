@@ -22,6 +22,7 @@
     "@zigordev/auth": "workspace:*",
     "@zigordev/config": "workspace:*",
     "@zigordev/otel": "workspace:*",
+    "@zigordev/rum": "workspace:*",
     "@zigordev/ui": "workspace:*",
     "next": "catalog:",
     "next-intl": "catalog:",

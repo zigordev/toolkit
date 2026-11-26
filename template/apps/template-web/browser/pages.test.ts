@@ -6,7 +6,12 @@ import { type AddressInfo, createServer as createTcpServer } from 'node:net';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
-import { type Browser, chromium } from 'playwright';
+import {
+  type Browser,
+  type BrowserContext,
+  type BrowserContextOptions,
+  chromium,
+} from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { textsIn } from '../test/texts.ts';
 
@@ -153,6 +158,8 @@ beforeAll(async () => {
       OTEL_SERVICE_NAME: 'template-web',
       LOG_LEVEL: 'warn',
       API_URL: `http://127.0.0.1:${(api.address() as AddressInfo).port}`,
+      RUM_URL: '/rum',
+      OTEL_RESOURCE_ATTRIBUTES: 'deployment.environment.name=test',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -172,6 +179,18 @@ afterAll(async () => {
   await new Promise((resolve) => api?.close(resolve));
 });
 
+async function watchedContext(options: BrowserContextOptions = {}): Promise<BrowserContext> {
+  const context = await browser.newContext(options);
+  await context.route(`${base}/rum`, (route) => route.fulfill({ status: 204 }));
+  await context.addInitScript(() => {
+    window.blockedByPolicy = [];
+    document.addEventListener('securitypolicyviolation', (event) => {
+      window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
+    });
+  });
+  return context;
+}
+
 const cases = visits.flatMap((visit) =>
   locales.flatMap((locale) => schemes.map((scheme) => ({ ...visit, locale, scheme })))
 );
@@ -180,16 +199,10 @@ describe('every page', () => {
   it.each(cases)(
     '$path in $locale and $scheme has no axe finding and breaks no rule of the policy',
     async ({ path, signedIn, status, locale, scheme }) => {
-      const context = await browser.newContext({ locale, colorScheme: scheme });
+      const context = await watchedContext({ locale, colorScheme: scheme });
       if (signedIn) {
         await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
       }
-      await context.addInitScript(() => {
-        window.blockedByPolicy = [];
-        document.addEventListener('securitypolicyviolation', (event) => {
-          window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
-        });
-      });
       const page = await context.newPage();
       const errors: string[] = [];
       const ownStatus = `the server responded with a status of ${status}`;
@@ -226,13 +239,7 @@ describe('every page', () => {
 
 describe('the policy', () => {
   it('refuses a script that carries no nonce, and reports it', async () => {
-    const context = await browser.newContext();
-    await context.addInitScript(() => {
-      window.blockedByPolicy = [];
-      document.addEventListener('securitypolicyviolation', (event) => {
-        window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
-      });
-    });
+    const context = await watchedContext();
     const page = await context.newPage();
     await page.route(`${base}/`, async (route) => {
       const response = await route.fetch();
@@ -255,14 +262,8 @@ describe('the policy', () => {
 
 describe('the notes', () => {
   it('make a new note through the form, through the API, under the policy', async () => {
-    const context = await browser.newContext({ locale: 'en' });
+    const context = await watchedContext({ locale: 'en' });
     await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
-    await context.addInitScript(() => {
-      window.blockedByPolicy = [];
-      document.addEventListener('securitypolicyviolation', (event) => {
-        window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
-      });
-    });
     const page = await context.newPage();
     try {
       await page.goto(`${base}/notes/new`, { waitUntil: 'networkidle' });
@@ -273,6 +274,33 @@ describe('the notes', () => {
       await page.waitForURL(`${base}/notes/${created.id}`);
 
       expect(await page.getByRole('heading', { level: 1 }).textContent()).toBe('Bake bread');
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
+describe('browser monitoring', () => {
+  it("sends Faro's telemetry to the app's own address, naming the app, without the query", async () => {
+    const context = await watchedContext();
+    const posts: string[] = [];
+    await context.route(`${base}/rum`, async (route) => {
+      posts.push(route.request().postData() ?? '');
+      await route.fulfill({ status: 204 });
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/?email=ada%40example.com`, { waitUntil: 'networkidle' });
+      const deadline = Date.now() + 10_000;
+      while (posts.length === 0 && Date.now() < deadline) {
+        await page.waitForTimeout(100);
+      }
+
+      const sent = posts.join('\n');
+      expect(sent).toContain('"name":"template-web"');
+      expect(sent).toContain('"environment":"test"');
+      expect(sent).not.toContain('ada');
       expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
     } finally {
       await context.close();

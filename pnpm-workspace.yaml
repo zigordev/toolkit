@@ -68,6 +68,8 @@ catalogs:
     "@fastify/rate-limit": 11.3.0
     "@fastify/swagger": 9.9.5
     "@fastify/swagger-ui": 6.1.5
+    "@grafana/faro-web-sdk": 2.15.0
+    "@grafana/faro-web-tracing": 2.15.0
     "@openfeature/flagd-provider": 0.18.0
     "@opentelemetry/core": 3.1.1
     "@opentelemetry/exporter-trace-otlp-http": 0.301.2
@@ -104,6 +106,8 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - "@zigordev/*"
 trustPolicy: no-downgrade
+trustPolicyExclude:
+  - ua-parser-js@1.0.41
 
 allowBuilds:
   "@parcel/watcher": false
