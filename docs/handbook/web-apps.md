@@ -123,7 +123,7 @@ Step 6.5 tried it on 2026-11-26, and the change arrived as toolkit#145:
 4. Fink commits through GitHub's API, as the person, with GitHub as the committer, its own message `chore: update translations`, and its co-author line. It changes only the messages files, and keeps their order, indentation and final newline.
 5. Someone opens the pull request: Fink does not, for a person with write access. The `identity` and `attribution` rules accept the commit, as [record 0048](../adr/0048-a-text-changed-in-fink-keeps-its-translator-as-author.md) says, and it waits for the owner, who marks it ready.
 
-The Inlang GitHub App asks for write access to the repo's administration, contents and workflows. The owner chose on 2026-11-26 to install it on toolkit for the trial only, and to remove it right after. A translator who comes later needs that choice again.
+The Inlang GitHub App asks for write access to the repo's administration, contents and workflows. It stays installed on toolkit, and on no other repo, as [record 0056](../adr/0056-the-inlang-github-app-stays-installed-on-toolkit.md) says. A product repo gets it only when the owner chooses so for it, and a person without write access works from a fork in their own account.
 
 The trial taught one rule: **a test never repeats a text**. It reads it from the messages, through `textsIn` in `test/texts.ts`, so a translator's change cannot break a test. The first run of toolkit#145 failed on a test that held the old Spanish sentence.
 
