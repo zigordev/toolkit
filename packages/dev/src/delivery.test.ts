@@ -46,7 +46,10 @@ function said(ran: StepRun): string {
 
 describe('the publish workflow', () => {
   const plan = stepScript(publish, 'List the apps that the product builds');
-  const build = stepScript(publish, 'Build the image for arm64, and push it under its commit');
+  const build = stepScript(
+    publish,
+    'Build the image for arm64, and push it under its commit and as main'
+  );
   const onMain = { GITHUB_REF: 'refs/heads/main', GITHUB_WORKSPACE: root };
 
   it('lists each app that compose.local.yaml builds, once, with its build folder and Dockerfile', () => {
@@ -127,7 +130,7 @@ describe('the publish workflow', () => {
     GITHUB_REPOSITORY: repository,
   };
 
-  it('builds for arm64 with no build record of its own, labels the source, pushes under the commit, and names the digest', () => {
+  it('builds for arm64 with no build record of its own, labels the source, pushes under the commit and as main, and names the digest', () => {
     const ran = runStep(build, {
       cwd: root,
       env: app,
@@ -152,12 +155,14 @@ describe('the publish workflow', () => {
         `org.opencontainers.image.revision=${commit}`,
         '--tag',
         `ghcr.io/zigordev/template-api:${commit}`,
+        '--tag',
+        'ghcr.io/zigordev/template-api:main',
         '--push',
         '.',
       ],
     ]);
     expect(ran.summary).toContain(
-      `| \`ghcr.io/zigordev/template-api:${commit}\` | \`${apiDigest}\` |`
+      `| \`ghcr.io/zigordev/template-api:${commit}\`, also \`main\` | \`${apiDigest}\` |`
     );
   });
 
