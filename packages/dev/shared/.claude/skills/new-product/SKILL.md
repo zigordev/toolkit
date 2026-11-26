@@ -29,20 +29,22 @@ A product starts as a copy of `template/` in toolkit at one release, with every 
    - `template/apps/` to `apps/`;
    - `createTemplateApiClient` and `TemplateApiClient` to the name in PascalCase, such as `createMyShopApiClient` for `my-shop`, and `Template API` to the name's API;
    - the descriptions "The API of the product template" and "the template's API" to the API of the name;
-   - `template.localhost`, `template.zigordev.com` and `template.greetings`;
-   - then `template-`, `template_` and `TEMPLATE_`.
+   - `template.localhost`, `template.zigordev.com`, `template.greetings`, and the cookies `template.session_token` and `template.locale`;
+   - the Compose project `name: template` and its network `template`, in `compose.yaml`;
+   - then `template-`, `template_` and `TEMPLATE_`;
+   - then the display name `Template`, in the web app's `messages/en.json` and `messages/es.json` and in the tests of both apps, as the API makes it from the name: the first letter in upper case, such as `My-shop` for `my-shop`.
 
-   Never rename `templateUrl` or `postgresTemplateUrl`, which belong to `@zigordev/test`.
+   Never rename `templateUrl` or `postgresTemplateUrl`, which belong to `@zigordev/test`, nor the key `template` that names an email's kind in the API's `plugins/sign-in.ts` and its test: `notifications` reads it.
 
 3. **Write the root files:**
    - every `@zigordev` dependency of the apps and packages as `catalog:`, in place of `workspace:*`;
-   - `package.json`: toolkit's `packageManager`, `engines` and scripts without `test:stories`; the lint line `biome ci . && markdownlint-cli2 && zizmor --offline . && zigordev check`; the template's `local:up`, `local:down`, `local:reset`, `dev` and `check:contract`, renamed; and as `catalog:` devDependencies Biome, commitlint, `@vitest/coverage-v8`, lefthook, markdownlint-cli2, `@types/node`, `@zigordev/dev`, `@zigordev/stack`, TypeScript and Vitest;
+   - `package.json`: toolkit's `packageManager`, `engines` and scripts, `test:browser` among them; the lint line `biome ci . && markdownlint-cli2 && zizmor --offline . && zigordev check`; the template's `local:up`, `local:down`, `local:reset`, `dev` and `check:contract`, renamed; and as `catalog:` devDependencies Biome, commitlint, `@vitest/coverage-v8`, lefthook, markdownlint-cli2, `@types/node`, `@zigordev/dev`, `@zigordev/stack`, TypeScript and Vitest;
    - `pnpm-workspace.yaml`: the packages `apps/*` and `packages/*`; toolkit's catalog entries for exactly the dependencies in use, in the default catalog and in the named ones such as `shipped` and `openapi-typescript`; every `@zigordev` package at npm's newest version; `catalogMode: strict`; toolkit's overrides; `minimumReleaseAge` with `@zigordev/*` excluded; `trustPolicy`; and `allowBuilds`;
    - `mise.toml`, `biome.json` and `.gitignore` as toolkit has them;
-   - a `tsconfig.json` that extends `@zigordev/dev/tsconfig/base.json`, and a `vitest.config.ts` whose projects are the configs of the apps and the packages and the root tests, with coverage of their `src` at the floor of 90%. `notifications` has both.
+   - a `tsconfig.json` that extends `@zigordev/dev/tsconfig/base.json`, and a `vitest.config.ts` whose projects are the configs of the apps and the packages and the root tests, with coverage of their `src` at the floor of 90%, leaving out `**/*.client.{ts,tsx}`, which the web app's browser tests count. `notifications` has both files.
 4. **The port, the build and the pins.** The laptop port takes the place of 5433 in `compose.local.yaml`, in the API's `.env.development` and in its `src/config.test.ts`. The build context in `compose.local.yaml` becomes `.` in place of `..`. In `.github/workflows/ci.yml`, every pin of toolkit takes the release's commit, with the version after it.
-5. **Hand edits.** A product with only an API makes the changes that the template's README lists under "A product with only an API". A product with pages renames the page title `Template` in `layout.tsx` and `page.tsx`, and in their tests.
-6. **What is left.** `grep -rni template --exclude-dir=.git .` shows it. Only `templateUrl` and `postgresTemplateUrl` stay.
+5. **Hand edits.** A product with only an API makes the changes that the template's README lists under "A product with only an API".
+6. **What is left.** `grep -rni template --exclude-dir=.git .` shows it. Only `templateUrl`, `postgresTemplateUrl` and the key `template` of an email's kind stay.
 
 ## Install, docs and check
 
