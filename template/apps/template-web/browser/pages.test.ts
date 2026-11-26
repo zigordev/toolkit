@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
 import { type Browser, chromium } from 'playwright';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { textsIn } from '../test/texts.ts';
 
 declare global {
   interface Window {
@@ -39,6 +40,22 @@ const session = {
   },
 };
 
+const note = {
+  id: '01938c2e-0000-7000-8000-0000000000aa',
+  title: 'Buy milk',
+  body: 'Two litres',
+  status: 'open',
+  createdAt: '2026-11-26T10:00:00.000Z',
+  updatedAt: '2026-11-26T10:00:00.000Z',
+};
+
+const created = {
+  ...note,
+  id: '01938c2e-0000-7000-8000-0000000000bb',
+  title: 'Bake bread',
+  body: '',
+};
+
 interface Visit {
   readonly path: string;
   readonly signedIn: boolean;
@@ -51,6 +68,9 @@ const visits: readonly Visit[] = [
   { path: '/sign-up', signedIn: false, status: 200 },
   { path: '/two-factor', signedIn: false, status: 200 },
   { path: '/account', signedIn: true, status: 200 },
+  { path: '/notes', signedIn: true, status: 200 },
+  { path: '/notes/new', signedIn: true, status: 200 },
+  { path: `/notes/${note.id}`, signedIn: true, status: 200 },
   { path: '/no-such-page', signedIn: false, status: 404 },
 ];
 
@@ -63,8 +83,8 @@ let output = '';
 let base = '';
 let browser: Browser;
 
-function answer(response: ServerResponse, body: unknown): void {
-  response.writeHead(200, { 'content-type': 'application/json' });
+function answer(response: ServerResponse, body: unknown, status = 200): void {
+  response.writeHead(status, { 'content-type': 'application/json' });
   response.end(JSON.stringify(body));
 }
 
@@ -78,6 +98,14 @@ function standInApi(): Server {
       answer(response, signedIn ? session : null);
     } else if (path === '/health') {
       answer(response, { status: 'ok' });
+    } else if (path === '/api/v1/notes' && request.method === 'POST') {
+      answer(response, created, 201);
+    } else if (path === '/api/v1/notes') {
+      answer(response, { items: [note] });
+    } else if (path === `/api/v1/notes/${note.id}`) {
+      answer(response, note);
+    } else if (path === `/api/v1/notes/${created.id}`) {
+      answer(response, created);
     } else {
       response.writeHead(404);
       response.end();
@@ -219,6 +247,33 @@ describe('the policy', () => {
 
       expect(await page.evaluate(() => window.ranWithoutNonce)).toBeUndefined();
       expect(await page.evaluate(() => window.blockedByPolicy)).toEqual(['script-src-elem inline']);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
+describe('the notes', () => {
+  it('make a new note through the form, through the API, under the policy', async () => {
+    const context = await browser.newContext({ locale: 'en' });
+    await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+    await context.addInitScript(() => {
+      window.blockedByPolicy = [];
+      document.addEventListener('securitypolicyviolation', (event) => {
+        window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
+      });
+    });
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/notes/new`, { waitUntil: 'networkidle' });
+
+      const t = textsIn('en');
+      await page.getByRole('textbox', { name: t('notes.titleLabel') }).fill('Bake bread');
+      await page.getByRole('button', { name: t('notes.save') }).click();
+      await page.waitForURL(`${base}/notes/${created.id}`);
+
+      expect(await page.getByRole('heading', { level: 1 }).textContent()).toBe('Bake bread');
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
     } finally {
       await context.close();
     }

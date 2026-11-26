@@ -8,8 +8,10 @@ import { connection } from 'next/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { timeZone } from '../i18n/locales.ts';
 import { LanguageSwitch } from './language-switch.tsx';
 import styles from './layout.module.css';
+import { Providers } from './providers.tsx';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('app');
@@ -25,7 +27,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
   return (
     <html lang={locale} data-mode="system">
       <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
           <header className={styles.header}>
             <LinkButton
               render={<Link href="/" />}
@@ -41,7 +43,9 @@ export default async function RootLayout({ children }: { readonly children: Reac
               names={{ en: language('en'), es: language('es') }}
             />
           </header>
-          <main className={styles.main}>{children}</main>
+          <main className={styles.main}>
+            <Providers>{children}</Providers>
+          </main>
         </NextIntlClientProvider>
       </body>
     </html>

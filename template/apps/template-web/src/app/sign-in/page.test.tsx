@@ -38,7 +38,7 @@ const text = (value: string) => asHtml(value);
 
 function render(page: ReactNode): string {
   return renderToStaticMarkup(
-    <NextIntlClientProvider locale="en" messages={messagesOf('en')}>
+    <NextIntlClientProvider locale="en" messages={messagesOf('en')} timeZone="UTC">
       {page}
     </NextIntlClientProvider>
   );
