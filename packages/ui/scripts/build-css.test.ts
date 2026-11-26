@@ -3,7 +3,7 @@ import { bundleCss } from './build-css.ts';
 import { supportedBrowsers } from './targets.ts';
 
 describe('the CSS bundle', () => {
-  it('is one file with the tokens, the reset, the base styles and the Button, in their layers', async () => {
+  it('is one file with the tokens, the reset, the base styles and every component, in their layers', async () => {
     const css = await bundleCss();
 
     const layers = [...css.matchAll(/@layer ([a-z.]+)[{;]/g)].map(([, name]) => name);
@@ -16,7 +16,9 @@ describe('the CSS bundle', () => {
     ]);
     expect(css).toContain('--ds-color-accent-solid:');
     expect(css).toContain(':root[data-mode=light]');
-    expect(css).toContain('.ds-button');
+    for (const component of ['.ds-button', '.ds-field', '.ds-checkbox', '.ds-alert']) {
+      expect(css).toContain(component);
+    }
     expect(css).not.toContain('@import');
   });
 
