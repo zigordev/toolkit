@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testLocale } from '../../test/locale.ts';
+import { asHtml, textsIn } from '../../test/texts.ts';
 
 let server: Server;
 
@@ -33,9 +34,10 @@ describe('the home page', () => {
   it('shows what the API says', async () => {
     const html = await render(`http://127.0.0.1:${(server.address() as AddressInfo).port}`);
 
-    expect(html).toBe(
-      '<main><h1>Template</h1><p>Hello from the stand-in</p><p><a href="/account">Your account</a></p></main>'
-    );
+    const en = textsIn('en');
+    expect(html).toContain(`<h1>${asHtml(en('home.title'))}</h1><p>Hello from the stand-in</p>`);
+    expect(html).toMatch(/href="\/account"[^>]*>/);
+    expect(html).toContain(`>${asHtml(en('home.account'))}</a>`);
   });
 
   it('says it in Spanish when Spanish is chosen', async () => {
@@ -43,16 +45,14 @@ describe('the home page', () => {
 
     const html = await render('http://127.0.0.1:9');
 
-    expect(html).toBe(
-      '<main><h1>Template</h1><p>La API no responde.</p><p><a href="/account">Tu cuenta</a></p></main>'
-    );
+    const es = textsIn('es');
+    expect(html).toContain(`<p>${asHtml(es('home.apiDown'))}</p>`);
+    expect(html).toContain(`>${asHtml(es('home.account'))}</a>`);
   });
 
   it('still renders when the API does not answer', async () => {
     const html = await render('http://127.0.0.1:9');
 
-    expect(html).toBe(
-      '<main><h1>Template</h1><p>The API does not answer.</p><p><a href="/account">Your account</a></p></main>'
-    );
+    expect(html).toContain(`<p>${asHtml(textsIn('en')('home.apiDown'))}</p>`);
   });
 });

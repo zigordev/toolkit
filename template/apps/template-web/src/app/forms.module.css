@@ -1,0 +1,32 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-3);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-4);
+  padding-block-start: var(--ds-space-6);
+  border-block-start: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+}
+
+.codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ds-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.address {
+  overflow-wrap: anywhere;
+}

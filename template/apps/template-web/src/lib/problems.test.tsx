@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { textsIn } from '../../test/texts.ts';
 import type { Locale } from '../i18n/locales.ts';
 import { messagesOf } from '../i18n/messages.ts';
 import { useProblemText } from './problems.ts';
@@ -19,7 +20,7 @@ function Texts() {
   return <>{problems.map((problem) => `${problemText(problem, 'the fallback')}|`)}</>;
 }
 
-function textsIn(locale: Locale): string[] {
+function wordsIn(locale: Locale): string[] {
   return renderToStaticMarkup(
     <NextIntlClientProvider locale={locale} messages={messagesOf(locale)}>
       <Texts />
@@ -31,13 +32,14 @@ function textsIn(locale: Locale): string[] {
 
 describe('the words for a problem', () => {
   it('names each problem in the chosen language, and the fallback for any other', () => {
-    expect(textsIn('en')).toEqual([
-      'The email or the password is wrong.',
-      'Confirm your email address first: the link is in your inbox.',
-      'That code did not work.',
-      'Too many tries. Wait a minute, then try again.',
+    const en = textsIn('en');
+    expect(wordsIn('en')).toEqual([
+      en('problems.wrongCredentials'),
+      en('problems.notVerified'),
+      en('problems.wrongCode'),
+      en('problems.tooMany'),
       'the fallback',
     ]);
-    expect(textsIn('es')[0]).toBe('El correo o la contraseña no son correctos.');
+    expect(wordsIn('es')[0]).toBe(textsIn('es')('problems.wrongCredentials'));
   });
 });

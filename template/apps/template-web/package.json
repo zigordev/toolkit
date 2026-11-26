@@ -15,23 +15,29 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "catalog:",
+    "@fontsource-variable/mona-sans": "catalog:",
     "@opentelemetry/api": "catalog:",
     "@zigordev/auth": "workspace:*",
     "@zigordev/config": "workspace:*",
     "@zigordev/otel": "workspace:*",
+    "@zigordev/ui": "workspace:*",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@inlang/cli": "catalog:",
     "@inlang/plugin-next-intl": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@zigordev/dev": "workspace:*",
+    "playwright": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

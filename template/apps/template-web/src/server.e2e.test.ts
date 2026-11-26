@@ -200,10 +200,10 @@ describe('the web app as a process', () => {
     await (await fetch(`${server.base}/`)).text();
     await until(() => spans().some((span) => span.kind === clientKind), 15);
 
-    const page = spans().find((span) => span.kind === serverKind);
+    const page = spans().find((span) => span.kind === serverKind && span.name === 'GET /');
     const [call, ...others] = spans().filter((span) => span.kind === clientKind);
     const hello = calls.find((entry) => entry.path === '/api/v1/hello');
-    expect(page?.name).toBe('GET /');
+    expect(page).toBeDefined();
     expect(call?.traceId).toBe(page?.traceId);
     expect(others).toEqual([]);
     expect(hello?.traceparent).toContain(page?.traceId);

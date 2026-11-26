@@ -183,6 +183,9 @@ settings:
 
 catalogs:
   default:
+    '@axe-core/playwright':
+      specifier: 4.14.1
+      version: 4.14.1
     '@biomejs/biome':
       specifier: 2.6.9
       version: 2.6.9
@@ -309,6 +312,9 @@ catalogs:
     react-email:
       specifier: 6.11.16
       version: 6.11.16
+    react-hook-form:
+      specifier: 7.92.0
+      version: 7.92.0
     semantic-release:
       specifier: 25.0.9
       version: 25.0.9
@@ -1030,6 +1036,12 @@ importers:
 
   template/apps/template-web:
     dependencies:
+      '@fontsource-variable/jetbrains-mono':
+        specifier: 'catalog:'
+        version: 5.3.0
+      '@fontsource-variable/mona-sans':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
@@ -1042,6 +1054,9 @@ importers:
       '@zigordev/otel':
         specifier: workspace:*
         version: link:../../../packages/otel
+      '@zigordev/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
       next:
         specifier: 'catalog:'
         version: 16.4.6(@babel/core@7.29.13(supports-color@10.2.2))(@opentelemetry/api@1.10.0)(@types/node@26.6.10)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -1054,10 +1069,16 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
+      react-hook-form:
+        specifier: 'catalog:'
+        version: 7.92.0(@types/react@19.3.2)(react@19.3.1)
       zod:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@axe-core/playwright':
+        specifier: 'catalog:'
+        version: 4.14.1(playwright-core@1.65.1)
       '@inlang/cli':
         specifier: 'catalog:'
         version: 3.7.1
@@ -1076,6 +1097,9 @@ importers:
       '@zigordev/dev':
         specifier: workspace:*
         version: link:../../../packages/dev
+      playwright:
+        specifier: 'catalog:'
+        version: 1.65.1
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -1142,6 +1166,12 @@ packages:
 
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
+
+  '@axe-core/playwright@4.14.1':
+    resolution: {integrity: sha512-cSN1ijrWLnlOof22sPN4RtWGSoPpt7GzOVyOKomyhnPsy1fPNoRdBiJAUziuCRs8KoK50kKufiMUFt7itAuwOg==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -6464,6 +6494,16 @@ packages:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
       react-dom: ^18.0 || ^19.0 || ^19.0.0-rc
 
+  react-hook-form@7.92.0:
+    resolution: {integrity: sha512-O5ILyY5fYHN7N13Pfxpe55KboyNFsJdM03BHpshQkClJd8raugiAUGY7VjifITrfhVxyx81ko25azXCoayhf1w==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8.0 || ^17 || ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
@@ -7358,6 +7398,11 @@ snapshots:
   '@actions/io@3.0.2': {}
 
   '@adobe/css-tools@4.5.0': {}
+
+  '@axe-core/playwright@4.14.1(playwright-core@1.65.1)':
+    dependencies:
+      axe-core: 4.14.1
+      playwright-core: 1.65.1
 
   '@babel/code-frame@7.29.7':
     dependencies:
@@ -12490,6 +12535,12 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  react-hook-form@7.92.0(@types/react@19.3.2)(react@19.3.1):
+    dependencies:
+      react: 19.3.1
+    optionalDependencies:
+      '@types/react': 19.3.2
 
   react-is@17.0.2: {}
 
