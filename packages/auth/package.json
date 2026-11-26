@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/auth",
   "version": "0.0.0",
-  "private": true,
   "description": "Sign-in for zigordev apps on Better Auth: email with a password, passkeys, two-factor and Google, sessions in the app's own database, account deletion, and the parts for Fastify, Next.js and the browser",
   "license": "UNLICENSED",
   "type": "module",
@@ -91,5 +90,13 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/auth"
   }
 }
