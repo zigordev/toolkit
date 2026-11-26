@@ -219,7 +219,7 @@ People sign in through [`@zigordev/auth`](../packages/auth/README.md), with emai
 
 Sign-in sends four emails: verify an address, choose a new password, someone tried to sign up with your address, and confirm a deletion. The API builds each with [`@zigordev/email`](../packages/email/README.md), in the language the browser asks for, and the notifications service delivers it, as the next section says.
 
-The web app has the pages: `/sign-in` with a password, Google or a passkey, `/sign-up`, `/two-factor` for the authenticator's code or a backup code, and `/account` to add a passkey, turn on two-factor, sign out or delete the account. They use `@zigordev/auth/client`, and are plain HTML until the interface step brings the design system. `/sign-in` sends a person who is signed in on to `next`, only a path on this site, and `/account` sends a person who is not to `/sign-in` and back.
+The web app has the pages: `/sign-in` with a password, Google or a passkey, `/sign-up`, `/two-factor` for the authenticator's code or a backup code, and `/account` to add a passkey, turn on two-factor, sign out or delete the account. They use `@zigordev/auth/client`, and wear the design system, as [the pages and their security](#the-pages-and-their-security) says. `/sign-in` sends a person who is signed in on to `next`, only a path on this site, and `/account` sends a person who is not to `/sign-in` and back.
 
 ### Google on this Mac
 

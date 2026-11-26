@@ -24,7 +24,7 @@ describe('requestIdOf', () => {
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(requestIdOf('template-api', 'auth-verify-email-abc')).toBe(id);
     expect(requestIdOf('template-api', 'auth-verify-email-abd')).not.toBe(id);
-    expect(requestIdOf('playground-api', 'auth-verify-email-abc')).not.toBe(id);
+    expect(requestIdOf('shop-api', 'auth-verify-email-abc')).not.toBe(id);
   });
 });
 
