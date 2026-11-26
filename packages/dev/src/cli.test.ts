@@ -128,7 +128,7 @@ describe('the zigordev command', () => {
     expect(output).toContain('package.json  scripts  the file is missing');
     expect(output).toContain('shared  the package holds no shared files');
     expect(output).toContain(
-      '(actions, attribution, comments, docs, flags, identity, links, migrations, scripts, shared)'
+      '(actions, attribution, comments, docs, flags, identity, links, migrations, scripts, shared, texts)'
     );
   });
 
