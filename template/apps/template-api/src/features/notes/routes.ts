@@ -1,6 +1,7 @@
 import { type ApiPlugin, problemResponses, requireScope } from '@zigordev/api';
+import type { FastifyRequest } from 'fastify';
 import * as z from 'zod';
-import { type Database, notesRepository } from './repository.ts';
+import { type Database, notesRepository, type Reach } from './repository.ts';
 import {
   createNoteBody,
   listNotesQuery,
@@ -15,6 +16,17 @@ export interface NotesOptions {
   readonly db: Database;
 }
 
+const reachDescription =
+  'A person who is signed in reaches only the notes they wrote: any other note answers 404. A caller with an API key needs the scope, and reaches every note.';
+
+function reachOf(request: FastifyRequest, scope: 'notes:read' | 'notes:write'): Reach {
+  if (request.user) {
+    return { ownerId: request.user.id };
+  }
+  requireScope(request, scope);
+  return 'all';
+}
+
 export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
   const service = notesService(notesRepository(options.db));
   const tags = ['notes'];
@@ -24,6 +36,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
     {
       schema: {
         summary: 'List the notes',
+        description: reachDescription,
         tags,
         operationId: 'listNotes',
         querystring: listNotesQuery,
@@ -31,8 +44,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
       },
     },
     async (request) => {
-      requireScope(request, 'notes:read');
-      return service.list(request.query);
+      return service.list(request.query, reachOf(request, 'notes:read'));
     }
   );
 
@@ -41,6 +53,8 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
     {
       schema: {
         summary: 'Create a note',
+        description:
+          'A note made by a person who is signed in is theirs. A note made with an API key belongs to nobody, and only API keys reach it.',
         tags,
         operationId: 'createNote',
         body: createNoteBody,
@@ -48,8 +62,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
       },
     },
     async (request, reply) => {
-      requireScope(request, 'notes:write');
-      const note = await service.create(request.body);
+      const note = await service.create(request.body, reachOf(request, 'notes:write'));
       request.log.info({ event: 'note.created', noteId: note.id });
       return reply.code(201).header('location', `/api/v1/notes/${note.id}`).send(note);
     }
@@ -60,6 +73,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
     {
       schema: {
         summary: 'Get one note',
+        description: reachDescription,
         tags,
         operationId: 'getNote',
         params: noteParams,
@@ -67,8 +81,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
       },
     },
     async (request) => {
-      requireScope(request, 'notes:read');
-      return service.get(request.params.noteId);
+      return service.get(request.params.noteId, reachOf(request, 'notes:read'));
     }
   );
 
@@ -77,6 +90,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
     {
       schema: {
         summary: 'Change a note',
+        description: reachDescription,
         tags,
         operationId: 'updateNote',
         params: noteParams,
@@ -85,8 +99,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
       },
     },
     async (request) => {
-      requireScope(request, 'notes:write');
-      return service.update(request.params.noteId, request.body);
+      return service.update(request.params.noteId, request.body, reachOf(request, 'notes:write'));
     }
   );
 
@@ -95,6 +108,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
     {
       schema: {
         summary: 'Delete a note',
+        description: reachDescription,
         tags,
         operationId: 'deleteNote',
         params: noteParams,
@@ -105,8 +119,7 @@ export const notes: ApiPlugin<NotesOptions> = async (app, options) => {
       },
     },
     async (request, reply) => {
-      requireScope(request, 'notes:write');
-      await service.remove(request.params.noteId);
+      await service.remove(request.params.noteId, reachOf(request, 'notes:write'));
       request.log.info({ event: 'note.deleted', noteId: request.params.noteId });
       return reply.code(204).send(null);
     }

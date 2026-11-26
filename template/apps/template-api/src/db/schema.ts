@@ -1,3 +1,4 @@
+import { users } from '@zigordev/auth/drizzle';
 import { sql } from 'drizzle-orm';
 import { check, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
@@ -7,6 +8,7 @@ export const notes = pgTable(
   'notes',
   {
     id: uuid().primaryKey().default(sql`uuidv7()`),
+    ownerId: uuid().references(() => users.id, { onDelete: 'cascade' }),
     title: text().notNull(),
     body: text().notNull().default(''),
     status: text({ enum: noteStatuses }).notNull().default('open'),
@@ -16,6 +18,7 @@ export const notes = pgTable(
   (table) => [
     check('notes_status_known', sql`${table.status} in ('open', 'done')`),
     index('notes_created_at_id_idx').on(table.createdAt, table.id),
+    index('notes_owner_id_created_at_id_idx').on(table.ownerId, table.createdAt, table.id),
   ]
 );
 

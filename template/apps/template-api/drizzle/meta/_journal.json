@@ -29,6 +29,13 @@
       "when": 1795636254264,
       "tag": "0003_add_events_tables",
       "breakpoints": false
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795693488150,
+      "tag": "0004_add_notes_owner",
+      "breakpoints": false
     }
   ]
 }

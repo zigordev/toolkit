@@ -153,6 +153,16 @@ Slice 2 gives the API its first real feature: notes, kept in the product's Postg
 
 A list filters by `status` and by `q`, a text that the title holds in any case, sorts by `createdAt`, `updatedAt` or `title`, newest first unless asked, and pages with `limit` and `cursor`. Every error is a problem in the platform's format, and the docs page at `/api/v1/docs` shows them all.
 
+Who reaches which note, as [record 0054](../docs/adr/0054-a-signed-in-person-reaches-only-the-notes-they-wrote.md) says:
+
+| Caller                                  | Reaches                                                                 | Needs                                                 |
+| --------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- |
+| A person who is signed in               | The notes they wrote. Any other note answers 404, as a missing one does | Their session, and no scope                           |
+| A caller with an API key                | Every note, including the people's. A note it makes belongs to nobody   | The scope of the route: `notes:read` or `notes:write` |
+| Nobody, or an API key without the scope | Nothing: 401 without credentials, 403 without the scope                 |                                                       |
+
+Each note keeps its writer in `owner_id`, and a person's notes are deleted with their account.
+
 A caller signs in with an API key in `Authorization: Bearer <key>`. The API keeps only the SHA-256 of each key, in `API_KEYS`, so the key itself is never in a setting the API reads. To try the notes on this Mac, make a key and start the API with it:
 
 ```bash
@@ -193,7 +203,7 @@ After a change to `openapi.json`, write the types again with `pnpm --dir package
 
 ## Sign-in
 
-People sign in through [`@zigordev/auth`](../packages/auth/README.md), with email and a password, passkeys, optional two-factor and Google, as [record 0050](../docs/adr/0050-sign-in-carries-over-novembers-design.md) says. Better Auth runs in the API, which serves `/api/auth/*`, keeps users and sessions in the API's own database, and answers `GET /api/v1/me` with the person who is signed in. Every other route takes a session or an API key: the notes still need a key with its scopes.
+People sign in through [`@zigordev/auth`](../packages/auth/README.md), with email and a password, passkeys, optional two-factor and Google, as [record 0050](../docs/adr/0050-sign-in-carries-over-novembers-design.md) says. Better Auth runs in the API, which serves `/api/auth/*`, keeps users and sessions in the API's own database, and answers `GET /api/v1/me` with the person who is signed in. Every other route takes a session or an API key: a person who is signed in reaches the notes they wrote, and an API key needs the notes scopes, as [the notes API](#the-notes-api) says.
 
 - **On this Mac, in containers:** sign-in is on at `http://template.localhost`, as `compose.local.yaml` sets.
 - **With the dev servers:** run `pnpm dev api`, and `API_URL=http://127.0.0.1:3000 pnpm dev web` as [hot reload](#while-you-edit-one-app-hot-reload) shows, then open `http://localhost:3001`. The web app forwards `/api/auth/*` to the API on its own origin, and the API has sign-in on for that origin, from `apps/template-api/.env.development`. The API also reads an untracked `.env.local` beside it, which is where the Google client's two values go. Git ignores every `.env*.local` file.
@@ -268,7 +278,7 @@ Sign up at `http://template.localhost/sign-up`, or at `http://localhost:3001/sig
 
 ### How the tests check it
 
-`src/features/account/sign-in.db.test.ts` runs every sign-in path against a real PostgreSQL and a real Kafka, which the API tests' global setup starts. The file makes topics of its own with `createTopics` from `@zigordev/events/testing`, and runs a stand-in for the notifications service on them: it reads each request, keeps it, and answers `email.sent`, or `email.failed` for an address at `refused.example.com`. The tests follow the links in the requests' plain text, and check the logs of both answers, the one notice in ten minutes, and that no log line carries an address or a link.
+`src/features/account/sign-in.db.test.ts` runs every sign-in path against a real PostgreSQL and a real Kafka, which the API tests' global setup starts. It also checks that a signed-in person reaches only the notes they wrote, and that their notes go with their account. The file makes topics of its own with `createTopics` from `@zigordev/events/testing`, and runs a stand-in for the notifications service on them: it reads each request, keeps it, and answers `email.sent`, or `email.failed` for an address at `refused.example.com`. The tests follow the links in the requests' plain text, and check the logs of both answers, the one notice in ten minutes, and that no log line carries an address or a link.
 
 ## The feature flags
 
@@ -410,7 +420,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
-Slice 5, the notes pages, is not built yet. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+Slice 5, the notes pages, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
