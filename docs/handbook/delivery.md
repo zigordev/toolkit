@@ -42,7 +42,7 @@ sequenceDiagram
   participant Host as The host
   participant Site as The product's address
   Main->>Publish: check is green
-  Publish->>GHCR: push each image under its commit, with its build record
+  Publish->>GHCR: push each image under its commit and as main, with its build record
   Publish->>Deploy: every image is in
   Deploy->>GHCR: find each image's digest, without signing in
   Deploy->>Deploy: verify each build record
@@ -59,6 +59,7 @@ sequenceDiagram
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Deploy target    | A product's name in `platform/infra/products.json`, or `platform` for the shared services                                    |
 | Image            | `ghcr.io/zigordev/<app>:<commit>`, where `<app>` is `<product>-<part>` and `<commit>` is the full commit of 40 characters    |
+| Moving tag       | `ghcr.io/zigordev/<app>:main`, the newest image built from `main`. Nothing deploys by it; a laptop can follow it             |
 | Version          | The full commit, everywhere: the image's tag, `VERSION`, `OTEL_SERVICE_VERSION` and `version` in the answer of `/health`     |
 | Command document | `platform-deploy-<target>` in AWS Systems Manager, in `eu-west-1`. It runs the host's deploy script for that target          |
 | Role             | `platform-deploy-<target>` in AWS IAM. It trusts only the repo of the target, and only a job in its environment `production` |
@@ -71,7 +72,9 @@ sequenceDiagram
 `publish.yml` has two jobs.
 
 1. **Plan** refuses to run anywhere but on `main`. It reads the product's `compose.yaml` and `compose.local.yaml`, and lists each app that the local file builds into an image of `ghcr.io/zigordev/`, once, with its build folder and its Dockerfile.
-2. **Image** runs once per app, on one of GitHub's arm64 machines, because the host is arm64. It builds the image for `linux/arm64`, labels it with the repo and the commit, and pushes it as `ghcr.io/zigordev/<app>:<commit>`. It then reads the image's digest back from GHCR and attests it with GitHub's own action, `actions/attest`. The build record is stored in GitHub and pushed into the registry beside the image.
+2. **Image** runs once per app, on one of GitHub's arm64 machines, because the host is arm64. It builds the image for `linux/arm64`, labels it with the repo and the commit, and pushes it as `ghcr.io/zigordev/<app>:<commit>` and as `ghcr.io/zigordev/<app>:main`. It then reads the image's digest back from GHCR and attests it with GitHub's own action, `actions/attest`. The build record is stored in GitHub and pushed into the registry beside the image.
+
+The tag `main` moves to each new image. Nothing deploys by it: a deploy names the commit and checks the digest. It is there for laptops. The shared services of `platform` run notifications on every laptop as `notifications-api:main@sha256:<digest>`, and Renovate proposes the new digest each time `main` moves, as it does for every other image in a compose file. A commit cannot be put in order, so Renovate could not follow a commit tag. [Record 0052](../adr/0052-each-image-is-also-tagged-main-so-a-laptop-can-follow-it.md) holds the decision.
 
 GitHub keeps a storage record of an image only for repos of an organisation, and `zigordev` is a personal account, so the workflow asks for none.
 

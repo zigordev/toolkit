@@ -59,3 +59,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0049](0049-shared-rules-and-skills-are-links-to-the-installed-package.md)     | Shared rules and skills are links to the installed package               | 2026-11-25 | accepted                            |
 | [0050](0050-sign-in-carries-over-novembers-design.md)                          | Sign-in carries over November's design, with emails as events            | 2026-11-25 | accepted                            |
 | [0051](0051-the-broker-is-watched-by-a-probe-and-the-apps-numbers.md)          | The broker is watched by a probe and by the apps' own numbers            | 2026-11-25 | accepted                            |
+| [0052](0052-each-image-is-also-tagged-main-so-a-laptop-can-follow-it.md)       | Each image is also tagged main, so a laptop can follow it                | 2026-11-26 | accepted                            |
