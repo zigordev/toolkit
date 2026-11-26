@@ -238,7 +238,7 @@ The request's id comes from the key that sign-in gives each email: it is the SHA
 | `email.sent`      | info  | `requestId`, `attempts`                       | The notifications service says the mail server took it |
 | `email.failed`    | warn  | `requestId`, `attempts`, `reason`, `smtpCode` | The notifications service says it will never send it   |
 
-No line carries an address, a subject or a link. `@zigordev/events` adds the numbers of the outbox, the consumer's lag and the dead letters, and `/health` names a `kafka` part, which turns the answer to `degraded`, not `error`, while Kafka is down.
+No line carries an address, a subject or a link. `@zigordev/events` adds the numbers of the outbox, the consumer's lag and the dead letters, and `/health` names two parts. `kafka` turns the answer to `degraded`, not `error`, while Kafka is down. `topics` turns it to `error` while Kafka says that a topic the API reads does not exist, a mistake in the setup that a deploy must not ship.
 
 Kafka is optional. The three `KAFKA_` settings come all together or not at all, and sign-in needs them. Without them the API starts no relay and no consumer.
 

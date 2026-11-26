@@ -106,16 +106,20 @@ An empty poll of the outbox starts no trace, as the platform's rule for backgrou
 
 The labels are the standard names of OpenTelemetry: `messaging.destination.name` for the topic and `messaging.consumer.group.name` for the group. The app's name comes with every metric, as it does for all telemetry.
 
-| Log event                    | Level | Means                                                             |
-| ---------------------------- | ----- | ----------------------------------------------------------------- |
-| `events.relay_failed`        | warn  | A send to Kafka failed. The events stay in the outbox             |
-| `events.handling_retried`    | warn  | A handler failed, and the consumer will try again                 |
-| `events.dead_lettered`       | error | A handler failed for the last time, and the message was set aside |
-| `events.message_rejected`    | error | A message could not be read, and was set aside at once            |
-| `events.consumer_restarting` | warn  | A consumer lost Kafka, and starts again after a pause             |
-| `events.prune_failed`        | warn  | Old rows of `events_handled` could not be deleted this hour       |
+| Log event                    | Level | Means                                                                                                     |
+| ---------------------------- | ----- | --------------------------------------------------------------------------------------------------------- |
+| `events.relay_failed`        | warn  | A send to Kafka failed. The events stay in the outbox                                                     |
+| `events.handling_retried`    | warn  | A handler failed, and the consumer will try again                                                         |
+| `events.dead_lettered`       | error | A handler failed for the last time, and the message was set aside                                         |
+| `events.message_rejected`    | error | A message could not be read, and was set aside at once                                                    |
+| `events.consumer_restarting` | warn  | A consumer lost Kafka, and starts again after a pause                                                     |
+| `events.topic_missing`       | error | Kafka answered that a topic a consumer reads does not exist. It is logged once, until the consumer starts |
+| `events.prune_failed`        | warn  | Old rows of `events_handled` could not be deleted this hour                                               |
 
-The health part is named `kafka`, and is not required: without Kafka the app still saves its changes and its events, so `/health` answers `degraded`, not `error`. It is `up` when Kafka answers and every consumer is reading.
+The events give an app two health parts:
+
+- **`kafka`, not required.** Without Kafka the app still saves its changes and its events, so `/health` answers `degraded`, not `error`. It is `up` when Kafka answers and every consumer is reading.
+- **`topics`, required.** It is `down` while Kafka answers that a topic a consumer reads does not exist, and `/health` then answers `error`, with 503. That is a mistake in the setup, which no waiting mends, so a deploy rolls back on it and an outside check reports it. A Kafka that cannot be reached, or that refuses the sign-in, leaves it `up`, so an outage only degrades the answer. Record 0053 says why.
 
 ## How to use it
 
@@ -197,6 +201,7 @@ const events = startEvents({
   ],
 });
 addHealthComponent(app, events.health);
+addHealthComponent(app, events.topics);
 app.addHook('onClose', () => events.stop());
 ```
 
@@ -225,11 +230,12 @@ await createTopics(connection, [topic, deadLetterTopicOf(topic)]);
 
 `pnpm exec vitest run --project events --project events:db` in `toolkit` runs this package's tests. The second project needs Docker, and runs every path above against a real Kafka and a real PostgreSQL: the send, the rollback, a duplicate, a retry, the dead-letter topic for a failure and for a message it cannot read, a stop during a pause, the trace across Kafka, the metrics and the health part.
 
-| What you see                                                            | What it means, and what to do                                                                                                                                                          |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `zigordev.events.outbox.oldest_age` keeps growing                       | The relay cannot send. Read `events.relay_failed`: a refused sign-in names the password, a missing topic names the topic, which `platform` has to make                                 |
-| `zigordev.events.consumer.lag` keeps growing                            | A consumer is not reading, or reads slower than messages arrive. Look for `events.consumer_restarting`, and at `messaging.process.duration`                                            |
-| `zigordev.events.dead_letters` goes up                                  | A message was set aside. `events.dead_lettered` or `events.message_rejected` names the topic, the event and why. Fix the cause, then send the message again from its dead-letter topic |
-| `/health` answers `degraded` with `kafka` down                          | The app cannot reach Kafka, or a consumer is starting again. Changes and events are still saved, and go out when Kafka answers                                                         |
-| A new consumer group reads nothing                                      | Check its topics and its access rules in `platform`. A group that may not read a topic is refused by the broker                                                                        |
-| A test fails with `Could not find a working container runtime strategy` | Docker is not running. Start it, and run the test again                                                                                                                                |
+| What you see                                                            | What it means, and what to do                                                                                                                                                                       |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `zigordev.events.outbox.oldest_age` keeps growing                       | The relay cannot send. Read `events.relay_failed`: a refused sign-in names the password, a missing topic names the topic, which `platform` has to make                                              |
+| `zigordev.events.consumer.lag` keeps growing                            | A consumer is not reading, or reads slower than messages arrive. Look for `events.consumer_restarting`, and at `messaging.process.duration`                                                         |
+| `zigordev.events.dead_letters` goes up                                  | A message was set aside. `events.dead_lettered` or `events.message_rejected` names the topic, the event and why. Fix the cause, then send the message again from its dead-letter topic              |
+| `/health` answers `degraded` with `kafka` down                          | The app cannot reach Kafka, or a consumer is starting again. Changes and events are still saved, and go out when Kafka answers                                                                      |
+| `/health` answers `error` with `topics` down                            | A topic that a consumer reads does not exist. `events.topic_missing` names the group and its topics. `platform` makes the topic, in `KAFKA_SETUP`, and the part turns `up` once the consumer starts |
+| A new consumer group reads nothing                                      | Check its topics and its access rules in `platform`. A group that may not read a topic is refused by the broker                                                                                     |
+| A test fails with `Could not find a working container runtime strategy` | Docker is not running. Start it, and run the test again                                                                                                                                             |
