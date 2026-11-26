@@ -1,7 +1,10 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { NextIntlClientProvider } from 'next-intl';
+import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { messagesOf } from '../../i18n/messages.ts';
 
 const request = vi.hoisted(() => ({ cookie: '' }));
 
@@ -30,6 +33,14 @@ const session = {
 
 let server: Server;
 
+function render(page: ReactNode): string {
+  return renderToStaticMarkup(
+    <NextIntlClientProvider locale="en" messages={messagesOf('en')}>
+      {page}
+    </NextIntlClientProvider>
+  );
+}
+
 beforeEach(async () => {
   server = createServer((incoming, response) => {
     response.writeHead(200, { 'content-type': 'application/json' });
@@ -53,7 +64,7 @@ describe('the sign-in page', () => {
   it('offers the password, Google and a passkey, and the way to sign up', async () => {
     const { default: SignIn } = await import('./page.tsx');
 
-    const html = renderToStaticMarkup(await SignIn({ searchParams: Promise.resolve({}) }));
+    const html = render(await SignIn({ searchParams: Promise.resolve({}) }));
 
     expect(html).toContain('<h1>Sign in</h1>');
     expect(html).toContain('name="email"');
@@ -79,7 +90,7 @@ describe('the account page', () => {
     request.cookie = 'template.session_token=abc';
     const { default: Account } = await import('../account/page.tsx');
 
-    const html = renderToStaticMarkup(await Account());
+    const html = render(await Account());
 
     expect(html).toContain('Ada Lovelace, ada@example.com');
     expect(html).toContain('Add a passkey');
@@ -101,9 +112,10 @@ describe('the sign-up and two-factor pages', () => {
   it('ask for a name, an email and a password of 15 to 128 characters', async () => {
     const { default: SignUp } = await import('../sign-up/page.tsx');
 
-    const html = renderToStaticMarkup(SignUp());
+    const html = render(await SignUp());
 
     expect(html).toContain('name="name"');
+    expect(html).toContain('Password, 15 to 128 characters');
     expect(html).toContain('minLength="15"');
     expect(html).toContain('maxLength="128"');
     expect(html).toContain('href="/sign-in"');
@@ -112,7 +124,7 @@ describe('the sign-up and two-factor pages', () => {
   it('take a code from the authenticator app or a backup code, and can trust the device', async () => {
     const { default: TwoFactor } = await import('../two-factor/page.tsx');
 
-    const html = renderToStaticMarkup(TwoFactor());
+    const html = render(await TwoFactor());
 
     expect(html).toContain('name="code"');
     expect(html).toContain('Trust this device for 30 days');

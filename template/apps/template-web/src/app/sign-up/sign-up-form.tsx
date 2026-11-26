@@ -1,43 +1,50 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { getAuthClient } from '../../lib/auth-client.ts';
+import { useProblemText } from '../../lib/problems.ts';
 import { signUp } from '../../lib/sign-in.ts';
 
+const shortest = 15;
+const longest = 128;
+
 export function SignUpForm() {
+  const t = useTranslations('signUp');
+  const problemText = useProblemText();
   const [sent, setSent] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const failure = await signUp(getAuthClient(), new FormData(event.currentTarget));
-    setSent(failure === null);
-    setMessage(failure);
+    const problem = await signUp(getAuthClient(), new FormData(event.currentTarget));
+    setSent(problem === null);
+    setMessage(problem === null ? null : problemText(problem, t('failed')));
   }
 
   if (sent) {
-    return <p>Check your inbox: a link there confirms your address and signs you in.</p>;
+    return <p>{t('sent')}</p>;
   }
   return (
     <form onSubmit={submit}>
       <label>
-        Name <input name="name" autoComplete="name" required />
+        {t('name')} <input name="name" autoComplete="name" required />
       </label>
       <label>
-        Email <input name="email" type="email" autoComplete="email" required />
+        {t('email')} <input name="email" type="email" autoComplete="email" required />
       </label>
       <label>
-        Password, 15 to 128 characters{' '}
+        {t('password', { min: shortest, max: longest })}{' '}
         <input
           name="password"
           type="password"
           autoComplete="new-password"
-          minLength={15}
-          maxLength={128}
+          minLength={shortest}
+          maxLength={longest}
           required
         />
       </label>
-      <button type="submit">Sign up</button>
+      <button type="submit">{t('submit')}</button>
       {message === null ? null : <p role="alert">{message}</p>}
     </form>
   );

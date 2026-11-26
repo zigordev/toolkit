@@ -5,6 +5,7 @@ import {
   confirmTwoFactor,
   deleteAccount,
   enableTwoFactor,
+  problemOf,
   signInWithGoogle,
   signInWithPasskey,
   signInWithPassword,
@@ -15,13 +16,13 @@ import {
 
 interface Answer {
   readonly data: unknown;
-  readonly error: { readonly message?: string } | null;
+  readonly error: { readonly code?: string; readonly status?: number } | null;
 }
 
 const ok = (data: unknown = {}): Answer => ({ data, error: null });
-const failed = (message?: string): Answer => ({
+const failed = (code?: string): Answer => ({
   data: null,
-  error: message === undefined ? {} : { message },
+  error: code === undefined ? {} : { code },
 });
 
 function clientAnswering(answers: Record<string, Answer | undefined>) {
@@ -71,20 +72,20 @@ describe('signing in with a password', () => {
     expect(go).not.toHaveBeenCalled();
   });
 
-  it('says why it failed, with a plain fallback', async () => {
+  it('says why it failed, as a code the page puts into words', async () => {
     const go = vi.fn();
 
     expect(
       await signInWithPassword(
-        clientAnswering({ email: failed('Invalid email or password') }).auth,
+        clientAnswering({ email: failed('INVALID_EMAIL_OR_PASSWORD') }).auth,
         form({}),
         '/',
         go
       )
-    ).toBe('Invalid email or password');
+    ).toBe('wrong-credentials');
     expect(
       await signInWithPassword(clientAnswering({ email: failed() }).auth, form({}), '/', go)
-    ).toBe('The email or the password is wrong.');
+    ).toBe('failed');
     expect(go).not.toHaveBeenCalled();
   });
 });
@@ -98,9 +99,7 @@ describe('the other ways to sign in', () => {
       provider: 'google',
       callbackURL: '/notes',
     });
-    expect(await signInWithGoogle(clientAnswering({ social: failed() }).auth, '/')).toBe(
-      'Google sign-in is not available.'
-    );
+    expect(await signInWithGoogle(clientAnswering({ social: failed() }).auth, '/')).toBe('failed');
   });
 
   it('signs in with a passkey and goes on, or says why not', async () => {
@@ -109,7 +108,7 @@ describe('the other ways to sign in', () => {
     expect(await signInWithPasskey(clientAnswering({}).auth, '/notes', go)).toBeNull();
     expect(go).toHaveBeenCalledWith('/notes');
     expect(await signInWithPasskey(clientAnswering({ passkey: failed() }).auth, '/', go)).toBe(
-      'The passkey did not sign you in.'
+      'failed'
     );
   });
 
@@ -125,9 +124,7 @@ describe('the other ways to sign in', () => {
       password: 'p',
       callbackURL: '/account',
     });
-    expect(await signUp(clientAnswering({ signUp: failed() }).auth, form({}))).toBe(
-      'The account could not be created.'
-    );
+    expect(await signUp(clientAnswering({ signUp: failed() }).auth, form({}))).toBe('failed');
   });
 });
 
@@ -145,8 +142,12 @@ describe('the second factor', () => {
     });
     expect(go).toHaveBeenCalledWith('/account');
     expect(
-      await verifyCode(clientAnswering({ totp: failed() }).auth, form({ code: '000000' }), go)
-    ).toBe('That code did not work.');
+      await verifyCode(
+        clientAnswering({ totp: failed('INVALID_CODE') }).auth,
+        form({ code: '000000' }),
+        go
+      )
+    ).toBe('wrong-code');
   });
 
   it('turns two-factor on with the address for the app and the backup codes', async () => {
@@ -161,16 +162,14 @@ describe('the second factor', () => {
     ).toEqual({ totpURI: setup.totpURI, backupCodes: ['a', 'b'] });
     expect(
       await enableTwoFactor(clientAnswering({ enable: ok({ method: 'otp' }) }).auth, form({}))
-    ).toBe('Two-factor could not be turned on.');
+    ).toBe('failed');
     expect(
-      await enableTwoFactor(clientAnswering({ enable: failed('Invalid password') }).auth, form({}))
-    ).toBe('Invalid password');
-    expect(await confirmTwoFactor(clientAnswering({}).auth, form({ code: '123456' }))).toBe(
-      'Two-factor is on.'
-    );
-    expect(await confirmTwoFactor(clientAnswering({ totp: failed() }).auth, form({}))).toBe(
-      'That code did not work.'
-    );
+      await enableTwoFactor(clientAnswering({ enable: failed('INVALID_PASSWORD') }).auth, form({}))
+    ).toBe('wrong-credentials');
+    expect(await confirmTwoFactor(clientAnswering({}).auth, form({ code: '123456' }))).toBe('on');
+    expect(
+      await confirmTwoFactor(clientAnswering({ totp: failed('OTP_HAS_EXPIRED') }).auth, form({}))
+    ).toBe('wrong-code');
   });
 });
 
@@ -179,16 +178,32 @@ describe('the account page', () => {
     const go = vi.fn();
     const { client, auth } = clientAnswering({});
 
-    expect(await addPasskey(auth, form({ name: 'Laptop' }))).toBe('Passkey added.');
+    expect(await addPasskey(auth, form({ name: 'Laptop' }))).toBe('added');
     expect(await addPasskey(clientAnswering({ addPasskey: failed() }).auth, form({}))).toBe(
-      'The passkey was not added.'
+      'failed'
     );
-    expect(await deleteAccount(auth)).toBe('Check your inbox: a link there deletes your account.');
-    expect(await deleteAccount(clientAnswering({ deleteUser: failed() }).auth)).toBe(
-      'The request failed.'
-    );
+    expect(await deleteAccount(auth)).toBe('asked');
+    expect(await deleteAccount(clientAnswering({ deleteUser: failed() }).auth)).toBe('failed');
     await signOut(auth, go);
     expect(client.signOut).toHaveBeenCalled();
     expect(go).toHaveBeenCalledWith('/');
+  });
+});
+
+describe('problemOf', () => {
+  it.each([
+    [{ code: 'INVALID_EMAIL_OR_PASSWORD' }, 'wrong-credentials'],
+    [{ code: 'INVALID_PASSWORD' }, 'wrong-credentials'],
+    [{ code: 'EMAIL_NOT_VERIFIED' }, 'not-verified'],
+    [{ code: 'INVALID_CODE' }, 'wrong-code'],
+    [{ code: 'INVALID_BACKUP_CODE' }, 'wrong-code'],
+    [{ code: 'OTP_HAS_EXPIRED' }, 'wrong-code'],
+    [{ code: 'TOO_MANY_ATTEMPTS' }, 'too-many'],
+    [{ code: 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE' }, 'too-many'],
+    [{ status: 429 }, 'too-many'],
+    [{ code: 'SOMETHING_ELSE', status: 500 }, 'failed'],
+    [{}, 'failed'],
+  ])('turns %j into %s', (error, problem) => {
+    expect(problemOf(error)).toBe(problem);
   });
 });

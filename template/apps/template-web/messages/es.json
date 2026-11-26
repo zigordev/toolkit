@@ -1,0 +1,75 @@
+{
+  "app": {
+    "name": "Template"
+  },
+  "language": {
+    "label": "Idioma",
+    "en": "English",
+    "es": "Español"
+  },
+  "home": {
+    "title": "Template",
+    "apiDown": "La API no responde.",
+    "account": "Tu cuenta"
+  },
+  "problems": {
+    "wrongCredentials": "El correo o la contraseña no son correctos.",
+    "notVerified": "Confirma antes tu dirección de correo: el enlace está en tu bandeja de entrada.",
+    "wrongCode": "Ese código no ha funcionado.",
+    "tooMany": "Demasiados intentos. Espera un minuto y vuelve a intentarlo."
+  },
+  "signIn": {
+    "title": "Entrar",
+    "email": "Correo",
+    "password": "Contraseña",
+    "submit": "Entrar",
+    "google": "Continuar con Google",
+    "passkey": "Entrar con una llave de acceso",
+    "failed": "No se ha podido entrar. Vuelve a intentarlo.",
+    "googleFailed": "Entrar con Google no está disponible.",
+    "passkeyFailed": "La llave de acceso no te ha dejado entrar.",
+    "noAccount": "¿Aún no tienes cuenta?",
+    "signUp": "Crear una cuenta"
+  },
+  "signUp": {
+    "title": "Crear una cuenta",
+    "name": "Nombre",
+    "email": "Correo",
+    "password": "Contraseña, de {min} a {max} caracteres",
+    "submit": "Crear la cuenta",
+    "sent": "Revisa tu bandeja de entrada: un enlace confirma tu dirección y te deja dentro.",
+    "failed": "No se ha podido crear la cuenta.",
+    "haveAccount": "¿Ya tienes cuenta?",
+    "signIn": "Entrar"
+  },
+  "twoFactor": {
+    "title": "Tu código de autenticación",
+    "code": "Los 6 dígitos de tu aplicación de autenticación, o un código de respaldo",
+    "trust": "Confiar en este dispositivo durante {days} días",
+    "submit": "Continuar",
+    "failed": "Ese código no ha funcionado."
+  },
+  "account": {
+    "title": "Tu cuenta",
+    "who": "{name}, {email}",
+    "passkeys": "Llaves de acceso",
+    "deviceName": "Nombre de este dispositivo",
+    "addPasskey": "Añadir una llave de acceso",
+    "passkeyAdded": "Llave de acceso añadida.",
+    "passkeyFailed": "No se ha añadido la llave de acceso.",
+    "twoFactor": "Doble factor",
+    "password": "Tu contraseña",
+    "turnOn": "Activar el doble factor",
+    "turnOnFailed": "No se ha podido activar el doble factor.",
+    "totpAddress": "Añade esta dirección a tu aplicación de autenticación: {address}",
+    "backupCodes": "Guarda estos códigos de respaldo en un lugar seguro: {codes}",
+    "firstCode": "El primer código de la aplicación",
+    "confirm": "Confirmar",
+    "twoFactorOn": "El doble factor está activado.",
+    "leave": "Salir",
+    "signOut": "Cerrar la sesión",
+    "delete": "Borrar mi cuenta",
+    "deleteAsked": "Revisa tu bandeja de entrada: un enlace borra tu cuenta.",
+    "deleteFailed": "La petición ha fallado."
+  }
+}

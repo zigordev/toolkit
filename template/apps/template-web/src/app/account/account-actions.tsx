@@ -1,7 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { getAuthClient } from '../../lib/auth-client.ts';
+import { useProblemText } from '../../lib/problems.ts';
 import {
   addPasskey,
   confirmTwoFactor,
@@ -12,6 +14,8 @@ import {
 } from '../../lib/sign-in.ts';
 
 export function AccountActions() {
+  const t = useTranslations('account');
+  const problemText = useProblemText();
   const [message, setMessage] = useState<string | null>(null);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
 
@@ -20,71 +24,78 @@ export function AccountActions() {
     return new FormData(event.currentTarget);
   }
 
+  async function addOne(event: FormEvent<HTMLFormElement>) {
+    const result = await addPasskey(getAuthClient(), formOf(event));
+    setMessage(result === 'added' ? t('passkeyAdded') : problemText(result, t('passkeyFailed')));
+  }
+
   async function startTwoFactor(event: FormEvent<HTMLFormElement>) {
     const result = await enableTwoFactor(getAuthClient(), formOf(event));
     if (typeof result === 'string') {
-      setMessage(result);
+      setMessage(problemText(result, t('turnOnFailed')));
     } else {
       setSetup(result);
+      setMessage(null);
     }
   }
 
   async function finishTwoFactor(event: FormEvent<HTMLFormElement>) {
     const result = await confirmTwoFactor(getAuthClient(), formOf(event));
-    if (result === 'Two-factor is on.') {
+    if (result === 'on') {
       setSetup(null);
+      setMessage(t('twoFactorOn'));
+    } else {
+      setMessage(problemText(result, t('turnOnFailed')));
     }
-    setMessage(result);
+  }
+
+  async function askToDelete() {
+    const result = await deleteAccount(getAuthClient());
+    setMessage(result === 'asked' ? t('deleteAsked') : problemText(result, t('deleteFailed')));
   }
 
   return (
     <>
       <section>
-        <h2>Passkeys</h2>
-        <form
-          onSubmit={async (event) => setMessage(await addPasskey(getAuthClient(), formOf(event)))}
-        >
+        <h2>{t('passkeys')}</h2>
+        <form onSubmit={addOne}>
           <label>
-            Name of this device <input name="name" required />
+            {t('deviceName')} <input name="name" required />
           </label>
-          <button type="submit">Add a passkey</button>
+          <button type="submit">{t('addPasskey')}</button>
         </form>
       </section>
       <section>
-        <h2>Two-factor</h2>
+        <h2>{t('twoFactor')}</h2>
         {setup === null ? (
           <form onSubmit={startTwoFactor}>
             <label>
-              Your password{' '}
+              {t('password')}{' '}
               <input name="password" type="password" autoComplete="current-password" required />
             </label>
-            <button type="submit">Turn on two-factor</button>
+            <button type="submit">{t('turnOn')}</button>
           </form>
         ) : (
           <form onSubmit={finishTwoFactor}>
-            <p>Add this address to your authenticator app: {setup.totpURI}</p>
-            <p>Keep these backup codes somewhere safe: {setup.backupCodes.join(' ')}</p>
+            <p>{t('totpAddress', { address: setup.totpURI })}</p>
+            <p>{t('backupCodes', { codes: setup.backupCodes.join(' ') })}</p>
             <label>
-              The first code from the app{' '}
-              <input name="code" autoComplete="one-time-code" required />
+              {t('firstCode')} <input name="code" autoComplete="one-time-code" required />
             </label>
-            <button type="submit">Confirm</button>
+            <button type="submit">{t('confirm')}</button>
           </form>
         )}
       </section>
       <section>
-        <h2>Leave</h2>
+        <h2>{t('leave')}</h2>
         <button
           type="button"
           onClick={() => signOut(getAuthClient(), (path) => window.location.assign(path))}
         >
-          Sign out
+          {t('signOut')}
         </button>
-        <button
-          type="button"
-          onClick={async () => setMessage(await deleteAccount(getAuthClient()))}
-        >
-          Delete my account
+        <button type="button" onClick={askToDelete}>
+          {t('delete')}
         </button>
       </section>
       {message === null ? null : <p role="status">{message}</p>}

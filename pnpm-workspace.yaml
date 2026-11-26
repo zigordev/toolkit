@@ -40,6 +40,7 @@ catalog:
   lightningcss: 1.33.0
   markdownlint-cli2: 0.24.2
   next: 16.4.6
+  next-intl: 4.16.2
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
   playwright: 1.65.1
@@ -101,6 +102,8 @@ minimumReleaseAgeExclude:
 trustPolicy: no-downgrade
 
 allowBuilds:
+  "@parcel/watcher": false
+  "@swc/core": false
   cpu-features: false
   esbuild: false
   lefthook: false
