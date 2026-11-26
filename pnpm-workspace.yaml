@@ -16,10 +16,10 @@ catalog:
   "@opentelemetry/api": 1.10.0
   "@opentelemetry/context-async-hooks": 3.1.1
   "@opentelemetry/sdk-metrics": 3.1.1
-  "@storybook/addon-a11y": 10.6.8
-  "@storybook/addon-docs": 10.6.8
-  "@storybook/addon-vitest": 10.6.8
-  "@storybook/react-vite": 10.6.8
+  "@storybook/addon-a11y": 10.6.9
+  "@storybook/addon-docs": 10.6.9
+  "@storybook/addon-vitest": 10.6.9
+  "@storybook/react-vite": 10.6.9
   "@terrazzo/cli": 2.10.0
   "@terrazzo/plugin-css": 2.10.0
   "@types/node": 26.6.10
@@ -45,7 +45,7 @@ catalog:
   react-dom: 19.3.1
   react-email: 6.11.16
   semantic-release: 25.0.9
-  storybook: 10.6.8
+  storybook: 10.6.9
   typescript: 7.0.2
   vite: 8.3.8
   vitest: 5.1.1
