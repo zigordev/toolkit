@@ -5,5 +5,6 @@ export default defineProject({
     name: 'template-web',
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./vitest.setup.ts'],
+    server: { deps: { inline: ['@zigordev/auth'] } },
   },
 });
