@@ -2,7 +2,7 @@ import { LinkButton } from '@zigordev/ui';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import styles from '../layout.module.css';
-import { SignUpForm } from './sign-up-form.tsx';
+import { SignUpForm } from './sign-up-form.client.tsx';
 
 export default async function SignUp() {
   const t = await getTranslations('signUp');

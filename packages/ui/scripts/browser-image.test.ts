@@ -7,7 +7,7 @@ function read(path: string): string {
   return readFileSync(new URL(path, repo), 'utf8');
 }
 
-describe("the stories' browser", () => {
+describe("the Browser job's browser", () => {
   const workflow = read('.github/workflows/check.yml');
   const image =
     /image: mcr\.microsoft\.com\/playwright:v(\d+\.\d+\.\d+)-([a-z]+)@sha256:[0-9a-f]{64}/.exec(

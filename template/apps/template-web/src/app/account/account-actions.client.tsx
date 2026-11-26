@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { getAuthClient } from '../../lib/auth-client.ts';
 import { useFieldError } from '../../lib/field-errors.ts';
 import { confirmFields, passkeyFields, passwordFields, zodResolver } from '../../lib/forms.ts';
+import { go } from '../../lib/navigate.ts';
 import { useProblemText } from '../../lib/problems.ts';
 import {
   addPasskey,
@@ -131,11 +132,7 @@ export function AccountActions() {
       <section className={styles.section} aria-labelledby="leave">
         <h2 id="leave">{t('leave')}</h2>
         <div className={styles.choices}>
-          <Button
-            variant="outline"
-            tone="neutral"
-            onClick={() => signOut(getAuthClient(), (path) => window.location.assign(path))}
-          >
+          <Button variant="outline" tone="neutral" onClick={() => signOut(getAuthClient(), go)}>
             {t('signOut')}
           </Button>
           <Button variant="outline" tone="danger" onClick={askToDelete}>

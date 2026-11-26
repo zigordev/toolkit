@@ -5,8 +5,8 @@ import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../../lib/auth.ts';
 import { notesApi } from '../../../lib/notes-api.ts';
 import styles from '../../layout.module.css';
-import { DeleteNote } from '../delete-note.tsx';
-import { NoteForm } from '../note-form.tsx';
+import { DeleteNote } from '../delete-note.client.tsx';
+import { NoteForm } from '../note-form.client.tsx';
 
 export const dynamic = 'force-dynamic';
 

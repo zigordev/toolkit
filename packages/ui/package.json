@@ -23,6 +23,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/build-css.ts",
     "typecheck": "tsc -p tsconfig.json",
+    "test:browser": "vitest run --config vitest.stories.config.ts --coverage",
     "storybook": "storybook dev --port 6006 --no-open"
   },
   "dependencies": {

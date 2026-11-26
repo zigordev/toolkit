@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../lib/auth.ts';
 import { localPath } from '../../lib/paths.ts';
 import styles from '../layout.module.css';
-import { SignInForm } from './sign-in-form.tsx';
+import { SignInForm } from './sign-in-form.client.tsx';
 
 export const dynamic = 'force-dynamic';
 

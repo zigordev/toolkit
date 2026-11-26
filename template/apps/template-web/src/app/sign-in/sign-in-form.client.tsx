@@ -7,11 +7,10 @@ import { useForm } from 'react-hook-form';
 import { getAuthClient } from '../../lib/auth-client.ts';
 import { useFieldError } from '../../lib/field-errors.ts';
 import { signInFields, zodResolver } from '../../lib/forms.ts';
+import { go } from '../../lib/navigate.ts';
 import { useProblemText } from '../../lib/problems.ts';
 import { signInWithGoogle, signInWithPasskey, signInWithPassword } from '../../lib/sign-in.ts';
 import styles from '../forms.module.css';
-
-const go = (path: string) => window.location.assign(path);
 
 export function SignInForm({ next }: { readonly next: string }) {
   const t = useTranslations('signIn');

@@ -18,7 +18,7 @@ jobs:
     uses: $/.github/workflows/check.yml
     with:
       product-folder: template
-      stories: true
+      browser: true
     permissions:
       contents: read
       security-events: write
