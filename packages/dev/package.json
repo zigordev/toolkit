@@ -46,6 +46,8 @@
   "devDependencies": {
     "@commitlint/lint": "catalog:",
     "@commitlint/load": "catalog:",
+    "@inlang/cli": "catalog:",
+    "@inlang/plugin-next-intl": "catalog:",
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

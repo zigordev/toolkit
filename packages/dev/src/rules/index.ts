@@ -9,6 +9,7 @@ import { links } from './links.ts';
 import { migrations } from './migrations.ts';
 import { scripts } from './scripts.ts';
 import { shared } from './shared.ts';
+import { texts } from './texts.ts';
 
 export function rulesWith(source: string): readonly Rule[] {
   return [
@@ -22,5 +23,6 @@ export function rulesWith(source: string): readonly Rule[] {
     migrations,
     scripts,
     shared(source),
+    texts,
   ];
 }

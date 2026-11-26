@@ -28,7 +28,7 @@ These rules apply to every Next.js app and to the design system.
 
 ## Text and languages
 
-- Every text exists in English and in Spanish, in `messages/en.json` and `messages/es.json`, with identical keys. A key that is missing or empty in one language fails `pnpm check`.
+- Every text exists in English and in Spanish, in `messages/en.json` and `messages/es.json`, with identical keys. A key that is missing or empty in one language, short of a variable, or used by no code fails `pnpm check`, through the `texts` rule of `zigordev check`.
 - Language tags are short: `en`, `es`.
 - Copy is short and in sentence case, with no emoji and no exclamation mark. A button is a verb.
 - Nothing fetches translations at runtime. A person who is not a developer changes a text in Fink, which opens a pull request.
