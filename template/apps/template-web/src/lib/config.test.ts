@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { ConfigError } from '@zigordev/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { readConfig } from './config.ts';
+import { environmentOf, readConfig } from './config.ts';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -33,6 +33,27 @@ describe('readConfig', () => {
       'OTEL_SERVICE_NAME',
       'API_URL',
     ]);
+  });
+});
+
+describe('browser monitoring', () => {
+  it("takes a path on the app's own address, and refuses another origin", () => {
+    const base = { OTEL_SERVICE_NAME: 'template-web', API_URL: 'http://template-api:3000' };
+
+    expect(readConfig({ ...base, RUM_URL: '/rum' }).RUM_URL).toBe('/rum');
+    expect(() => readConfig({ ...base, RUM_URL: 'https://collector.example.com' })).toThrow(
+      ConfigError
+    );
+    expect(() => readConfig({ ...base, RUM_URL: '//collector.example.com' })).toThrow(ConfigError);
+  });
+
+  it('names the environment that OpenTelemetry names, or none', () => {
+    expect(environmentOf('service.namespace=zigordev,deployment.environment.name=local')).toBe(
+      'local'
+    );
+    expect(environmentOf('deployment.environment.name=')).toBeUndefined();
+    expect(environmentOf('service.namespace=zigordev')).toBeUndefined();
+    expect(environmentOf(undefined)).toBeUndefined();
   });
 });
 

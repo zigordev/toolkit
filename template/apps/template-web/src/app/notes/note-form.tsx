@@ -1,5 +1,6 @@
 'use client';
 
+import { recordInteraction } from '@zigordev/rum';
 import { Alert, Button, Checkbox, TextArea, TextField } from '@zigordev/ui';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -48,6 +49,7 @@ export function NoteForm({ note }: NoteFormProps) {
     try {
       if (note === undefined) {
         const created = await create.mutateAsync({ body: { title, body, status } });
+        recordInteraction('note.created');
         router.push(`/notes/${created.id}`);
       } else {
         await update.mutateAsync({

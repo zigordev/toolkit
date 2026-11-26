@@ -9,9 +9,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { timeZone } from '../i18n/locales.ts';
+import { environmentOf, getConfig } from '../lib/config.ts';
 import { LanguageSwitch } from './language-switch.tsx';
 import styles from './layout.module.css';
 import { Providers } from './providers.tsx';
+import { Rum } from './rum.tsx';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('app');
@@ -24,6 +26,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
   const messages = await getMessages();
   const app = await getTranslations('app');
   const language = await getTranslations('language');
+  const config = getConfig();
   return (
     <html lang={locale} data-mode="system">
       <body>
@@ -43,6 +46,14 @@ export default async function RootLayout({ children }: { readonly children: Reac
               names={{ en: language('en'), es: language('es') }}
             />
           </header>
+          {config.RUM_URL === undefined ? null : (
+            <Rum
+              url={config.RUM_URL}
+              app={config.OTEL_SERVICE_NAME}
+              version={config.OTEL_SERVICE_VERSION}
+              environment={environmentOf(config.OTEL_RESOURCE_ATTRIBUTES)}
+            />
+          )}
           <main className={styles.main}>
             <Providers>{children}</Providers>
           </main>

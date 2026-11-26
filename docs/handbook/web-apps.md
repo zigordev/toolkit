@@ -1,6 +1,6 @@
 # Web apps
 
-This page covers what step 6.5 builds into a web app: its texts in English and Spanish and how a translator changes one, the design system on its pages, its content security policy, and the browser check of every page. Browser monitoring joins this page as step 6.5 adds it.
+This page covers what step 6.5 builds into a web app: its texts in English and Spanish and how a translator changes one, the design system on its pages, its content security policy, browser monitoring, and the browser check of every page.
 
 ## What it is
 
@@ -94,6 +94,14 @@ So a page never shows a raw name, and the files hold no text that nobody reads. 
 
 The plugin is installed from npm at the catalog's exact version, and `settings.json` names it by its path in `node_modules`. The documented setup loads it from a public CDN at its latest version instead, which our supply-chain rules do not allow. inlang's machine translation is never used: it would send the texts to a service outside.
 
+### Browser monitoring
+
+The root layout renders a small client component, `src/app/rum.tsx`, which starts [`@zigordev/rum`](../../packages/rum/README.md) once: Grafana Faro, with page speed, browser errors and a trace for each request, and a filter that keeps every query, user and console line in the browser. It starts only while the setting `RUM_URL` names a path on the product's own address, such as `/rum`, so the policy's `connect-src 'self'` lets it through.
+
+The requests of a page to its own origin carry `traceparent`, so the API continues the trace that began in the browser. An interaction that the app tracks is on its list in `src/lib/interactions.ts`, and the code records it where it happens: the template records `note.created` and `note.deleted`. Any other name is dropped in the browser.
+
+Platform's shared services do not route the path to Alloy yet, so the template leaves `RUM_URL` out of its compose files. When `platform` has Alloy's Faro receiver and the route on each product's address, a small pull request sets it, as [record 0055](../adr/0055-browser-monitoring-carries-over-novembers-rum.md) says.
+
 ### The page check
 
 `browser/pages.test.ts` starts the web app from its build with `next start`, with a small stand-in for the API, and opens every page in Chromium through Playwright: in English and in Spanish, in light and in dark, signed in where a page needs it, the notes pages and the 404 page too. On each it checks that:
@@ -103,7 +111,7 @@ The plugin is installed from npm at the catalog's exact version, and `settings.j
 - axe finds nothing;
 - the policy blocked nothing, and the browser logged no error.
 
-One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. `pnpm test:pages` runs it, after `pnpm build`, and the pipeline's Stories job runs it after the stories, in the pinned Playwright image.
+One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. The web app runs with `RUM_URL=/rum`, so Faro runs on every page, and one case reads what Faro posts: it names the app and carries nothing of the address's query. `pnpm test:pages` runs it, after `pnpm build`, and the pipeline's Stories job runs it after the stories, in the pinned Playwright image.
 
 ### Changing a text in Fink
 

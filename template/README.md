@@ -44,6 +44,7 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 | React Hook Form                  | Every form, checked by a Zod schema, with each problem shown under its field in the person's language    |
 | TanStack Query                   | The notes forms' writes from the browser, through `openapi-react-query` on the typed client              |
 | Playwright and axe               | Open every page in Chromium and check it for accessibility and for its content security policy           |
+| `@zigordev/rum`                  | Browser monitoring with Grafana Faro, once `RUM_URL` is set                                              |
 | The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                       |
 | `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
 | `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                             |
@@ -140,6 +141,7 @@ The API's dev process sends to the agent's port on this Mac, `127.0.0.1:4318`. T
 | `KAFKA_BROKERS`, `KAFKA_USERNAME`, `KAFKA_PASSWORD`  | The API          | The broker as `host:port`, and the API's Kafka user and password. All three, or none | Kafka is off, and sign-in cannot be turned on   |
 | `DATABASE_ADMIN_URL`                                 | The job          | The superuser's address, to make the app's role and database                         | The job only migrates                           |
 | `API_URL`                                            | The web          | Where the web app's server reaches the API                                           | The app does not start                          |
+| `RUM_URL`                                            | The web          | The path on the product's own address where browser monitoring sends, such as `/rum` | Browser monitoring is off                       |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`                        | OpenTelemetry    | Where the telemetry goes. The compose file names the agent                           | `http://localhost:4318`                         |
 | `OTEL_RESOURCE_ATTRIBUTES`                           | OpenTelemetry    | The environment the app runs in, as `local` or `production`                          | It is left out                                  |
 
@@ -319,6 +321,8 @@ Every page wears the design system, `@zigordev/ui`, and follows the person's lig
 
 `pnpm test:pages`, from the root of `toolkit`, starts the web app from its build with a stand-in for the API, and opens every page in Chromium: in English and Spanish, in light and in dark. It fails on any finding of axe, on anything the policy blocks and on any error in the browser. The pipeline's Stories job runs it on every pull request. Run `pnpm build` first.
 
+Browser monitoring starts on every page once `RUM_URL` names a path on the product's own address, such as `/rum`. [`@zigordev/rum`](../packages/rum/README.md) runs Grafana Faro and keeps every query, user and console line in the browser. The template tracks two interactions, `note.created` and `note.deleted`, listed in `apps/template-web/src/lib/interactions.ts`.
+
 A test of the web app never writes out a text: it reads it from the messages with `textsIn` from `apps/template-web/test/texts.ts`, so a translator who changes a text in Fink breaks no test.
 
 ## The feature flags
@@ -461,7 +465,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
-Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, its third the design system, the content security policy and the page check, and its fourth the notes pages. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, its third the design system, the content security policy and the page check, its fourth the notes pages, and its fifth browser monitoring, which needs `@zigordev/rum` on npm. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
@@ -481,7 +485,7 @@ Without the web app's code, the coverage of branches comes close to the floor of
 
 ## What is left for later
 
-- **In the web app:** browser monitoring, which arrives with the rest of the fifth slice.
+- **Browser monitoring on the laptop and in production:** the web app carries `@zigordev/rum`, and starts it once `RUM_URL` is set. The compose files leave it out until `platform` routes the path to Alloy's Faro receiver, as [record 0055](../docs/adr/0055-browser-monitoring-carries-over-novembers-rum.md) says.
 - **What a failed email changes:** the API logs `email.failed`, and nothing more. Telling the person, such as on `/account`, is left to the product.
 
 ## Known limits

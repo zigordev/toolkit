@@ -1,5 +1,6 @@
 'use client';
 
+import { recordInteraction } from '@zigordev/rum';
 import { Alert, Button } from '@zigordev/ui';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -17,6 +18,7 @@ export function DeleteNote({ id }: { readonly id: string }) {
   async function deleteIt() {
     try {
       await remove.mutateAsync({ params: { path: { noteId: id } } });
+      recordInteraction('note.deleted');
       router.push('/notes');
       router.refresh();
     } catch {
