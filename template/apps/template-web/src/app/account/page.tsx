@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../lib/auth.ts';
-import { AccountActions } from './account-actions.tsx';
+import { AccountActions } from './account-actions.client.tsx';
 
 export const dynamic = 'force-dynamic';
 

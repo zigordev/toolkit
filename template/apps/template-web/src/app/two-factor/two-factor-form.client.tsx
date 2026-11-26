@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { getAuthClient } from '../../lib/auth-client.ts';
 import { useFieldError } from '../../lib/field-errors.ts';
 import { codeFields, zodResolver } from '../../lib/forms.ts';
+import { go } from '../../lib/navigate.ts';
 import { useProblemText } from '../../lib/problems.ts';
 import { verifyCode } from '../../lib/sign-in.ts';
 import styles from '../forms.module.css';
@@ -28,9 +29,7 @@ export function TwoFactorForm() {
   });
 
   const submit = handleSubmit(async (values) => {
-    const problem = await verifyCode(getAuthClient(), values, (path) =>
-      window.location.assign(path)
-    );
+    const problem = await verifyCode(getAuthClient(), values, go);
     setMessage(problem === null ? null : problemText(problem, t('failed')));
   });
 

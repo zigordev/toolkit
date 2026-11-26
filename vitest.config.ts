@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 const floor = 90;
+const floors = { lines: floor, functions: floor, branches: floor, statements: floor };
 
 export default defineConfig({
   test: {
@@ -22,13 +23,17 @@ export default defineConfig({
         'packages/*/*.js',
         'packages/*/shared/.claude/hooks/*.mjs',
       ],
-      exclude: ['**/*.test.{js,ts,tsx}', '**/*.d.ts', '**/src/generated/**', 'packages/ui/src/**'],
+      exclude: [
+        '**/*.test.{js,ts,tsx}',
+        '**/*.client.{ts,tsx}',
+        '**/*.d.ts',
+        '**/src/generated/**',
+        'packages/ui/src/**',
+      ],
       reporter: ['text'],
       thresholds: {
-        lines: floor,
-        functions: floor,
-        branches: floor,
-        statements: floor,
+        ...floors,
+        'template/{apps,packages}/*/src/**/*.{ts,tsx}': floors,
       },
     },
   },

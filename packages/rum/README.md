@@ -69,7 +69,7 @@ Names follow the log events' form, `area.what_happened`. A name missing from `in
 ## How to check that it works
 
 - `pnpm exec vitest run --project rum` runs the filter's tests and the start's, in Node.
-- The template's page check, `pnpm test:pages`, starts the web app with browser monitoring on, takes what Faro posts, and checks that it names the app and carries no query from the address, under the content security policy.
+- The template's page check, which `pnpm test:browser` runs, starts the web app with browser monitoring on, takes what Faro posts, and checks that it names the app and carries no query from the address, under the content security policy.
 - Once the shared services have the receiver, Grafana's Explore shows the browser's lines in Loki under the app's name, and its traces in Tempo beside the API's.
 
 | What you see                                        | Why                                                    | What to do                                              |

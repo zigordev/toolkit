@@ -13,7 +13,7 @@ import { environmentOf, getConfig } from '../lib/config.ts';
 import { LanguageSwitch } from './language-switch.tsx';
 import styles from './layout.module.css';
 import { Providers } from './providers.tsx';
-import { Rum } from './rum.tsx';
+import { Rum } from './rum.client.tsx';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('app');

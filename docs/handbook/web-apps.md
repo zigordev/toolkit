@@ -96,11 +96,19 @@ The plugin is installed from npm at the catalog's exact version, and `settings.j
 
 ### Browser monitoring
 
-The root layout renders a small client component, `src/app/rum.tsx`, which starts [`@zigordev/rum`](../../packages/rum/README.md) once: Grafana Faro, with page speed, browser errors and a trace for each request, and a filter that keeps every query, user and console line in the browser. It starts only while the setting `RUM_URL` names a path on the product's own address, such as `/rum`, so the policy's `connect-src 'self'` lets it through.
+The root layout renders a small client component, `src/app/rum.client.tsx`, which starts [`@zigordev/rum`](../../packages/rum/README.md) once: Grafana Faro, with page speed, browser errors and a trace for each request, and a filter that keeps every query, user and console line in the browser. It starts only while the setting `RUM_URL` names a path on the product's own address, such as `/rum`, so the policy's `connect-src 'self'` lets it through.
 
 The requests of a page to its own origin carry `traceparent`, so the API continues the trace that began in the browser. An interaction that the app tracks is on its list in `src/lib/interactions.ts`, and the code records it where it happens: the template records `note.created` and `note.deleted`. Any other name is dropped in the browser.
 
 Platform's shared services do not route the path to Alloy yet, so the template leaves `RUM_URL` out of its compose files. When `platform` has Alloy's Faro receiver and the route on each product's address, a small pull request sets it, as [record 0055](../adr/0055-browser-monitoring-carries-over-novembers-rum.md) says.
+
+### The browser tests
+
+A module that only runs in the browser, such as a form or the account's buttons, is named `*.client.tsx`. Its test sits beside it as `*.client.test.tsx`, and runs in Chromium through Vitest's browser mode on Playwright, with `vitest.browser.config.ts`. The test renders the component with `render` from `test/render.tsx`, which gives it the real English texts and a query client, then clicks and types through `page` and `userEvent` from `vitest/browser`, as a person would. It replaces only the edges with `vi.mock`: the auth client, the API's hooks in `src/lib/notes-client.ts`, the router, `@zigordev/rum` and `go`.
+
+`go`, in `src/lib/navigate.ts`, loads a new page in full, after a sign-in, a sign-out and the second step. A browser test replaces it, because a real load would leave the test's own page.
+
+The run counts the coverage of `src/**/*.client.{ts,tsx}` against the floor of 90%, and `pnpm check` leaves those modules out of its own coverage, because a test in Node.js renders them but cannot click them. Every other module keeps its tests in Node.js.
 
 ### The page check
 
@@ -111,7 +119,7 @@ Platform's shared services do not route the path to Alloy yet, so the template l
 - axe finds nothing;
 - the policy blocked nothing, and the browser logged no error.
 
-One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. The web app runs with `RUM_URL=/rum`, so Faro runs on every page, and one case reads what Faro posts: it names the app and carries nothing of the address's query. `pnpm test:pages` runs it, after `pnpm build`, and the pipeline's Stories job runs it after the stories, in the pinned Playwright image.
+One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. The web app runs with `RUM_URL=/rum`, so Faro runs on every page, and one case reads what Faro posts: it names the app and carries nothing of the address's query. Its configuration is `vitest.pages.config.ts`. The web app's script `test:browser` runs it after the browser tests, so `pnpm test:browser` runs both, after `pnpm build`, and the pipeline's Browser job runs them in the pinned Playwright image.
 
 ### Changing a text in Fink
 
@@ -136,6 +144,8 @@ To add a text:
 3. Read it in the page: `const t = await getTranslations('account')` on the server, or `const t = useTranslations('account')` in the browser, then `t('newName')`.
 4. Run `pnpm exec zigordev check texts`. It names any text missing, empty, short of a variable or unused, with its file and line.
 
+To test a form, write its test beside it, as `sign-up-form.client.test.tsx` does: render the form, fill it in through `userEvent`, and check what the person sees, through roles and texts from `textsIn`, and what reached the mocked edge. Run it with `pnpm --dir apps/<app> exec vitest run --config vitest.browser.config.ts`.
+
 Copy is short and in sentence case, with no emoji and no exclamation mark, and a button is a verb, as the web rules say. A test that checks a page reads the text with `textsIn('en')('account.title')`, and never writes it out.
 
 ## How to check that it works, and what to do when it does not
@@ -143,7 +153,7 @@ Copy is short and in sentence case, with no emoji and no exclamation mark, and a
 - `pnpm exec zigordev check texts` passes, and `pnpm check` runs it.
 - The web app's tests render each page in English and in Spanish, through the real messages.
 - On the laptop, `pnpm dev web` and the switch at the top of a page show both languages.
-- `pnpm build`, then `pnpm test:pages`, checks every page in Chromium with axe and the policy.
+- `pnpm build`, then `pnpm test:browser`, runs the browser tests of the forms and checks every page in Chromium with axe and the policy.
 
 | What you see                                                   | Why                                                        | What to do                                                                  |
 | -------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |

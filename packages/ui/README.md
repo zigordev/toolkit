@@ -73,10 +73,10 @@ Each component has a `*.stories.tsx` beside it. A story is one state of the comp
 
 Storybook's Vitest addon turns every story into a browser test, which runs in Chromium through Playwright, once in light and once in dark. After each story, axe checks the page, and any finding fails the story, contrast included. The run measures coverage of `src` against the floor of 90%.
 
-| Where        | What runs                                                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------- |
-| This Mac     | `pnpm test:stories` in `toolkit`, and Storybook itself with `pnpm --dir packages/ui run storybook`                  |
-| The pipeline | The Stories job, inside `mcr.microsoft.com/playwright`, pinned by its digest, in every pull request and every merge |
+| Where        | What runs                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| This Mac     | `pnpm --dir packages/ui run test:browser` in `toolkit`, and Storybook itself with `pnpm --dir packages/ui run storybook` |
+| The pipeline | The Browser job, inside `mcr.microsoft.com/playwright`, pinned by its digest, in every pull request and every merge      |
 
 The showroom runs on this Mac only. It is not published.
 
@@ -124,7 +124,7 @@ A new component starts in its own pull request, with its CSS in `src/styles`, im
 
 ## How to check that it works
 
-- `pnpm test:stories` in `toolkit` runs every story in Chromium, in light and in dark, with axe and with coverage. It needs Playwright's Chromium on the machine once: `pnpm exec playwright install chromium`. It builds nothing, so build the tokens first with `pnpm --dir packages/tokens run build`.
+- `pnpm --dir packages/ui run test:browser` in `toolkit` runs every story in Chromium, in light and in dark, with axe and with coverage. It needs Playwright's Chromium on the machine once: `pnpm exec playwright install chromium`. It builds nothing, so build the tokens first with `pnpm --dir packages/tokens run build`.
 - `pnpm exec vitest run --project ui` checks the stylesheet: the bundle, its layers, the token-only rule on every file, and that the pipeline's Playwright image matches the Playwright version of the workspace.
 - A story that fails with `Expected the HTML found at ... to have no violations` names the axe rule and links to its explanation. Fix the component, not the story.
 - A story that fails in one mode only usually points at a colour role whose contrast holds in one half of its ramp. Open Storybook, switch the mode in the toolbar, and look.

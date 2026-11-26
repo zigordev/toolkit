@@ -7,8 +7,8 @@ on:
         description: The folder that holds a product's compose.yaml. Its images are built and held to the platform contract. A repo without apps leaves it out.
         type: string
         default: ""
-      stories:
-        description: Whether the repo has a design system whose stories run as browser tests, in light and in dark, with an accessibility check. They run in the pinned Playwright image, which holds the browsers. The same job then runs the script test:pages, when package.json has one.
+      browser:
+        description: Whether the repo has browser tests, which the script test:browser runs after a build, in the pinned Playwright image that holds the browsers. In toolkit they are the design system's stories and the template's forms and pages. In a product, they are its web app's forms and pages.
         type: boolean
         default: false
 
@@ -64,9 +64,9 @@ jobs:
           PRODUCT_FOLDER: ${{ inputs.product-folder }}
         run: pnpm --dir "$PRODUCT_FOLDER" run check:contract
 
-  stories:
-    name: Stories
-    if: inputs.stories
+  browser:
+    name: Browser
+    if: inputs.browser
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     container:
@@ -90,11 +90,8 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Run the stories in light and in dark
-        run: pnpm run test:stories
-
-      - name: Run every page in Chromium, with axe and the content security policy
-        run: pnpm run --if-present test:pages
+      - name: Run the browser tests
+        run: pnpm run test:browser
 
   title:
     name: Title

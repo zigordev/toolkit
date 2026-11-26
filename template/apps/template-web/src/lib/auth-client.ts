@@ -1,11 +1,12 @@
 import { type AuthClient, createAuthClient } from '@zigordev/auth/client';
+import { go } from './navigate.ts';
 
 let client: AuthClient | undefined;
 
 export function getAuthClient(): AuthClient {
   client ??= createAuthClient({
     onTwoFactorRedirect: () => {
-      window.location.assign('/two-factor');
+      go('/two-factor');
     },
   });
   return client;

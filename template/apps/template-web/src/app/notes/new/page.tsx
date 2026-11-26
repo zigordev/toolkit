@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../../lib/auth.ts';
 import styles from '../../layout.module.css';
-import { NoteForm } from '../note-form.tsx';
+import { NoteForm } from '../note-form.client.tsx';
 
 export const dynamic = 'force-dynamic';
 
