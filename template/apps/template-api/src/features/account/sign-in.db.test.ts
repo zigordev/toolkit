@@ -175,9 +175,25 @@ class Browser {
   }
 
   async post(url: string, body: unknown): Promise<LightMyRequestResponse> {
+    return this.send('POST', url, body);
+  }
+
+  async patch(url: string, body: unknown): Promise<LightMyRequestResponse> {
+    return this.send('PATCH', url, body);
+  }
+
+  async delete(url: string): Promise<LightMyRequestResponse> {
+    return this.keep(await server.app.inject({ method: 'DELETE', url, headers: this.headers() }));
+  }
+
+  private async send(
+    method: 'POST' | 'PATCH',
+    url: string,
+    body: unknown
+  ): Promise<LightMyRequestResponse> {
     return this.keep(
       await server.app.inject({
-        method: 'POST',
+        method,
         url,
         headers: { ...this.headers(), 'content-type': 'application/json' },
         payload: JSON.stringify(body),
@@ -421,8 +437,9 @@ describe('two-factor', () => {
 });
 
 describe('account deletion', () => {
-  it('deletes the account through the confirmation link, opened while signed in', async () => {
+  it('deletes the account and its notes through the confirmation link, opened while signed in', async () => {
     const owner = await signUp('barbara@example.com');
+    const note = (await owner.post('/api/v1/notes', { title: 'Mine alone' })).json() as NoteBody;
     await owner.post('/api/auth/delete-user', {});
     const request = await requestFor('delete-account', 'barbara@example.com');
 
@@ -434,6 +451,82 @@ describe('account deletion', () => {
       password,
     });
     expect(again.statusCode).toBe(401);
+    const gone = await server.app.inject({
+      method: 'GET',
+      url: `/api/v1/notes/${note.id}`,
+      headers: { authorization: `Bearer ${reader}` },
+    });
+    expectProblem(gone, { status: 404, code: 'note.not_found' });
+  });
+});
+
+interface NoteBody {
+  readonly id: string;
+  readonly title: string;
+  readonly status: string;
+}
+
+interface NotesPage {
+  readonly items: readonly NoteBody[];
+}
+
+function titlesOf(response: LightMyRequestResponse): string[] {
+  return (response.json() as NotesPage).items.map((note) => note.title).sort();
+}
+
+describe('the notes of a signed-in person', () => {
+  it('lists, reads, changes and deletes only the notes the person wrote', async () => {
+    const grace = await signUp('grace.notes@example.com');
+    const alan = await signUp('alan.notes@example.com');
+    const created = await grace.post('/api/v1/notes', { title: 'Compile the report' });
+    expect(created.statusCode).toBe(201);
+    const graces = created.json() as NoteBody;
+    const alans = (
+      await alan.post('/api/v1/notes', { title: 'Break the code' })
+    ).json() as NoteBody;
+
+    expect(titlesOf(await grace.get('/api/v1/notes'))).toEqual(['Compile the report']);
+    expect(titlesOf(await alan.get('/api/v1/notes'))).toEqual(['Break the code']);
+    expect((await grace.get(`/api/v1/notes/${graces.id}`)).json()).toMatchObject({
+      title: 'Compile the report',
+    });
+    const changed = await grace.patch(`/api/v1/notes/${graces.id}`, { status: 'done' });
+    expect(changed.json()).toMatchObject({ status: 'done' });
+
+    expectProblem(await grace.get(`/api/v1/notes/${alans.id}`), {
+      status: 404,
+      code: 'note.not_found',
+    });
+    expectProblem(await grace.patch(`/api/v1/notes/${alans.id}`, { title: 'Mine now' }), {
+      status: 404,
+      code: 'note.not_found',
+    });
+    expectProblem(await grace.delete(`/api/v1/notes/${alans.id}`), {
+      status: 404,
+      code: 'note.not_found',
+    });
+    expect((await alan.get(`/api/v1/notes/${alans.id}`)).json()).toMatchObject({
+      title: 'Break the code',
+    });
+
+    expect((await grace.delete(`/api/v1/notes/${graces.id}`)).statusCode).toBe(204);
+    expect(titlesOf(await grace.get('/api/v1/notes'))).toEqual([]);
+  });
+
+  it('leaves every note to an API key that has the scope', async () => {
+    const katherine = await signUp('katherine.notes@example.com');
+    const written = (
+      await katherine.post('/api/v1/notes', { title: 'Check the orbit' })
+    ).json() as NoteBody;
+
+    const response = await server.app.inject({
+      method: 'GET',
+      url: `/api/v1/notes/${written.id}`,
+      headers: { authorization: `Bearer ${reader}` },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ title: 'Check the orbit' });
   });
 });
 

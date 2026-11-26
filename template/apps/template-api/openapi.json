@@ -47,6 +47,7 @@
         "operationId": "listNotes",
         "summary": "List the notes",
         "tags": ["notes"],
+        "description": "A person who is signed in reaches only the notes they wrote: any other note answers 404. A caller with an API key needs the scope, and reaches every note.",
         "parameters": [
           {
             "schema": {
@@ -284,6 +285,7 @@
         "operationId": "createNote",
         "summary": "Create a note",
         "tags": ["notes"],
+        "description": "A note made by a person who is signed in is theirs. A note made with an API key belongs to nobody, and only API keys reach it.",
         "requestBody": {
           "required": true,
           "content": {
@@ -485,6 +487,7 @@
         "operationId": "getNote",
         "summary": "Get one note",
         "tags": ["notes"],
+        "description": "A person who is signed in reaches only the notes they wrote: any other note answers 404. A caller with an API key needs the scope, and reaches every note.",
         "parameters": [
           {
             "schema": {
@@ -711,6 +714,7 @@
         "operationId": "updateNote",
         "summary": "Change a note",
         "tags": ["notes"],
+        "description": "A person who is signed in reaches only the notes they wrote: any other note answers 404. A caller with an API key needs the scope, and reaches every note.",
         "requestBody": {
           "required": true,
           "content": {
@@ -963,6 +967,7 @@
         "operationId": "deleteNote",
         "summary": "Delete a note",
         "tags": ["notes"],
+        "description": "A person who is signed in reaches only the notes they wrote: any other note answers 404. A caller with an API key needs the scope, and reaches every note.",
         "parameters": [
           {
             "schema": {

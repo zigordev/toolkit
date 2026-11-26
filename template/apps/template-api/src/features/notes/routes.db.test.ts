@@ -76,6 +76,10 @@ describe('POST /api/v1/notes', () => {
       updatedAt: note.createdAt,
     });
     expect(logs.find('note.created')).toEqual([expect.objectContaining({ noteId: note.id })]);
+    const owners = await server.app.db.execute(
+      sql`SELECT owner_id FROM notes WHERE id = ${note.id}`
+    );
+    expect(owners.rows).toEqual([{ owner_id: null }]);
   });
 
   it('answers 400 and names every invalid field', async () => {

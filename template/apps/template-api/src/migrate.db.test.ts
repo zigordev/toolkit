@@ -33,7 +33,7 @@ describe('the migrate job', () => {
 
     expect(code).toBe(0);
     expect(logs.find('migration.finished')).toEqual([
-      expect.objectContaining({ applied: 4, total: 4 }),
+      expect.objectContaining({ applied: 5, total: 5 }),
     ]);
     const client = new pg.Client({ connectionString: address(name, password, name) });
     await client.connect();
