@@ -14,6 +14,9 @@ const product = read('../../../template/.github/workflows/ci.yml');
 const template = JSON.parse(read('../../../template/package.json')) as {
   readonly scripts: Readonly<Record<string, string>>;
 };
+const toolkit = JSON.parse(read('../../../package.json')) as {
+  readonly scripts: Readonly<Record<string, string>>;
+};
 
 function job(text: string, name: string): string {
   const rest = text.slice(text.indexOf(`\n  ${name}:\n`) + 1);
@@ -73,7 +76,7 @@ describe('the machines of the pipeline', () => {
     expect(jobs(workflow)).toEqual([
       'quality',
       'contract',
-      'stories',
+      'browser',
       'title',
       'dependencies',
       'scan',
@@ -305,37 +308,43 @@ describe('the Contract job', () => {
   });
 });
 
-describe('the Stories job', () => {
-  it('runs only for a repo that says it has stories', () => {
-    expect(workflow).toContain('      stories:\n');
+describe('the Browser job', () => {
+  it('runs only for a repo that says it has browser tests', () => {
+    expect(workflow).toContain('      browser:\n');
     expect(workflow).toContain('        type: boolean\n        default: false\n');
-    expect(job(workflow, 'stories')).toContain('if: inputs.stories');
+    expect(job(workflow, 'browser')).toContain('if: inputs.browser');
   });
 
   it('runs in the official Playwright image, pinned by its digest, which already holds the browsers', () => {
-    expect(job(workflow, 'stories')).toMatch(
+    expect(job(workflow, 'browser')).toMatch(
       /^ {4}container:\n {6}image: mcr\.microsoft\.com\/playwright:v[\d.]+-resolute@sha256:[0-9a-f]{64}$/m
     );
   });
 
   it('may read the repo, and nothing else', () => {
-    expect(job(workflow, 'stories')).toContain('    permissions:\n      contents: read\n');
-    expect(job(workflow, 'stories')).not.toContain('write');
-    expect(job(workflow, 'stories')).toContain('persist-credentials: false');
+    expect(job(workflow, 'browser')).toContain('    permissions:\n      contents: read\n');
+    expect(job(workflow, 'browser')).not.toContain('write');
+    expect(job(workflow, 'browser')).toContain('persist-credentials: false');
   });
 
-  it('installs only Node.js and pnpm, runs no install script, builds, and runs the stories', () => {
-    const steps = job(workflow, 'stories');
+  it('installs only Node.js and pnpm, runs no install script, builds, and runs the browser tests', () => {
+    const steps = job(workflow, 'browser');
 
     expect(steps).toContain('          install_args: node pnpm\n');
     expect(steps).toContain('        run: pnpm install --frozen-lockfile --ignore-scripts\n');
     expect(steps).toContain('        run: pnpm run build\n');
-    expect(steps).toContain('        run: pnpm run test:stories\n');
+    expect(steps).toContain('        run: pnpm run test:browser\n');
   });
 
-  it('is asked for by this repo, which holds the design system', () => {
-    expect(job(caller, 'pipeline')).toContain('      stories: true\n');
-    expect(job(product, 'pipeline')).not.toContain('stories');
+  it('finds the browser tests of every package through one script at the root', () => {
+    expect(toolkit.scripts['test:browser']).toBe(
+      'pnpm --recursive --workspace-concurrency=1 --if-present run test:browser'
+    );
+  });
+
+  it('is asked for by this repo and by the template, whose web app has browser tests', () => {
+    expect(job(caller, 'pipeline')).toContain('      browser: true\n');
+    expect(job(product, 'pipeline')).toContain('      browser: true\n');
   });
 });
 

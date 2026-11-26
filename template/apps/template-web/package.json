@@ -12,7 +12,8 @@
     "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "dev": "NEXT_TELEMETRY_DISABLED=1 next dev --hostname 127.0.0.1 --port 3001",
     "start": "NEXT_TELEMETRY_DISABLED=1 NEXT_OTEL_FETCH_DISABLED=1 node --import @zigordev/otel/register node_modules/next/dist/bin/next start",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test:browser": "vitest run --config vitest.browser.config.ts --coverage && vitest run --config vitest.pages.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "catalog:",
@@ -40,6 +41,9 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
     "@zigordev/dev": "workspace:*",
     "playwright": "catalog:",
     "typescript": "catalog:",

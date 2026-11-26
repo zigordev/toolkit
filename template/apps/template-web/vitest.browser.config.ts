@@ -1,12 +1,29 @@
 import { fileURLToPath } from 'node:url';
-import { defineProject } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import { playwright } from '@vitest/browser-playwright';
+import { defineConfig } from 'vitest/config';
 
-export default defineProject({
+const floor = 90;
+
+export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
+  plugins: [react()],
   test: {
     name: 'template-web:browser',
-    include: ['browser/**/*.test.ts'],
-    testTimeout: 30_000,
-    hookTimeout: 60_000,
+    include: ['src/**/*.client.test.tsx'],
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright(),
+      instances: [{ browser: 'chromium' }],
+      screenshotFailures: false,
+    },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.client.{ts,tsx}'],
+      exclude: ['**/*.test.{ts,tsx}'],
+      reporter: ['text'],
+      thresholds: { lines: floor, functions: floor, branches: floor, statements: floor },
+    },
   },
 });
