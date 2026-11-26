@@ -2,21 +2,42 @@ import type { AuthClient } from '@zigordev/auth/client';
 
 export type Go = (path: string) => void;
 
+export type Problem = 'wrong-credentials' | 'not-verified' | 'wrong-code' | 'too-many' | 'failed';
+
 export interface TwoFactorSetup {
   readonly totpURI: string;
   readonly backupCodes: readonly string[];
 }
 
 interface Failure {
-  readonly message?: string | undefined;
+  readonly code?: string | undefined;
+  readonly status?: number | undefined;
 }
 
 function text(form: FormData, name: string): string {
   return String(form.get(name) ?? '').trim();
 }
 
-function messageOf(error: Failure, fallback: string): string {
-  return error.message ?? fallback;
+export function problemOf(error: Failure): Problem {
+  if (error.status === 429) {
+    return 'too-many';
+  }
+  switch (error.code) {
+    case 'INVALID_EMAIL_OR_PASSWORD':
+    case 'INVALID_PASSWORD':
+      return 'wrong-credentials';
+    case 'EMAIL_NOT_VERIFIED':
+      return 'not-verified';
+    case 'INVALID_CODE':
+    case 'INVALID_BACKUP_CODE':
+    case 'OTP_HAS_EXPIRED':
+      return 'wrong-code';
+    case 'TOO_MANY_ATTEMPTS':
+    case 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE':
+      return 'too-many';
+    default:
+      return 'failed';
+  }
 }
 
 export async function signInWithPassword(
@@ -24,13 +45,13 @@ export async function signInWithPassword(
   form: FormData,
   next: string,
   go: Go
-): Promise<string | null> {
+): Promise<Problem | null> {
   const { data, error } = await client.signIn.email({
     email: text(form, 'email'),
     password: String(form.get('password') ?? ''),
   });
   if (error !== null) {
-    return messageOf(error, 'The email or the password is wrong.');
+    return problemOf(error);
   }
   if (!(data !== null && 'twoFactorRedirect' in data)) {
     go(next);
@@ -38,39 +59,39 @@ export async function signInWithPassword(
   return null;
 }
 
-export async function signInWithGoogle(client: AuthClient, next: string): Promise<string | null> {
+export async function signInWithGoogle(client: AuthClient, next: string): Promise<Problem | null> {
   const { error } = await client.signIn.social({ provider: 'google', callbackURL: next });
-  return error === null ? null : messageOf(error, 'Google sign-in is not available.');
+  return error === null ? null : problemOf(error);
 }
 
 export async function signInWithPasskey(
   client: AuthClient,
   next: string,
   go: Go
-): Promise<string | null> {
+): Promise<Problem | null> {
   const result = await client.signIn.passkey();
   if (result?.error) {
-    return messageOf(result.error, 'The passkey did not sign you in.');
+    return problemOf(result.error);
   }
   go(next);
   return null;
 }
 
-export async function signUp(client: AuthClient, form: FormData): Promise<string | null> {
+export async function signUp(client: AuthClient, form: FormData): Promise<Problem | null> {
   const { error } = await client.signUp.email({
     name: text(form, 'name'),
     email: text(form, 'email'),
     password: String(form.get('password') ?? ''),
     callbackURL: '/account',
   });
-  return error === null ? null : messageOf(error, 'The account could not be created.');
+  return error === null ? null : problemOf(error);
 }
 
 export async function verifyCode(
   client: AuthClient,
   form: FormData,
   go: Go
-): Promise<string | null> {
+): Promise<Problem | null> {
   const code = text(form, 'code');
   const trustDevice = form.get('trust') === 'on';
   const { error } =
@@ -78,42 +99,41 @@ export async function verifyCode(
       ? await client.twoFactor.verifyTotp({ code, trustDevice })
       : await client.twoFactor.verifyBackupCode({ code, trustDevice });
   if (error !== null) {
-    return messageOf(error, 'That code did not work.');
+    return problemOf(error);
   }
   go('/account');
   return null;
 }
 
-export async function addPasskey(client: AuthClient, form: FormData): Promise<string> {
+export async function addPasskey(client: AuthClient, form: FormData): Promise<'added' | Problem> {
   const result = await client.passkey.addPasskey({ name: text(form, 'name') });
-  return result?.error ? messageOf(result.error, 'The passkey was not added.') : 'Passkey added.';
+  return result?.error ? problemOf(result.error) : 'added';
 }
 
 export async function enableTwoFactor(
   client: AuthClient,
   form: FormData
-): Promise<TwoFactorSetup | string> {
+): Promise<TwoFactorSetup | Problem> {
   const { data, error } = await client.twoFactor.enable({
     password: String(form.get('password') ?? ''),
   });
   if (error === null && data !== null && data.method === 'totp') {
     return { totpURI: data.totpURI, backupCodes: data.backupCodes };
   }
-  return error === null
-    ? 'Two-factor could not be turned on.'
-    : messageOf(error, 'Two-factor could not be turned on.');
+  return error === null ? 'failed' : problemOf(error);
 }
 
-export async function confirmTwoFactor(client: AuthClient, form: FormData): Promise<string> {
+export async function confirmTwoFactor(
+  client: AuthClient,
+  form: FormData
+): Promise<'on' | Problem> {
   const { error } = await client.twoFactor.verifyTotp({ code: text(form, 'code') });
-  return error === null ? 'Two-factor is on.' : messageOf(error, 'That code did not work.');
+  return error === null ? 'on' : problemOf(error);
 }
 
-export async function deleteAccount(client: AuthClient): Promise<string> {
+export async function deleteAccount(client: AuthClient): Promise<'asked' | Problem> {
   const { error } = await client.deleteUser({ callbackURL: '/' });
-  return error === null
-    ? 'Check your inbox: a link there deletes your account.'
-    : messageOf(error, 'The request failed.');
+  return error === null ? 'asked' : problemOf(error);
 }
 
 export async function signOut(client: AuthClient, go: Go): Promise<void> {

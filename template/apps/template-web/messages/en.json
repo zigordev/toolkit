@@ -1,0 +1,75 @@
+{
+  "app": {
+    "name": "Template"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "es": "Español"
+  },
+  "home": {
+    "title": "Template",
+    "apiDown": "The API does not answer.",
+    "account": "Your account"
+  },
+  "problems": {
+    "wrongCredentials": "The email or the password is wrong.",
+    "notVerified": "Confirm your email address first: the link is in your inbox.",
+    "wrongCode": "That code did not work.",
+    "tooMany": "Too many tries. Wait a minute, then try again."
+  },
+  "signIn": {
+    "title": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "google": "Continue with Google",
+    "passkey": "Sign in with a passkey",
+    "failed": "Sign-in did not work. Try again.",
+    "googleFailed": "Google sign-in is not available.",
+    "passkeyFailed": "The passkey did not sign you in.",
+    "noAccount": "No account yet?",
+    "signUp": "Sign up"
+  },
+  "signUp": {
+    "title": "Sign up",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password, {min} to {max} characters",
+    "submit": "Sign up",
+    "sent": "Check your inbox: a link there confirms your address and signs you in.",
+    "failed": "The account could not be created.",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "twoFactor": {
+    "title": "Your authenticator code",
+    "code": "The 6 digits from your authenticator app, or a backup code",
+    "trust": "Trust this device for {days} days",
+    "submit": "Continue",
+    "failed": "That code did not work."
+  },
+  "account": {
+    "title": "Your account",
+    "who": "{name}, {email}",
+    "passkeys": "Passkeys",
+    "deviceName": "Name of this device",
+    "addPasskey": "Add a passkey",
+    "passkeyAdded": "Passkey added.",
+    "passkeyFailed": "The passkey was not added.",
+    "twoFactor": "Two-factor",
+    "password": "Your password",
+    "turnOn": "Turn on two-factor",
+    "turnOnFailed": "Two-factor could not be turned on.",
+    "totpAddress": "Add this address to your authenticator app: {address}",
+    "backupCodes": "Keep these backup codes somewhere safe: {codes}",
+    "firstCode": "The first code from the app",
+    "confirm": "Confirm",
+    "twoFactorOn": "Two-factor is on.",
+    "leave": "Leave",
+    "signOut": "Sign out",
+    "delete": "Delete my account",
+    "deleteAsked": "Check your inbox: a link there deletes your account.",
+    "deleteFailed": "The request failed."
+  }
+}

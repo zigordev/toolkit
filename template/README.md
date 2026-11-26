@@ -1,6 +1,6 @@
 # The product template
 
-A minimal product, kept inside `toolkit`. It is being built in slices, and this page describes what exists on 2026-11-25: the API and the web app, their images, the compose files that run both as containers behind the shared services, sign-in, and the emails that sign-in sends through the notifications service.
+A minimal product, kept inside `toolkit`. It is being built in slices, and this page describes what exists on 2026-11-26: the API and the web app, their images, the compose files that run both as containers behind the shared services, sign-in, the emails that sign-in sends through the notifications service, and every text of the web app in English and Spanish.
 
 ## What it is
 
@@ -9,7 +9,7 @@ A product on the platform is an API and a web app that is one of its clients. Th
 | Path                                 | What it holds                                                                                                                                                                                                                                                               |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/template-api`                  | The API: a Fastify service on `@zigordev/api` with a greeting behind a feature flag, the notes and sign-in, whose emails it sends to the notifications service over Kafka. Its flags in `flags.json`, its migrations in `drizzle/`, its `openapi.json` and its `Dockerfile` |
-| `apps/template-web`                  | The web app: a Next.js app whose one page shows what the API says, and the `Dockerfile` of it                                                                                                                                                                               |
+| `apps/template-web`                  | The web app: a Next.js app that shows what the API says and holds the sign-in pages, its texts in `messages/en.json` and `messages/es.json`, its inlang project in `project.inlang/`, and the `Dockerfile` of it                                                            |
 | `packages/template-api-client`       | The API's typed client: the types written from `openapi.json`, and `createTemplateApiClient()` on openapi-fetch                                                                                                                                                             |
 | `packages/template-client-generator` | The one package that writes those types, with openapi-typescript on its own TypeScript 5.9.3                                                                                                                                                                                |
 | `compose.yaml`                       | The whole product as it runs everywhere: both apps, the API's migrate job and the product's PostgreSQL, each with its limits and health check                                                                                                                               |
@@ -38,7 +38,9 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 | Node.js 26                       | Runs both apps. The API's TypeScript files run directly, with no build step                              |
 | Fastify 5                        | Serves the API's routes                                                                                  |
 | Next.js 16                       | Builds the web app, and renders its page on the server at each request                                   |
-| React 19                         | The web app's page                                                                                       |
+| React 19                         | The web app's pages                                                                                      |
+| next-intl                        | Picks each request's language, and gives each page its texts in English or Spanish                       |
+| The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                       |
 | `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
 | `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                             |
 | `@zigordev/api`                  | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop   |
@@ -280,6 +282,17 @@ Sign up at `http://template.localhost/sign-up`, or at `http://localhost:3001/sig
 
 `src/features/account/sign-in.db.test.ts` runs every sign-in path against a real PostgreSQL and a real Kafka, which the API tests' global setup starts. It also checks that a signed-in person reaches only the notes they wrote, and that their notes go with their account. The file makes topics of its own with `createTopics` from `@zigordev/events/testing`, and runs a stand-in for the notifications service on them: it reads each request, keeps it, and answers `email.sent`, or `email.failed` for an address at `refused.example.com`. The tests follow the links in the requests' plain text, and check the logs of both answers, the one notice in ten minutes, and that no log line carries an address or a link.
 
+## The texts in English and Spanish
+
+Every text of the web app exists in English and in Spanish, in `apps/template-web/messages/en.json` and `messages/es.json`, under the same names. [Web apps](../docs/handbook/web-apps.md) explains the whole of it: how a page reads its texts, how a request picks its language, and the check.
+
+- **The language:** the one the person chose with the switch at the top of every page, kept in the cookie `template.locale`. Without a choice, the browser's `Accept-Language`, and then English. The address stays the same in both languages.
+- **The texts in a page:** `getTranslations('signIn')` in a server component, `useTranslations('signIn')` in a component that runs in the browser. The names are typed from `en.json`.
+- **The sign-in pages' problems:** the functions in `src/lib/sign-in.ts` answer with a code, such as `wrong-credentials`, and the page puts it into words in the person's language. Better Auth's own messages are in English, so they never reach the page.
+- **The check:** `pnpm exec zigordev check texts` runs `inlang check` on `apps/template-web/project.inlang`, and fails on a text missing or empty in one language, short of a variable, or used by no code.
+
+The emails of sign-in pick their language from the browser's `Accept-Language`, not from the switch: the API, which builds them, does not see the web app's cookie.
+
 ## The feature flags
 
 The API keeps its flags in `apps/template-api/flags.json`, and reads them in the app through [`@zigordev/flags`](../packages/flags/README.md). Its image carries the file, so a flag changes through a pull request and takes effect with the deploy. No flag server runs.
@@ -420,7 +433,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
-Slice 5, the notes pages, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
@@ -440,7 +453,7 @@ Without the web app's code, the coverage of branches comes close to the floor of
 
 ## What is left for later
 
-- **In the web app:** the notes pages, the design system, every text in English and Spanish, the content security policy and browser monitoring. They arrive with the fifth slice. Until then the page calls the API with a plain `fetch`.
+- **In the web app:** the notes pages, the design system, the content security policy and browser monitoring. They arrive with the rest of the fifth slice. Until then the page calls the API with a plain `fetch`.
 - **What a failed email changes:** the API logs `email.failed`, and nothing more. Telling the person, such as on `/account`, is left to the product.
 
 ## Known limits

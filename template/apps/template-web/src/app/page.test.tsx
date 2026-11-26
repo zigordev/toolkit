@@ -2,6 +2,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { testLocale } from '../../test/locale.ts';
 
 let server: Server;
 
@@ -34,6 +35,16 @@ describe('the home page', () => {
 
     expect(html).toBe(
       '<main><h1>Template</h1><p>Hello from the stand-in</p><p><a href="/account">Your account</a></p></main>'
+    );
+  });
+
+  it('says it in Spanish when Spanish is chosen', async () => {
+    testLocale.current = 'es';
+
+    const html = await render('http://127.0.0.1:9');
+
+    expect(html).toBe(
+      '<main><h1>Template</h1><p>La API no responde.</p><p><a href="/account">Tu cuenta</a></p></main>'
     );
   });
 

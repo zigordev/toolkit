@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../lib/auth.ts';
 import { localPath } from '../../lib/paths.ts';
 import { SignInForm } from './sign-in-form.tsx';
@@ -14,12 +15,13 @@ export default async function SignIn({ searchParams }: SignInProps) {
   if ((await getNextAuth().getUser()) !== null) {
     redirect(next);
   }
+  const t = await getTranslations('signIn');
   return (
     <main>
-      <h1>Sign in</h1>
+      <h1>{t('title')}</h1>
       <SignInForm next={next} />
       <p>
-        No account yet? <a href="/sign-up">Sign up</a>
+        {t('noAccount')} <a href="/sign-up">{t('signUp')}</a>
       </p>
     </main>
   );

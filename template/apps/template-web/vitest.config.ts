@@ -4,5 +4,6 @@ export default defineProject({
   test: {
     name: 'template-web',
     include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

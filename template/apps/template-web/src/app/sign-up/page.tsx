@@ -1,12 +1,14 @@
+import { getTranslations } from 'next-intl/server';
 import { SignUpForm } from './sign-up-form.tsx';
 
-export default function SignUp() {
+export default async function SignUp() {
+  const t = await getTranslations('signUp');
   return (
     <main>
-      <h1>Sign up</h1>
+      <h1>{t('title')}</h1>
       <SignUpForm />
       <p>
-        Already have an account? <a href="/sign-in">Sign in</a>
+        {t('haveAccount')} <a href="/sign-in">{t('signIn')}</a>
       </p>
     </main>
   );
