@@ -259,8 +259,8 @@ catalogs:
       specifier: 1.1.0
       version: 1.1.0
     '@zigordev/stack':
-      specifier: 1.8.0
-      version: 1.8.0
+      specifier: 1.8.1
+      version: 1.8.1
     drizzle-kit:
       specifier: 0.31.11
       version: 0.31.11
@@ -935,7 +935,7 @@ importers:
         version: link:../packages/dev
       '@zigordev/stack':
         specifier: 'catalog:'
-        version: 1.8.0
+        version: 1.8.1
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -3543,8 +3543,8 @@ packages:
       '@zigordev/events': ^1.26.0
       zod: ^4.6.0
 
-  '@zigordev/stack@1.8.0':
-    resolution: {integrity: sha512-zaMihTSOIwaviRQRQ8Bq9zXai5kSH+YCg8PuMRvRDOUvJAoPJtSlDQ5x1Yi+EkwmVpKiLVS/JWStVIpJBA4CgQ==}
+  '@zigordev/stack@1.8.1':
+    resolution: {integrity: sha512-xi4S+wRUEVi8bnp+Jja+OtZTWl6px6ZZTmSJ7jJMyGDPTmB8jGruBa49FFHDM6Ud0rWsUx9UHWpVq+7GkBfUEA==}
     engines: {node: '>=26'}
     hasBin: true
 
@@ -9104,7 +9104,7 @@ snapshots:
       '@zigordev/events': link:packages/events
       zod: 4.6.7
 
-  '@zigordev/stack@1.8.0': {}
+  '@zigordev/stack@1.8.1': {}
 
   abort-controller@3.0.0:
     dependencies:
