@@ -3,6 +3,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  transpilePackages: ['template-api-client'],
   logging: { browserToTerminal: false },
 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeFields, signInFields, signUpFields, zodResolver } from './forms.ts';
+import { codeFields, noteFields, signInFields, signUpFields, zodResolver } from './forms.ts';
 
 type Resolve = (values: unknown) => Promise<{ values: unknown; errors: unknown }>;
 
@@ -46,14 +46,32 @@ describe('the resolver', () => {
       password: 'x'.repeat(129),
     });
 
-    expect(short.errors).toEqual({ password: { type: 'too_small', message: 'too-short' } });
-    expect(long.errors).toEqual({ password: { type: 'too_big', message: 'too-long' } });
+    expect(short.errors).toEqual({
+      password: { type: 'too_small', message: 'password-too-short' },
+    });
+    expect(long.errors).toEqual({ password: { type: 'too_big', message: 'password-too-long' } });
   });
 
   it('takes a code and whether to trust the device', async () => {
     expect(await resolve(codeFields, { code: ' 123456 ', trust: true })).toEqual({
       values: { code: '123456', trust: true },
       errors: {},
+    });
+  });
+});
+
+describe('the fields of a note', () => {
+  it('need a title of at most 200 characters, and a text of at most 10,000', async () => {
+    expect(await resolve(noteFields, { title: ' Buy milk ', body: '', done: false })).toEqual({
+      values: { title: 'Buy milk', body: '', done: false },
+      errors: {},
+    });
+    expect(
+      (await resolve(noteFields, { title: 'x'.repeat(201), body: 'y'.repeat(10_001), done: true }))
+        .errors
+    ).toEqual({
+      title: { type: 'too_big', message: 'title-too-long' },
+      body: { type: 'too_big', message: 'body-too-long' },
     });
   });
 });

@@ -42,6 +42,7 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 | next-intl                        | Picks each request's language, and gives each page its texts in English or Spanish                       |
 | `@zigordev/ui`                   | Every button, field, checkbox and message on the pages, from the design system, in light and in dark     |
 | React Hook Form                  | Every form, checked by a Zod schema, with each problem shown under its field in the person's language    |
+| TanStack Query                   | The notes forms' writes from the browser, through `openapi-react-query` on the typed client              |
 | Playwright and axe               | Open every page in Chromium and check it for accessibility and for its content security policy           |
 | The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                       |
 | `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
@@ -296,6 +297,20 @@ Every text of the web app exists in English and in Spanish, in `apps/template-we
 
 The emails of sign-in pick their language from the browser's `Accept-Language`, not from the switch: the API, which builds them, does not see the web app's cookie.
 
+## The notes pages
+
+A person who is signed in keeps their notes at `/notes`. Each page sends a person who is not signed in to `/sign-in`, and back afterwards.
+
+| Page              | What it does                                                                                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/notes`          | Lists the person's notes, newest first, with a search on the titles, a filter on open or done, and "Show more" for the next page. The address holds all of it, as `?status=done&q=milk&cursor=…` |
+| `/notes/new`      | A form for a new note: a title and a text                                                                                                                                                        |
+| `/notes/{noteId}` | The note in the same form, with the box "Done", and a delete that asks once more. Another person's note answers 404                                                                              |
+
+The pages follow the web rules. A server component reads the API on the server, through the typed client of `packages/template-api-client`, with the person's cookie, so the list and the note arrive in the page. A form in the browser writes through TanStack Query and `openapi-react-query`, on the same typed client, then moves on and asks the server for the page again. The API decides whose notes these are, as [the notes API](#the-notes-api) says.
+
+In containers the ingress sends `/api` to the API, so the browser's requests reach it at the page's own address. The dev server and the page check have no ingress, so `src/app/api/v1/[...path]/route.ts` hands those requests on to `API_URL`, as `src/app/api/auth/[...all]/route.ts` does for sign-in.
+
 ## The pages and their security
 
 Every page wears the design system, `@zigordev/ui`, and follows the person's light or dark setting. The root layout draws a header, with the product's name and the language switch, and one `<main>`. The forms use React Hook Form with the Zod schemas of `apps/template-web/src/lib/forms.ts`, so a field that fails says why under it, in the person's language. [Web apps](../docs/handbook/web-apps.md) explains each part.
@@ -446,7 +461,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0       |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                             |
 
-Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, and its third the design system, the content security policy and the page check. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, its third the design system, the content security policy and the page check, and its fourth the notes pages. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
 Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
@@ -466,7 +481,7 @@ Without the web app's code, the coverage of branches comes close to the floor of
 
 ## What is left for later
 
-- **In the web app:** the notes pages and browser monitoring. They arrive with the rest of the fifth slice. Until then the start page calls the API with a plain `fetch`.
+- **In the web app:** browser monitoring, which arrives with the rest of the fifth slice.
 - **What a failed email changes:** the API logs `email.failed`, and nothing more. Telling the person, such as on `/account`, is left to the product.
 
 ## Known limits

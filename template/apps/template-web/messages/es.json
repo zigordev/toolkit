@@ -11,7 +11,8 @@
   "home": {
     "title": "Template",
     "apiDown": "La API no responde.",
-    "account": "Tu cuenta"
+    "account": "Tu cuenta",
+    "notes": "Tus notas"
   },
   "problems": {
     "wrongCredentials": "El correo o la contraseña no son correctos.",
@@ -90,5 +91,34 @@
     "title": "Algo ha fallado",
     "text": "La página no se ha podido cargar. Vuelve a intentarlo en un momento.",
     "retry": "Volver a intentarlo"
+  },
+  "notes": {
+    "title": "Tus notas",
+    "new": "Nueva nota",
+    "searchLabel": "Buscar en los títulos",
+    "search": "Buscar",
+    "filterLabel": "Mostrar",
+    "allNotes": "Todas",
+    "openNotes": "Abiertas",
+    "doneNotes": "Hechas",
+    "open": "Abierta",
+    "done": "Hecha",
+    "markDone": "Hecha",
+    "empty": "Aún no tienes notas. Escribe la primera.",
+    "noMatch": "Ninguna nota coincide.",
+    "more": "Ver más",
+    "loadFailed": "Las notas no se han podido cargar. Vuelve a intentarlo en un momento.",
+    "newTitle": "Nueva nota",
+    "titleLabel": "Título",
+    "bodyLabel": "Texto",
+    "save": "Guardar la nota",
+    "saved": "Nota guardada.",
+    "saveFailed": "La nota no se ha guardado. Vuelve a intentarlo.",
+    "back": "Todas las notas",
+    "delete": "Borrar la nota",
+    "deleteQuestion": "¿Borrar esta nota para siempre?",
+    "deleteForGood": "Borrarla",
+    "keep": "Conservarla",
+    "deleteFailed": "La nota no se ha borrado. Vuelve a intentarlo."
   }
 }

@@ -22,7 +22,7 @@ function Texts() {
 
 function wordsIn(locale: Locale): string[] {
   return renderToStaticMarkup(
-    <NextIntlClientProvider locale={locale} messages={messagesOf(locale)}>
+    <NextIntlClientProvider locale={locale} messages={messagesOf(locale)} timeZone="UTC">
       <Texts />
     </NextIntlClientProvider>
   )

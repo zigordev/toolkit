@@ -11,7 +11,8 @@
   "home": {
     "title": "Template",
     "apiDown": "The API does not answer.",
-    "account": "Your account"
+    "account": "Your account",
+    "notes": "Your notes"
   },
   "problems": {
     "wrongCredentials": "The email or the password is wrong.",
@@ -90,5 +91,34 @@
     "title": "Something went wrong",
     "text": "The page could not load. Try again in a moment.",
     "retry": "Try again"
+  },
+  "notes": {
+    "title": "Your notes",
+    "new": "New note",
+    "searchLabel": "Search the titles",
+    "search": "Search",
+    "filterLabel": "Show",
+    "allNotes": "All",
+    "openNotes": "Open",
+    "doneNotes": "Done",
+    "open": "Open",
+    "done": "Done",
+    "markDone": "Done",
+    "empty": "No notes yet. Write the first one.",
+    "noMatch": "No note matches.",
+    "more": "Show more",
+    "loadFailed": "The notes could not load. Try again in a moment.",
+    "newTitle": "New note",
+    "titleLabel": "Title",
+    "bodyLabel": "Text",
+    "save": "Save note",
+    "saved": "Note saved.",
+    "saveFailed": "The note was not saved. Try again.",
+    "back": "All notes",
+    "delete": "Delete note",
+    "deleteQuestion": "Delete this note for good?",
+    "deleteForGood": "Delete it",
+    "keep": "Keep it",
+    "deleteFailed": "The note was not deleted. Try again."
   }
 }
