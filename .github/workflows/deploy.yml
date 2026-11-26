@@ -115,7 +115,7 @@ jobs:
           echo "images=$images" >> "$GITHUB_OUTPUT"
 
       - name: Sign in to AWS with the target's role
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        uses: aws-actions/configure-aws-credentials@45666896f5d8e0f10ae255413f3a4cdd03bdc8f5 # v6.3.1
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/platform-deploy-${{ inputs.target }}
           role-session-name: deploy-${{ inputs.target }}-${{ github.run_id }}
