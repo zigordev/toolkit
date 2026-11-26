@@ -1,6 +1,6 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the Button today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the Button, the form fields and the alert today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
@@ -8,6 +8,10 @@ The design system's components, and the one stylesheet that dresses them: the Bu
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Button`     | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state |
 | `LinkButton` | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                |
+| `TextField`  | A labelled one-line input, of any text type, with an optional description and an error                                                                                          |
+| `TextArea`   | The same field with a text area, for text of several lines                                                                                                                      |
+| `Checkbox`   | A labelled checkbox, with an optional description                                                                                                                               |
+| `Alert`      | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
 | `ui.css`     | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in both modes, on this Mac.
@@ -44,6 +48,25 @@ The Button is Base UI's button with the brand's look on top. It is a `type="butt
 
 Its focus ring follows the tokens, its spinner slows to a third of its speed when the system asks for less motion, and in forced colours it draws its border in the system's colours.
 
+### The fields
+
+`TextField` and `TextArea` are Base UI's Field with an input or a text area inside. Base UI ties the parts together: the label names the control, and the description and the error describe it, so a screen reader reads all three.
+
+| Prop          | What it does                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `label`       | The visible name of the control. Every field has one                                                               |
+| `description` | A hint under the control, which assistive technology reads with it                                                 |
+| `error`       | A message under the control. While it is set, the control says `aria-invalid` and its border takes the danger role |
+| `ref`         | Reaches the input or the text area itself, so React Hook Form's `register` works on it                             |
+
+Every other prop goes to the input or the text area: `name`, `type`, `autoComplete`, `required`, `disabled`, `rows` and the rest.
+
+`Checkbox` is the browser's own checkbox, coloured with the accent role, with its label beside it. It is not Base UI's checkbox, because that one renders its hidden input with an inline `style` attribute, and the strict content security policy of the web apps blocks inline styles. The browser's checkbox needs no script, works in a plain form, and keeps its own keyboard and forced-colours behaviour.
+
+### The alert
+
+`Alert` is a box for a message the person has to see: a form that failed, a step that worked. A `warning` or a `danger` alert has the role `alert`, so a screen reader reads it as soon as it appears. An `info` or a `success` alert has the role `status`, which waits for a pause. It holds no script, so a server component can render it.
+
 ### The stories, which are the tests
 
 Each component has a `*.stories.tsx` beside it. A story is one state of the component, and its `play` function is a test: it clicks, types and checks, as a person would.
@@ -76,7 +99,7 @@ import '@zigordev/ui/ui.css';
 Then use the components:
 
 ```tsx
-import { Button, LinkButton } from '@zigordev/ui';
+import { Alert, Button, Checkbox, LinkButton, TextArea, TextField } from '@zigordev/ui';
 
 <Button onClick={save} loading={saving}>Save note</Button>
 <Button variant="outline" tone="neutral" onClick={cancel}>Cancel</Button>
@@ -84,6 +107,11 @@ import { Button, LinkButton } from '@zigordev/ui';
   <TrashIcon />
 </Button>
 <LinkButton href="/notes/new">New note</LinkButton>
+
+<TextField label="Title" error={errors.title?.message} {...register('title')} />
+<TextArea label="Body" rows={6} {...register('body')} />
+<Checkbox label="Done" {...register('done')} />
+<Alert tone="danger">The note was not saved.</Alert>
 ```
 
 With Next.js, `LinkButton` hands its look to Next's own link:
