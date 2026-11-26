@@ -5,7 +5,15 @@ z.config({ jitless: true });
 
 export const passwordLength = { shortest: 15, longest: 128 } as const;
 
-export type FieldProblem = 'required' | 'email' | 'too-short' | 'too-long';
+export const noteLength = { title: 200, body: 10_000 } as const;
+
+export type FieldProblem =
+  | 'required'
+  | 'email'
+  | 'password-too-short'
+  | 'password-too-long'
+  | 'title-too-long'
+  | 'body-too-long';
 
 const filled = z.string().trim().min(1, { error: 'required' });
 const email = filled.pipe(z.email({ error: 'email' }));
@@ -16,13 +24,18 @@ export const signUpFields = z.object({
   name: filled,
   email,
   password: password
-    .min(passwordLength.shortest, { error: 'too-short' })
-    .max(passwordLength.longest, { error: 'too-long' }),
+    .min(passwordLength.shortest, { error: 'password-too-short' })
+    .max(passwordLength.longest, { error: 'password-too-long' }),
 });
 export const codeFields = z.object({ code: filled, trust: z.boolean() });
 export const passkeyFields = z.object({ name: filled });
 export const passwordFields = z.object({ password });
 export const confirmFields = z.object({ code: filled });
+export const noteFields = z.object({
+  title: filled.max(noteLength.title, { error: 'title-too-long' }),
+  body: z.string().max(noteLength.body, { error: 'body-too-long' }),
+  done: z.boolean(),
+});
 
 export type SignInValues = z.output<typeof signInFields>;
 export type SignUpValues = z.output<typeof signUpFields>;
@@ -30,6 +43,7 @@ export type CodeValues = z.output<typeof codeFields>;
 export type PasskeyValues = z.output<typeof passkeyFields>;
 export type PasswordValues = z.output<typeof passwordFields>;
 export type ConfirmValues = z.output<typeof confirmFields>;
+export type NoteValues = z.output<typeof noteFields>;
 
 export function zodResolver<Input extends FieldValues, Output extends FieldValues>(
   schema: z.ZodType<Output, Input>

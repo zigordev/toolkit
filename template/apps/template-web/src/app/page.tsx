@@ -16,6 +16,7 @@ export default async function Home() {
       <h1>{t('title')}</h1>
       <p>{greeting ?? t('apiDown')}</p>
       <div className={styles.actions}>
+        <LinkButton render={<Link href="/notes" />}>{t('notes')}</LinkButton>
         <LinkButton render={<Link href="/account" />} variant="outline" tone="neutral">
           {t('account')}
         </LinkButton>

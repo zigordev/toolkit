@@ -23,7 +23,7 @@ describe('the pages for a missing page and a failure', () => {
     const t = textsIn('en');
 
     const html = renderToStaticMarkup(
-      <NextIntlClientProvider locale="en" messages={messagesOf('en')}>
+      <NextIntlClientProvider locale="en" messages={messagesOf('en')} timeZone="UTC">
         <Failure reset={() => undefined} />
       </NextIntlClientProvider>
     );

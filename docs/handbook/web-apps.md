@@ -45,6 +45,12 @@ Every element comes from the design system: `TextField`, `TextArea`, `Checkbox`,
 
 Every form uses React Hook Form, with a Zod schema from `src/lib/forms.ts` and the small resolver there. A field that fails shows its message under it in the person's language, says `aria-invalid`, and takes the focus. The schemas turn Zod's JIT off, with `z.config({ jitless: true })`, because Zod otherwise tries `new Function` once in the browser, which the policy refuses and reports.
 
+### Reading and writing the API
+
+The notes pages of the template show the way. A server component reads the API on the server through the product's typed client, with the person's cookie, so the data arrives in the page and the page works before its script loads. A component in the browser writes through TanStack Query, with `openapi-react-query` on the same typed client, and then asks the server for the page again with `router.refresh()`. The state of a list lives in its address, such as `/notes?status=done&q=milk`.
+
+In containers the ingress sends `/api` to the API. The dev server and the page check have no ingress, so a route under `src/app/api/v1/` hands those requests on to the API.
+
 ### The content security policy
 
 `src/proxy.ts` runs before every page. It makes a fresh nonce, a random value of 16 bytes, and sets this policy on the page, and on the request that Next.js renders, which stamps the nonce on each of its own scripts:
@@ -90,14 +96,14 @@ The plugin is installed from npm at the catalog's exact version, and `settings.j
 
 ### The page check
 
-`browser/pages.test.ts` starts the web app from its build with `next start`, with a small stand-in for the API, and opens every page in Chromium through Playwright: in English and in Spanish, in light and in dark, signed in where a page needs it, and the 404 page too. On each it checks that:
+`browser/pages.test.ts` starts the web app from its build with `next start`, with a small stand-in for the API, and opens every page in Chromium through Playwright: in English and in Spanish, in light and in dark, signed in where a page needs it, the notes pages and the 404 page too. On each it checks that:
 
 - the page answers with its status and its policy;
 - `<html lang>` is the language asked for;
 - axe finds nothing;
 - the policy blocked nothing, and the browser logged no error.
 
-One more case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. `pnpm test:pages` runs it, after `pnpm build`, and the pipeline's Stories job runs it after the stories, in the pinned Playwright image.
+One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. `pnpm test:pages` runs it, after `pnpm build`, and the pipeline's Stories job runs it after the stories, in the pinned Playwright image.
 
 ### Changing a text in Fink
 
