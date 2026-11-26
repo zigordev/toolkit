@@ -1,8 +1,12 @@
 'use client';
 
+import { Alert, Button, TextField } from '@zigordev/ui';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { getAuthClient } from '../../lib/auth-client.ts';
+import { useFieldError } from '../../lib/field-errors.ts';
+import { confirmFields, passkeyFields, passwordFields, zodResolver } from '../../lib/forms.ts';
 import { useProblemText } from '../../lib/problems.ts';
 import {
   addPasskey,
@@ -12,93 +16,134 @@ import {
   signOut,
   type TwoFactorSetup,
 } from '../../lib/sign-in.ts';
+import styles from '../forms.module.css';
+
+interface Notice {
+  readonly tone: 'success' | 'danger';
+  readonly text: string;
+}
 
 export function AccountActions() {
   const t = useTranslations('account');
   const problemText = useProblemText();
-  const [message, setMessage] = useState<string | null>(null);
+  const fieldError = useFieldError();
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
+  const passkey = useForm({ resolver: zodResolver(passkeyFields), defaultValues: { name: '' } });
+  const password = useForm({
+    resolver: zodResolver(passwordFields),
+    defaultValues: { password: '' },
+  });
+  const confirm = useForm({ resolver: zodResolver(confirmFields), defaultValues: { code: '' } });
 
-  function formOf(event: FormEvent<HTMLFormElement>): FormData {
-    event.preventDefault();
-    return new FormData(event.currentTarget);
-  }
+  const addOne = passkey.handleSubmit(async (values) => {
+    const result = await addPasskey(getAuthClient(), values);
+    setNotice(
+      result === 'added'
+        ? { tone: 'success', text: t('passkeyAdded') }
+        : { tone: 'danger', text: problemText(result, t('passkeyFailed')) }
+    );
+  });
 
-  async function addOne(event: FormEvent<HTMLFormElement>) {
-    const result = await addPasskey(getAuthClient(), formOf(event));
-    setMessage(result === 'added' ? t('passkeyAdded') : problemText(result, t('passkeyFailed')));
-  }
-
-  async function startTwoFactor(event: FormEvent<HTMLFormElement>) {
-    const result = await enableTwoFactor(getAuthClient(), formOf(event));
+  const startTwoFactor = password.handleSubmit(async (values) => {
+    const result = await enableTwoFactor(getAuthClient(), values);
     if (typeof result === 'string') {
-      setMessage(problemText(result, t('turnOnFailed')));
+      setNotice({ tone: 'danger', text: problemText(result, t('turnOnFailed')) });
     } else {
       setSetup(result);
-      setMessage(null);
+      setNotice(null);
     }
-  }
+  });
 
-  async function finishTwoFactor(event: FormEvent<HTMLFormElement>) {
-    const result = await confirmTwoFactor(getAuthClient(), formOf(event));
+  const finishTwoFactor = confirm.handleSubmit(async (values) => {
+    const result = await confirmTwoFactor(getAuthClient(), values);
     if (result === 'on') {
       setSetup(null);
-      setMessage(t('twoFactorOn'));
+      setNotice({ tone: 'success', text: t('twoFactorOn') });
     } else {
-      setMessage(problemText(result, t('turnOnFailed')));
+      setNotice({ tone: 'danger', text: problemText(result, t('turnOnFailed')) });
     }
-  }
+  });
 
   async function askToDelete() {
     const result = await deleteAccount(getAuthClient());
-    setMessage(result === 'asked' ? t('deleteAsked') : problemText(result, t('deleteFailed')));
+    setNotice(
+      result === 'asked'
+        ? { tone: 'success', text: t('deleteAsked') }
+        : { tone: 'danger', text: problemText(result, t('deleteFailed')) }
+    );
   }
 
   return (
     <>
-      <section>
-        <h2>{t('passkeys')}</h2>
-        <form onSubmit={addOne}>
-          <label>
-            {t('deviceName')} <input name="name" required />
-          </label>
-          <button type="submit">{t('addPasskey')}</button>
+      <section className={styles.section} aria-labelledby="passkeys">
+        <h2 id="passkeys">{t('passkeys')}</h2>
+        <form className={styles.form} onSubmit={addOne} noValidate>
+          <TextField
+            label={t('deviceName')}
+            error={fieldError(passkey.formState.errors.name?.message)}
+            {...passkey.register('name')}
+          />
+          <Button type="submit" variant="soft" loading={passkey.formState.isSubmitting}>
+            {t('addPasskey')}
+          </Button>
         </form>
       </section>
-      <section>
-        <h2>{t('twoFactor')}</h2>
+      <section className={styles.section} aria-labelledby="two-factor">
+        <h2 id="two-factor">{t('twoFactor')}</h2>
         {setup === null ? (
-          <form onSubmit={startTwoFactor}>
-            <label>
-              {t('password')}{' '}
-              <input name="password" type="password" autoComplete="current-password" required />
-            </label>
-            <button type="submit">{t('turnOn')}</button>
+          <form className={styles.form} onSubmit={startTwoFactor} noValidate>
+            <TextField
+              label={t('password')}
+              type="password"
+              autoComplete="current-password"
+              error={fieldError(password.formState.errors.password?.message)}
+              {...password.register('password')}
+            />
+            <Button type="submit" variant="soft" loading={password.formState.isSubmitting}>
+              {t('turnOn')}
+            </Button>
           </form>
         ) : (
-          <form onSubmit={finishTwoFactor}>
-            <p>{t('totpAddress', { address: setup.totpURI })}</p>
-            <p>{t('backupCodes', { codes: setup.backupCodes.join(' ') })}</p>
-            <label>
-              {t('firstCode')} <input name="code" autoComplete="one-time-code" required />
-            </label>
-            <button type="submit">{t('confirm')}</button>
+          <form className={styles.form} onSubmit={finishTwoFactor} noValidate>
+            <p>{t('totpAddress')}</p>
+            <code className={styles.address}>{setup.totpURI}</code>
+            <p>{t('backupCodes')}</p>
+            <ul className={styles.codes}>
+              {setup.backupCodes.map((code) => (
+                <li key={code}>
+                  <code>{code}</code>
+                </li>
+              ))}
+            </ul>
+            <TextField
+              label={t('firstCode')}
+              autoComplete="one-time-code"
+              error={fieldError(confirm.formState.errors.code?.message)}
+              {...confirm.register('code')}
+            />
+            <Button type="submit" loading={confirm.formState.isSubmitting}>
+              {t('confirm')}
+            </Button>
           </form>
         )}
       </section>
-      <section>
-        <h2>{t('leave')}</h2>
-        <button
-          type="button"
-          onClick={() => signOut(getAuthClient(), (path) => window.location.assign(path))}
-        >
-          {t('signOut')}
-        </button>
-        <button type="button" onClick={askToDelete}>
-          {t('delete')}
-        </button>
+      <section className={styles.section} aria-labelledby="leave">
+        <h2 id="leave">{t('leave')}</h2>
+        <div className={styles.choices}>
+          <Button
+            variant="outline"
+            tone="neutral"
+            onClick={() => signOut(getAuthClient(), (path) => window.location.assign(path))}
+          >
+            {t('signOut')}
+          </Button>
+          <Button variant="outline" tone="danger" onClick={askToDelete}>
+            {t('delete')}
+          </Button>
+        </div>
       </section>
-      {message === null ? null : <p role="status">{message}</p>}
+      {notice === null ? null : <Alert tone={notice.tone}>{notice.text}</Alert>}
     </>
   );
 }

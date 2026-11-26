@@ -1,4 +1,12 @@
 import type { AuthClient } from '@zigordev/auth/client';
+import type {
+  CodeValues,
+  ConfirmValues,
+  PasskeyValues,
+  PasswordValues,
+  SignInValues,
+  SignUpValues,
+} from './forms.ts';
 
 export type Go = (path: string) => void;
 
@@ -12,10 +20,6 @@ export interface TwoFactorSetup {
 interface Failure {
   readonly code?: string | undefined;
   readonly status?: number | undefined;
-}
-
-function text(form: FormData, name: string): string {
-  return String(form.get(name) ?? '').trim();
 }
 
 export function problemOf(error: Failure): Problem {
@@ -42,14 +46,11 @@ export function problemOf(error: Failure): Problem {
 
 export async function signInWithPassword(
   client: AuthClient,
-  form: FormData,
+  values: SignInValues,
   next: string,
   go: Go
 ): Promise<Problem | null> {
-  const { data, error } = await client.signIn.email({
-    email: text(form, 'email'),
-    password: String(form.get('password') ?? ''),
-  });
+  const { data, error } = await client.signIn.email(values);
   if (error !== null) {
     return problemOf(error);
   }
@@ -77,23 +78,16 @@ export async function signInWithPasskey(
   return null;
 }
 
-export async function signUp(client: AuthClient, form: FormData): Promise<Problem | null> {
-  const { error } = await client.signUp.email({
-    name: text(form, 'name'),
-    email: text(form, 'email'),
-    password: String(form.get('password') ?? ''),
-    callbackURL: '/account',
-  });
+export async function signUp(client: AuthClient, values: SignUpValues): Promise<Problem | null> {
+  const { error } = await client.signUp.email({ ...values, callbackURL: '/account' });
   return error === null ? null : problemOf(error);
 }
 
 export async function verifyCode(
   client: AuthClient,
-  form: FormData,
+  { code, trust: trustDevice }: CodeValues,
   go: Go
 ): Promise<Problem | null> {
-  const code = text(form, 'code');
-  const trustDevice = form.get('trust') === 'on';
   const { error } =
     code.length === 6
       ? await client.twoFactor.verifyTotp({ code, trustDevice })
@@ -105,18 +99,19 @@ export async function verifyCode(
   return null;
 }
 
-export async function addPasskey(client: AuthClient, form: FormData): Promise<'added' | Problem> {
-  const result = await client.passkey.addPasskey({ name: text(form, 'name') });
+export async function addPasskey(
+  client: AuthClient,
+  values: PasskeyValues
+): Promise<'added' | Problem> {
+  const result = await client.passkey.addPasskey(values);
   return result?.error ? problemOf(result.error) : 'added';
 }
 
 export async function enableTwoFactor(
   client: AuthClient,
-  form: FormData
+  values: PasswordValues
 ): Promise<TwoFactorSetup | Problem> {
-  const { data, error } = await client.twoFactor.enable({
-    password: String(form.get('password') ?? ''),
-  });
+  const { data, error } = await client.twoFactor.enable(values);
   if (error === null && data !== null && data.method === 'totp') {
     return { totpURI: data.totpURI, backupCodes: data.backupCodes };
   }
@@ -125,9 +120,9 @@ export async function enableTwoFactor(
 
 export async function confirmTwoFactor(
   client: AuthClient,
-  form: FormData
+  values: ConfirmValues
 ): Promise<'on' | Problem> {
-  const { error } = await client.twoFactor.verifyTotp({ code: text(form, 'code') });
+  const { error } = await client.twoFactor.verifyTotp(values);
   return error === null ? 'on' : problemOf(error);
 }
 

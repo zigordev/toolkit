@@ -22,11 +22,12 @@ The API tests run on a real PostgreSQL because a stand-in for the database hides
 
 Two commands run the tests, and each says what it covers:
 
-| Command             | Runs                                                                                                             | Who runs it                                                        |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `pnpm check`        | Everything, with coverage against a floor of 90%                                                                 | You, before a push, and the pipeline                               |
-| `pnpm check:quick`  | Everything that needs no container, without coverage, in about a minute                                          | The push hook, before every push                                   |
-| `pnpm test:stories` | The design system's stories in Chromium, in light and in dark, with axe and with coverage against the same floor | You, after a change to a component, and the pipeline's Stories job |
+| Command             | Runs                                                                                                                                                                  | Who runs it                                                        |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `pnpm check`        | Everything, with coverage against a floor of 90%                                                                                                                      | You, before a push, and the pipeline                               |
+| `pnpm check:quick`  | Everything that needs no container, without coverage, in about a minute                                                                                               | The push hook, before every push                                   |
+| `pnpm test:stories` | The design system's stories in Chromium, in light and in dark, with axe and with coverage against the same floor                                                      | You, after a change to a component, and the pipeline's Stories job |
+| `pnpm test:pages`   | Every page of the template's web app in Chromium, in English and Spanish, in light and in dark, with axe and its content security policy. It needs `pnpm build` first | You, after a change to a page, and the pipeline's Stories job      |
 
 A test that needs a container sits in a file named `*.db.test.ts`. Those files belong to a Vitest project of their own, named after the app or package with `:db` at the end, and that project's global setup starts the container. `check:quick` leaves out every project whose name ends in `:db`, so a push never waits for Docker.
 

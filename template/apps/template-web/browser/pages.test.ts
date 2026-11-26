@@ -1,0 +1,226 @@
+import { type ChildProcess, spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { createServer, type Server, type ServerResponse } from 'node:http';
+import { createRequire } from 'node:module';
+import { type AddressInfo, createServer as createTcpServer } from 'node:net';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import AxeBuilder from '@axe-core/playwright';
+import { type Browser, chromium } from 'playwright';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+declare global {
+  interface Window {
+    blockedByPolicy: string[];
+    ranWithoutNonce?: boolean;
+  }
+}
+
+const folder = fileURLToPath(new URL('..', import.meta.url));
+const next = createRequire(import.meta.url).resolve('next/dist/bin/next');
+const sessionCookie = 'template.session_token';
+
+const session = {
+  user: {
+    id: '01938c2e-0000-7000-8000-000000000001',
+    email: 'ada@example.com',
+    name: 'Ada Lovelace',
+    emailVerified: true,
+    image: null,
+    createdAt: '2026-11-25T10:00:00.000Z',
+    updatedAt: '2026-11-25T10:00:00.000Z',
+  },
+  session: {
+    id: '01938c2e-0000-7000-8000-000000000002',
+    userId: '01938c2e-0000-7000-8000-000000000001',
+    expiresAt: '2026-12-02T10:00:00.000Z',
+    createdAt: '2026-11-25T10:00:00.000Z',
+    updatedAt: '2026-11-25T10:00:00.000Z',
+  },
+};
+
+interface Visit {
+  readonly path: string;
+  readonly signedIn: boolean;
+  readonly status: number;
+}
+
+const visits: readonly Visit[] = [
+  { path: '/', signedIn: false, status: 200 },
+  { path: '/sign-in', signedIn: false, status: 200 },
+  { path: '/sign-up', signedIn: false, status: 200 },
+  { path: '/two-factor', signedIn: false, status: 200 },
+  { path: '/account', signedIn: true, status: 200 },
+  { path: '/no-such-page', signedIn: false, status: 404 },
+];
+
+const locales = ['en', 'es'] as const;
+const schemes = ['light', 'dark'] as const;
+
+let api: Server;
+let app: ChildProcess;
+let output = '';
+let base = '';
+let browser: Browser;
+
+function answer(response: ServerResponse, body: unknown): void {
+  response.writeHead(200, { 'content-type': 'application/json' });
+  response.end(JSON.stringify(body));
+}
+
+function standInApi(): Server {
+  return createServer((request, response) => {
+    const path = new URL(request.url ?? '/', 'http://stand-in').pathname;
+    const signedIn = (request.headers.cookie ?? '').includes(`${sessionCookie}=`);
+    if (path === '/api/v1/hello') {
+      answer(response, { message: 'Hello from the stand-in' });
+    } else if (path === '/api/auth/get-session') {
+      answer(response, signedIn ? session : null);
+    } else if (path === '/health') {
+      answer(response, { status: 'ok' });
+    } else {
+      response.writeHead(404);
+      response.end();
+    }
+  });
+}
+
+async function freePort(): Promise<number> {
+  const probe = createTcpServer();
+  await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
+  const { port } = probe.address() as AddressInfo;
+  await new Promise((resolve) => probe.close(resolve));
+  return port;
+}
+
+async function ready(seconds: number): Promise<void> {
+  const deadline = Date.now() + seconds * 1000;
+  while (Date.now() < deadline) {
+    const up = await fetch(`${base}/health`).then(
+      (response) => response.ok,
+      () => false
+    );
+    if (up) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`the web app did not get ready:\n${output}`);
+}
+
+beforeAll(async () => {
+  if (!existsSync(join(folder, '.next', 'BUILD_ID'))) {
+    throw new Error('run pnpm build first');
+  }
+  api = standInApi();
+  await new Promise<void>((resolve) => api.listen(0, '127.0.0.1', resolve));
+  const port = await freePort();
+  base = `http://127.0.0.1:${port}`;
+  app = spawn(process.execPath, [next, 'start', '-p', String(port), '-H', '127.0.0.1'], {
+    cwd: folder,
+    env: {
+      PATH: process.env.PATH,
+      NODE_ENV: 'production',
+      NEXT_TELEMETRY_DISABLED: '1',
+      OTEL_SERVICE_NAME: 'template-web',
+      LOG_LEVEL: 'warn',
+      API_URL: `http://127.0.0.1:${(api.address() as AddressInfo).port}`,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  app.stdout?.on('data', (chunk: Buffer) => {
+    output += chunk.toString();
+  });
+  app.stderr?.on('data', (chunk: Buffer) => {
+    output += chunk.toString();
+  });
+  await ready(30);
+  browser = await chromium.launch();
+});
+
+afterAll(async () => {
+  await browser?.close();
+  app?.kill('SIGKILL');
+  await new Promise((resolve) => api?.close(resolve));
+});
+
+const cases = visits.flatMap((visit) =>
+  locales.flatMap((locale) => schemes.map((scheme) => ({ ...visit, locale, scheme })))
+);
+
+describe('every page', () => {
+  it.each(cases)(
+    '$path in $locale and $scheme has no axe finding and breaks no rule of the policy',
+    async ({ path, signedIn, status, locale, scheme }) => {
+      const context = await browser.newContext({ locale, colorScheme: scheme });
+      if (signedIn) {
+        await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+      }
+      await context.addInitScript(() => {
+        window.blockedByPolicy = [];
+        document.addEventListener('securitypolicyviolation', (event) => {
+          window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
+        });
+      });
+      const page = await context.newPage();
+      const errors: string[] = [];
+      const ownStatus = `the server responded with a status of ${status}`;
+      page.on('console', (message) => {
+        if (message.type() === 'error' && !(status !== 200 && message.text().includes(ownStatus))) {
+          errors.push(message.text());
+        }
+      });
+      page.on('pageerror', (error) => errors.push(error.message));
+
+      try {
+        const response = await page.goto(`${base}${path}`, { waitUntil: 'networkidle' });
+
+        expect(response?.status()).toBe(status);
+        expect(response?.headers()['content-security-policy']).toMatch(
+          /script-src 'self' 'nonce-[^']+' 'strict-dynamic'/
+        );
+        expect(await page.getAttribute('html', 'lang')).toBe(locale);
+        const { violations } = await new AxeBuilder({ page }).analyze();
+        expect(
+          violations.map(
+            (violation) =>
+              `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`
+          )
+        ).toEqual([]);
+        expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+        expect(errors).toEqual([]);
+      } finally {
+        await context.close();
+      }
+    }
+  );
+});
+
+describe('the policy', () => {
+  it('refuses a script that carries no nonce, and reports it', async () => {
+    const context = await browser.newContext();
+    await context.addInitScript(() => {
+      window.blockedByPolicy = [];
+      document.addEventListener('securitypolicyviolation', (event) => {
+        window.blockedByPolicy.push(`${event.violatedDirective} ${event.blockedURI}`);
+      });
+    });
+    const page = await context.newPage();
+    await page.route(`${base}/`, async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        '</head>',
+        '<script>window.ranWithoutNonce = true;</script></head>'
+      );
+      await route.fulfill({ response, body });
+    });
+    try {
+      await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+
+      expect(await page.evaluate(() => window.ranWithoutNonce)).toBeUndefined();
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual(['script-src-elem inline']);
+    } finally {
+      await context.close();
+    }
+  });
+});

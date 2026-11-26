@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { messagesOf } from './messages.ts';
 
 const request = vi.hoisted(() => ({ cookie: undefined as string | undefined, language: '' }));
 
@@ -17,12 +18,15 @@ afterEach(() => {
   request.language = '';
 });
 
-async function configFor(): Promise<{ locale: string; messages: { language: { label: string } } }> {
+interface Config {
+  readonly locale: string;
+  readonly messages: unknown;
+  readonly timeZone: string;
+}
+
+async function configFor(): Promise<Config> {
   const { default: config } = await import('./request.ts');
-  return (await (config as unknown as () => Promise<unknown>)()) as {
-    locale: string;
-    messages: { language: { label: string } };
-  };
+  return (await (config as unknown as () => Promise<Config>)()) as Config;
 }
 
 describe('the request config', () => {
@@ -32,7 +36,8 @@ describe('the request config', () => {
     const config = await configFor();
 
     expect(config.locale).toBe('es');
-    expect(config.messages.language.label).toBe('Idioma');
+    expect(config.timeZone).toBe('UTC');
+    expect(config.messages).toBe(messagesOf('es'));
   });
 
   it('gives the language the person chose in the cookie', async () => {
@@ -42,6 +47,6 @@ describe('the request config', () => {
     const config = await configFor();
 
     expect(config.locale).toBe('en');
-    expect(config.messages.language.label).toBe('Language');
+    expect(config.messages).toBe(messagesOf('en'));
   });
 });

@@ -1,28 +1,36 @@
 'use client';
 
+import { Alert, Button, TextField } from '@zigordev/ui';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { getAuthClient } from '../../lib/auth-client.ts';
+import { useFieldError } from '../../lib/field-errors.ts';
+import { signInFields, zodResolver } from '../../lib/forms.ts';
 import { useProblemText } from '../../lib/problems.ts';
 import { signInWithGoogle, signInWithPasskey, signInWithPassword } from '../../lib/sign-in.ts';
+import styles from '../forms.module.css';
 
 const go = (path: string) => window.location.assign(path);
 
 export function SignInForm({ next }: { readonly next: string }) {
   const t = useTranslations('signIn');
   const problemText = useProblemText();
+  const fieldError = useFieldError();
   const [message, setMessage] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(signInFields),
+    defaultValues: { email: '', password: '' },
+  });
 
-  async function withPassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const problem = await signInWithPassword(
-      getAuthClient(),
-      new FormData(event.currentTarget),
-      next,
-      go
-    );
+  const withPassword = handleSubmit(async (values) => {
+    const problem = await signInWithPassword(getAuthClient(), values, next, go);
     setMessage(problem === null ? null : problemText(problem, t('failed')));
-  }
+  });
 
   async function withGoogle() {
     const problem = await signInWithGoogle(getAuthClient(), next);
@@ -36,30 +44,34 @@ export function SignInForm({ next }: { readonly next: string }) {
 
   return (
     <>
-      <form onSubmit={withPassword}>
-        <label>
-          {t('email')} <input name="email" type="email" autoComplete="username webauthn" required />
-        </label>
-        <label>
-          {t('password')}{' '}
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            minLength={15}
-            maxLength={128}
-            required
-          />
-        </label>
-        <button type="submit">{t('submit')}</button>
+      <form className={styles.form} onSubmit={withPassword} noValidate>
+        <TextField
+          label={t('email')}
+          type="email"
+          autoComplete="username webauthn"
+          error={fieldError(errors.email?.message)}
+          {...register('email')}
+        />
+        <TextField
+          label={t('password')}
+          type="password"
+          autoComplete="current-password"
+          error={fieldError(errors.password?.message)}
+          {...register('password')}
+        />
+        <Button type="submit" loading={isSubmitting}>
+          {t('submit')}
+        </Button>
       </form>
-      <button type="button" onClick={withGoogle}>
-        {t('google')}
-      </button>
-      <button type="button" onClick={withPasskey}>
-        {t('passkey')}
-      </button>
-      {message === null ? null : <p role="alert">{message}</p>}
+      <div className={styles.choices}>
+        <Button variant="outline" tone="neutral" onClick={withGoogle}>
+          {t('google')}
+        </Button>
+        <Button variant="outline" tone="neutral" onClick={withPasskey}>
+          {t('passkey')}
+        </Button>
+      </div>
+      {message === null ? null : <Alert tone="danger">{message}</Alert>}
     </>
   );
 }

@@ -5,6 +5,7 @@ packages:
   - template/packages/*
 
 catalog:
+  "@axe-core/playwright": 4.14.1
   "@biomejs/biome": 2.6.9
   "@commitlint/cli": 21.2.4
   "@commitlint/lint": 21.2.4
@@ -47,6 +48,7 @@ catalog:
   react: 19.3.1
   react-dom: 19.3.1
   react-email: 6.11.16
+  react-hook-form: 7.92.0
   semantic-release: 25.0.9
   storybook: 10.6.9
   typescript: 7.0.2

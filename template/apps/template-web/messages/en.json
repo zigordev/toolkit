@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Template"
+    "name": "Template",
+    "home": "Template, the start page"
   },
   "language": {
     "label": "Language",
@@ -35,12 +36,13 @@
     "title": "Sign up",
     "name": "Name",
     "email": "Email",
-    "password": "Password, {min} to {max} characters",
+    "password": "Password",
     "submit": "Sign up",
     "sent": "Check your inbox: a link there confirms your address and signs you in.",
     "failed": "The account could not be created.",
     "haveAccount": "Already have an account?",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "passwordHint": "From {min} to {max} characters."
   },
   "twoFactor": {
     "title": "Your authenticator code",
@@ -61,8 +63,8 @@
     "password": "Your password",
     "turnOn": "Turn on two-factor",
     "turnOnFailed": "Two-factor could not be turned on.",
-    "totpAddress": "Add this address to your authenticator app: {address}",
-    "backupCodes": "Keep these backup codes somewhere safe: {codes}",
+    "totpAddress": "Add this address to your authenticator app:",
+    "backupCodes": "Keep these backup codes somewhere safe:",
     "firstCode": "The first code from the app",
     "confirm": "Confirm",
     "twoFactorOn": "Two-factor is on.",
@@ -71,5 +73,22 @@
     "delete": "Delete my account",
     "deleteAsked": "Check your inbox: a link there deletes your account.",
     "deleteFailed": "The request failed."
+  },
+  "fields": {
+    "required": "Fill this in.",
+    "email": "Enter an email address, such as ada@example.com.",
+    "tooShort": "Use at least {min} characters.",
+    "tooLong": "Use at most {max} characters.",
+    "invalid": "Check this value."
+  },
+  "notFound": {
+    "title": "This page does not exist",
+    "text": "The address may be wrong, or the page may have moved.",
+    "home": "Go to the start page"
+  },
+  "failure": {
+    "title": "Something went wrong",
+    "text": "The page could not load. Try again in a moment.",
+    "retry": "Try again"
   }
 }

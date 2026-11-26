@@ -42,33 +42,22 @@ function clientAnswering(answers: Record<string, Answer | undefined>) {
   return { client, auth: client as unknown as AuthClient };
 }
 
-function form(values: Record<string, string>): FormData {
-  const data = new FormData();
-  for (const [name, value] of Object.entries(values)) {
-    data.set(name, value);
-  }
-  return data;
-}
-
 describe('signing in with a password', () => {
   it('goes on to the next page, and leaves the second factor to its own page', async () => {
     const go = vi.fn();
     const { client, auth } = clientAnswering({});
 
     expect(
-      await signInWithPassword(
-        auth,
-        form({ email: ' ada@example.com ', password: 'p' }),
-        '/notes',
-        go
-      )
+      await signInWithPassword(auth, { email: 'ada@example.com', password: 'p' }, '/notes', go)
     ).toBeNull();
     expect(client.signIn.email).toHaveBeenCalledWith({ email: 'ada@example.com', password: 'p' });
     expect(go).toHaveBeenCalledWith('/notes');
 
     const twoFactor = clientAnswering({ email: ok({ twoFactorRedirect: true }) });
     go.mockClear();
-    expect(await signInWithPassword(twoFactor.auth, form({}), '/notes', go)).toBeNull();
+    expect(
+      await signInWithPassword(twoFactor.auth, { email: '', password: '' }, '/notes', go)
+    ).toBeNull();
     expect(go).not.toHaveBeenCalled();
   });
 
@@ -78,13 +67,18 @@ describe('signing in with a password', () => {
     expect(
       await signInWithPassword(
         clientAnswering({ email: failed('INVALID_EMAIL_OR_PASSWORD') }).auth,
-        form({}),
+        { email: '', password: '' },
         '/',
         go
       )
     ).toBe('wrong-credentials');
     expect(
-      await signInWithPassword(clientAnswering({ email: failed() }).auth, form({}), '/', go)
+      await signInWithPassword(
+        clientAnswering({ email: failed() }).auth,
+        { email: '', password: '' },
+        '/',
+        go
+      )
     ).toBe('failed');
     expect(go).not.toHaveBeenCalled();
   });
@@ -115,16 +109,20 @@ describe('the other ways to sign in', () => {
   it('signs up and sends the confirmation link to the account page', async () => {
     const { client, auth } = clientAnswering({});
 
-    expect(
-      await signUp(auth, form({ name: 'Ada', email: 'ada@example.com', password: 'p' }))
-    ).toBeNull();
+    expect(await signUp(auth, { name: 'Ada', email: 'ada@example.com', password: 'p' })).toBeNull();
     expect(client.signUp.email).toHaveBeenCalledWith({
       name: 'Ada',
       email: 'ada@example.com',
       password: 'p',
       callbackURL: '/account',
     });
-    expect(await signUp(clientAnswering({ signUp: failed() }).auth, form({}))).toBe('failed');
+    expect(
+      await signUp(clientAnswering({ signUp: failed() }).auth, {
+        name: '',
+        email: '',
+        password: '',
+      })
+    ).toBe('failed');
   });
 });
 
@@ -133,9 +131,9 @@ describe('the second factor', () => {
     const go = vi.fn();
     const { client, auth } = clientAnswering({});
 
-    expect(await verifyCode(auth, form({ code: '123456', trust: 'on' }), go)).toBeNull();
+    expect(await verifyCode(auth, { code: '123456', trust: true }, go)).toBeNull();
     expect(client.twoFactor.verifyTotp).toHaveBeenCalledWith({ code: '123456', trustDevice: true });
-    await verifyCode(auth, form({ code: 'abcde-fghij' }), go);
+    await verifyCode(auth, { code: 'abcde-fghij', trust: false }, go);
     expect(client.twoFactor.verifyBackupCode).toHaveBeenCalledWith({
       code: 'abcde-fghij',
       trustDevice: false,
@@ -144,7 +142,7 @@ describe('the second factor', () => {
     expect(
       await verifyCode(
         clientAnswering({ totp: failed('INVALID_CODE') }).auth,
-        form({ code: '000000' }),
+        { code: '000000', trust: false },
         go
       )
     ).toBe('wrong-code');
@@ -158,17 +156,23 @@ describe('the second factor', () => {
     };
 
     expect(
-      await enableTwoFactor(clientAnswering({ enable: ok(setup) }).auth, form({ password: 'p' }))
+      await enableTwoFactor(clientAnswering({ enable: ok(setup) }).auth, { password: 'p' })
     ).toEqual({ totpURI: setup.totpURI, backupCodes: ['a', 'b'] });
     expect(
-      await enableTwoFactor(clientAnswering({ enable: ok({ method: 'otp' }) }).auth, form({}))
+      await enableTwoFactor(clientAnswering({ enable: ok({ method: 'otp' }) }).auth, {
+        password: '',
+      })
     ).toBe('failed');
     expect(
-      await enableTwoFactor(clientAnswering({ enable: failed('INVALID_PASSWORD') }).auth, form({}))
+      await enableTwoFactor(clientAnswering({ enable: failed('INVALID_PASSWORD') }).auth, {
+        password: '',
+      })
     ).toBe('wrong-credentials');
-    expect(await confirmTwoFactor(clientAnswering({}).auth, form({ code: '123456' }))).toBe('on');
+    expect(await confirmTwoFactor(clientAnswering({}).auth, { code: '123456' })).toBe('on');
     expect(
-      await confirmTwoFactor(clientAnswering({ totp: failed('OTP_HAS_EXPIRED') }).auth, form({}))
+      await confirmTwoFactor(clientAnswering({ totp: failed('OTP_HAS_EXPIRED') }).auth, {
+        code: '',
+      })
     ).toBe('wrong-code');
   });
 });
@@ -178,8 +182,8 @@ describe('the account page', () => {
     const go = vi.fn();
     const { client, auth } = clientAnswering({});
 
-    expect(await addPasskey(auth, form({ name: 'Laptop' }))).toBe('added');
-    expect(await addPasskey(clientAnswering({ addPasskey: failed() }).auth, form({}))).toBe(
+    expect(await addPasskey(auth, { name: 'Laptop' })).toBe('added');
+    expect(await addPasskey(clientAnswering({ addPasskey: failed() }).auth, { name: '' })).toBe(
       'failed'
     );
     expect(await deleteAccount(auth)).toBe('asked');

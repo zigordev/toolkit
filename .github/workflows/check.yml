@@ -8,7 +8,7 @@ on:
         type: string
         default: ""
       stories:
-        description: Whether the repo has a design system whose stories run as browser tests, in light and in dark, with an accessibility check. They run in the pinned Playwright image, which holds the browsers.
+        description: Whether the repo has a design system whose stories run as browser tests, in light and in dark, with an accessibility check. They run in the pinned Playwright image, which holds the browsers. The same job then runs the script test:pages, when package.json has one.
         type: boolean
         default: false
 
@@ -92,6 +92,9 @@ jobs:
 
       - name: Run the stories in light and in dark
         run: pnpm run test:stories
+
+      - name: Run every page in Chromium, with axe and the content security policy
+        run: pnpm run --if-present test:pages
 
   title:
     name: Title

@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Template"
+    "name": "Template",
+    "home": "Template, la página de inicio"
   },
   "language": {
     "label": "Idioma",
@@ -35,12 +36,13 @@
     "title": "Crear una cuenta",
     "name": "Nombre",
     "email": "Correo",
-    "password": "Contraseña, de {min} a {max} caracteres",
+    "password": "Contraseña",
     "submit": "Crear la cuenta",
     "sent": "Revisa tu bandeja de entrada: un enlace confirma tu dirección y te deja dentro.",
     "failed": "No se ha podido crear la cuenta.",
     "haveAccount": "¿Ya tienes cuenta?",
-    "signIn": "Entrar"
+    "signIn": "Entrar",
+    "passwordHint": "De {min} a {max} caracteres."
   },
   "twoFactor": {
     "title": "Tu código de autenticación",
@@ -61,8 +63,8 @@
     "password": "Tu contraseña",
     "turnOn": "Activar el doble factor",
     "turnOnFailed": "No se ha podido activar el doble factor.",
-    "totpAddress": "Añade esta dirección a tu aplicación de autenticación: {address}",
-    "backupCodes": "Guarda estos códigos de respaldo en un lugar seguro: {codes}",
+    "totpAddress": "Añade esta dirección a tu aplicación de autenticación:",
+    "backupCodes": "Guarda estos códigos de respaldo en un lugar seguro:",
     "firstCode": "El primer código de la aplicación",
     "confirm": "Confirmar",
     "twoFactorOn": "El doble factor está activado.",
@@ -71,5 +73,22 @@
     "delete": "Borrar mi cuenta",
     "deleteAsked": "Revisa tu bandeja de entrada: un enlace borra tu cuenta.",
     "deleteFailed": "La petición ha fallado."
+  },
+  "fields": {
+    "required": "Rellena este campo.",
+    "email": "Escribe una dirección de correo, como ada@example.com.",
+    "tooShort": "Usa al menos {min} caracteres.",
+    "tooLong": "Usa como mucho {max} caracteres.",
+    "invalid": "Revisa este valor."
+  },
+  "notFound": {
+    "title": "Esta página no existe",
+    "text": "Puede que la dirección esté mal o que la página se haya movido.",
+    "home": "Ir a la página de inicio"
+  },
+  "failure": {
+    "title": "Algo ha fallado",
+    "text": "La página no se ha podido cargar. Vuelve a intentarlo en un momento.",
+    "retry": "Volver a intentarlo"
   }
 }

@@ -8,10 +8,10 @@ export default async function Account() {
   const user = await getNextAuth().requireUser('/account');
   const t = await getTranslations('account');
   return (
-    <main>
+    <>
       <h1>{t('title')}</h1>
       <p>{t('who', { name: user.name, email: user.email })}</p>
       <AccountActions />
-    </main>
+    </>
   );
 }
