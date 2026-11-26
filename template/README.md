@@ -260,11 +260,7 @@ Start the shared services and the template, from this folder:
 pnpm local:up
 ```
 
-Then start the notifications service in its containers, from the `notifications` folder. It has to run in a container, because Mailpit takes mail only on the shared network: its port for mail is not published on this Mac. Start only its own project, because its `pnpm local:up` would first run `zigordev-stack up` from the `@zigordev/stack` that notifications holds, which can be older than the template's:
-
-```bash
-docker compose --file compose.yaml --file compose.local.yaml up --build --detach --wait
-```
+The shared services start the notifications service too, from its published image, after Kafka's topics and users are made. Nothing else has to run.
 
 Sign up at `http://template.localhost/sign-up`, or at `http://localhost:3001/sign-up` with the dev servers of [hot reload](#while-you-edit-one-app-hot-reload). The email arrives in Mailpit at `http://mail.localhost` within a few seconds, from `no-reply@zigordev.com`, and its button confirms the address and signs the person in. The API's `email.requested` and `email.sent`, and the service's `email.accepted` and `email.sent`, carry the same trace.
 
