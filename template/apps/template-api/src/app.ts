@@ -85,6 +85,7 @@ export async function buildApp(options: AppOptions) {
       ...(relayInterval === undefined ? {} : { relay: { interval: relayInterval } }),
     });
     addHealthComponent(app, events.health);
+    addHealthComponent(app, events.topics);
     app.addHook('onClose', () => events.stop());
   }
   await app.register(hello, { prefix: '/api/v1', service, flags: flags.client });

@@ -80,11 +80,33 @@ export interface RunConsumerOptions {
 export interface RunningConsumer {
   readonly group: string;
   readonly healthy: () => boolean;
+  readonly missingTopic: () => boolean;
   stop(): Promise<void>;
 }
 
 class Stopped extends Error {
   override readonly name = 'Stopped';
+}
+
+const unknownTopicMessage = /^Unknown topic /;
+
+export function namesUnknownTopic(error: unknown, seen: Set<unknown> = new Set()): boolean {
+  if (typeof error !== 'object' || error === null || seen.has(error)) {
+    return false;
+  }
+  seen.add(error);
+  const { apiId, code, message } = error as { apiId?: unknown; code?: unknown; message?: unknown };
+  if (apiId === 'UNKNOWN_TOPIC_OR_PARTITION') {
+    return true;
+  }
+  if (code === 'PLT_KFK_USER' && typeof message === 'string' && unknownTopicMessage.test(message)) {
+    return true;
+  }
+  const nested = (error as { errors?: unknown }).errors;
+  if (Array.isArray(nested) && nested.some((item) => namesUnknownTopic(item, seen))) {
+    return true;
+  }
+  return namesUnknownTopic((error as { cause?: unknown }).cause, seen);
 }
 
 type Incoming = Message<string, Buffer, string, string>;
@@ -113,6 +135,7 @@ export function runConsumer(options: RunConsumerOptions): RunningConsumer {
   let stopping = false;
   let busy = false;
   let connected = false;
+  let missing = false;
   let consumer: Consumer<string, Buffer, string, string> | undefined;
   let stream: MessagesStream<string, Buffer, string, string> | undefined;
   const abort = new AbortController();
@@ -316,6 +339,7 @@ export function runConsumer(options: RunConsumerOptions): RunningConsumer {
       });
       current.startLagMonitoring({ topics: [...definition.topics] }, options.lagInterval ?? 30_000);
       connected = true;
+      missing = false;
       for await (const message of stream) {
         busy = true;
         try {
@@ -348,6 +372,11 @@ export function runConsumer(options: RunConsumerOptions): RunningConsumer {
           break;
         }
         failures += 1;
+        const confirmed = namesUnknownTopic(error);
+        if (confirmed && !missing) {
+          logger.error({ event: 'events.topic_missing', group, topics: [...definition.topics] });
+        }
+        missing = confirmed;
         logger.warn({ event: 'events.consumer_restarting', group, attempt: failures, error });
       }
       if (stopping) {
@@ -364,6 +393,7 @@ export function runConsumer(options: RunConsumerOptions): RunningConsumer {
   return {
     group,
     healthy: () => connected && consumer !== undefined,
+    missingTopic: () => missing,
     stop: async () => {
       stopping = true;
       abort.abort();

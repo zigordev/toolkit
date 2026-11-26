@@ -25,6 +25,7 @@ export interface StartEventsOptions {
 
 export interface Events {
   readonly health: HealthComponent;
+  readonly topics: HealthComponent;
   flush(): Promise<number>;
   stop(): Promise<void>;
 }
@@ -98,6 +99,11 @@ export function startEvents(options: StartEventsOptions): Events {
         await producer.metadata({ topics: [], forceUpdate: true });
         return consumers.every((consumer) => consumer.healthy()) ? 'up' : 'down';
       },
+    },
+    topics: {
+      name: 'topics',
+      required: true,
+      check: async () => (consumers.some((consumer) => consumer.missingTopic()) ? 'down' : 'up'),
     },
     flush: async () => (relay === undefined ? 0 : relay.flush()),
     stop: async () => {

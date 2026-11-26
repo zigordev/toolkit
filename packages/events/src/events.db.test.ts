@@ -551,10 +551,44 @@ describe('the consumer', () => {
         60_000
       );
       await expect(events.health.check()).rejects.toThrow();
+      expect(await events.topics.check()).toBe('up');
     } finally {
       const started = Date.now();
       await events.stop();
       expect(Date.now() - started).toBeLessThan(10_000);
+    }
+  });
+
+  it('fails the required topics part while Kafka says a topic it reads does not exist, says so, and passes again once the topic exists', async () => {
+    const topic = uniqueTopic('absent');
+    const group = uniqueTopic('group');
+    const events = startEvents({
+      connection: connection(),
+      db,
+      logger,
+      relay: false,
+      consumers: [
+        defineConsumer({
+          group,
+          topics: [topic],
+          events: [noteCreated],
+          handle: async () => undefined,
+        }),
+      ],
+    });
+    try {
+      expect(events.topics).toEqual(expect.objectContaining({ name: 'topics', required: true }));
+      expect(events.health).toEqual(expect.objectContaining({ name: 'kafka', required: false }));
+      await waitFor(async () => (await events.topics.check()) === 'down', 60_000);
+      expect(await events.health.check()).toBe('down');
+      expect(
+        logs.find('events.topic_missing').filter((line) => line.group === group)
+      ).not.toHaveLength(0);
+      await createTopics(connection(), [topic, deadLetterTopicOf(topic)]);
+      await waitFor(async () => (await events.topics.check()) === 'up', 60_000);
+      await waitFor(async () => (await events.health.check()) === 'up', 60_000);
+    } finally {
+      await events.stop();
     }
   });
 
