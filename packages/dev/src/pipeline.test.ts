@@ -342,8 +342,9 @@ describe('the Browser job', () => {
     );
   });
 
-  it('is asked for by this repo, which holds the design system and the template', () => {
+  it('is asked for by this repo and by the template, whose web app has browser tests', () => {
     expect(job(caller, 'pipeline')).toContain('      browser: true\n');
+    expect(job(product, 'pipeline')).toContain('      browser: true\n');
   });
 });
 
