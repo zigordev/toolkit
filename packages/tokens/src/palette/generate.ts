@@ -52,6 +52,7 @@ function rampsOf(
       inkHue,
       overrides: overrides[mode],
       backgrounds: backgrounds?.[mode],
+      readableOnSoft: backgrounds !== undefined,
     });
   return { light: build('light'), dark: build('dark') };
 }
