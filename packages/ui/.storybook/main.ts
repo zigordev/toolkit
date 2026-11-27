@@ -7,6 +7,7 @@ export const prebundled = [
   '@base-ui/react/dialog',
   '@base-ui/react/drawer',
   '@base-ui/react/field',
+  '@base-ui/react/menu',
   '@base-ui/react/use-render',
   'lucide-react',
   'react-dom/server',

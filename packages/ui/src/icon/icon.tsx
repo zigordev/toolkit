@@ -1,9 +1,11 @@
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   CircleUser,
   House,
   Languages,
+  LogOut,
   type LucideIcon,
   Menu,
   NotebookPen,
@@ -16,11 +18,13 @@ import {
 import { classNames } from '../internal/class-names.ts';
 
 const glyphs = {
+  check: Check,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
   'circle-user': CircleUser,
   house: House,
   languages: Languages,
+  'log-out': LogOut,
   menu: Menu,
   'notebook-pen': NotebookPen,
   'panel-left-close': PanelLeftClose,

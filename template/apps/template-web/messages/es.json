@@ -23,6 +23,14 @@
     "close": "Cerrar",
     "places": "Ir a"
   },
+  "accountMenu": {
+    "label": "Tu cuenta, {name}",
+    "appearance": "Apariencia",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "settings": "Ajustes de la cuenta"
+  },
   "home": {
     "title": "Template",
     "apiDown": "La API no contesta.",

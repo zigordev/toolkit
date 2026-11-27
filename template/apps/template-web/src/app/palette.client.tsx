@@ -4,7 +4,7 @@ import { type CommandGroup, CommandPalette, type Place } from '@zigordev/ui';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { type Locale, locales } from '../i18n/locales.ts';
-import { chooseLanguage } from './language.ts';
+import { setLanguage } from './language.ts';
 
 export interface PaletteTexts {
   readonly label: string;
@@ -20,12 +20,6 @@ export interface PaletteProps {
   readonly locale: Locale;
   readonly languages: Readonly<Record<Locale, string>>;
   readonly texts: PaletteTexts;
-}
-
-async function switchTo(locale: Locale): Promise<void> {
-  const form = new FormData();
-  form.set('locale', locale);
-  await chooseLanguage(form);
 }
 
 export function Palette({ places, locale, languages, texts }: PaletteProps) {
@@ -51,7 +45,7 @@ export function Palette({ places, locale, languages, texts }: PaletteProps) {
           icon: 'languages',
           lang: other,
           keywords: [texts.language],
-          onSelect: () => startTransition(() => switchTo(other)),
+          onSelect: () => startTransition(() => setLanguage(other)),
         })),
     },
   ];

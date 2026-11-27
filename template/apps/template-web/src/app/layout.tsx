@@ -3,13 +3,17 @@ import '@fontsource-variable/jetbrains-mono';
 import '@zigordev/ui/ui.css';
 import { AppShell, LinkButton, type Place, TopBar } from '@zigordev/ui';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { connection } from 'next/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { timeZone } from '../i18n/locales.ts';
+import { signedInUser } from '../lib/auth.ts';
 import { environmentOf, getConfig } from '../lib/config.ts';
+import { modeCookie, modeFrom } from '../lib/mode.ts';
+import { Account } from './account-menu.client.tsx';
 import { LanguageSwitch } from './language-switch.tsx';
 import styles from './layout.module.css';
 import { Navigation } from './navigation.client.tsx';
@@ -30,6 +34,11 @@ export default async function RootLayout({ children }: { readonly children: Reac
   const language = await getTranslations('language');
   const nav = await getTranslations('nav');
   const palette = await getTranslations('palette');
+  const accountMenu = await getTranslations('accountMenu');
+  const account = await getTranslations('account');
+  const mode = modeFrom((await cookies()).get(modeCookie)?.value);
+  const user = await signedInUser();
+  const languages = { en: language('en'), es: language('es') };
   const places = [
     { href: '/', label: nav('home'), icon: 'house' },
     { href: '/notes', label: nav('notes'), icon: 'notebook-pen' },
@@ -37,7 +46,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
   ] satisfies Place[];
   const config = getConfig();
   return (
-    <html lang={locale} data-mode="system">
+    <html lang={locale} data-mode={mode}>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages} timeZone={timeZone}>
           {config.RUM_URL === undefined ? null : (
@@ -67,7 +76,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
                     <Palette
                       places={places}
                       locale={locale}
-                      languages={{ en: language('en'), es: language('es') }}
+                      languages={languages}
                       texts={{
                         label: palette('label'),
                         placeholder: palette('placeholder'),
@@ -77,11 +86,33 @@ export default async function RootLayout({ children }: { readonly children: Reac
                         language: language('label'),
                       }}
                     />
-                    <LanguageSwitch
-                      current={locale}
-                      label={language('label')}
-                      names={{ en: language('en'), es: language('es') }}
-                    />
+                    {user === null ? (
+                      <LanguageSwitch
+                        current={locale}
+                        label={language('label')}
+                        names={languages}
+                      />
+                    ) : (
+                      <Account
+                        name={user.name}
+                        email={user.email}
+                        locale={locale}
+                        languages={languages}
+                        mode={mode}
+                        texts={{
+                          label: accountMenu('label', { name: user.name }),
+                          language: language('label'),
+                          appearance: accountMenu('appearance'),
+                          modes: {
+                            system: accountMenu('system'),
+                            light: accountMenu('light'),
+                            dark: accountMenu('dark'),
+                          },
+                          settings: accountMenu('settings'),
+                          signOut: account('signOut'),
+                        }}
+                      />
+                    )}
                   </>
                 }
               />

@@ -23,6 +23,14 @@
     "close": "Close",
     "places": "Go to"
   },
+  "accountMenu": {
+    "label": "Your account, {name}",
+    "appearance": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "settings": "Account settings"
+  },
   "home": {
     "title": "Template",
     "apiDown": "The API does not answer.",

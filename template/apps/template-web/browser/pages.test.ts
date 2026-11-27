@@ -104,6 +104,9 @@ function standInApi(): Server {
       answer(response, { message: 'Hello from the stand-in' });
     } else if (path === '/api/auth/get-session') {
       answer(response, signedIn ? session : null);
+    } else if (path === '/api/auth/sign-out' && request.method === 'POST') {
+      response.setHeader('set-cookie', `${sessionCookie}=; Path=/; Max-Age=0; HttpOnly`);
+      answer(response, { success: true });
     } else if (path === '/health') {
       answer(response, { status: 'ok' });
     } else if (path === '/api/v1/notes' && request.method === 'POST') {
@@ -315,6 +318,57 @@ describe('the main navigation', () => {
   });
 });
 
+describe('the account menu', () => {
+  it('turns the page dark and keeps it, switches the language and signs out, under the policy', async () => {
+    const context = await watchedContext({ locale: 'en', colorScheme: 'light' });
+    await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/account`, { waitUntil: 'networkidle' });
+
+      const t = textsIn('en');
+      const label = t('accountMenu.label', { name: session.user.name });
+      expect(await page.getAttribute('html', 'data-mode')).toBe('system');
+      await page.getByRole('button', { name: label }).click();
+      const menu = page.getByRole('menu', { name: label });
+      await menu.waitFor();
+      await page.waitForFunction(() => document.getAnimations().length === 0);
+      const { violations } = await new AxeBuilder({ page }).analyze();
+      expect(
+        violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`
+        )
+      ).toEqual([]);
+      expect(await menu.getByText(session.user.email).isVisible()).toBe(true);
+
+      await menu.getByRole('menuitemradio', { name: t('accountMenu.dark') }).click();
+      await page.waitForFunction(() => document.documentElement.dataset.mode === 'dark');
+      await expect
+        .poll(async () => (await context.cookies()).find((c) => c.name === 'template.mode')?.value)
+        .toBe('dark');
+      await page.reload({ waitUntil: 'networkidle' });
+      expect(await page.getAttribute('html', 'data-mode')).toBe('dark');
+
+      await page.getByRole('button', { name: label }).click();
+      await page.getByRole('menuitemradio', { name: t('language.es') }).click();
+      await page.waitForFunction(() => document.documentElement.lang === 'es');
+
+      const es = textsIn('es');
+      const spanish = es('accountMenu.label', { name: session.user.name });
+      await page.getByRole('button', { name: spanish }).click();
+      await page.getByRole('menuitem', { name: es('account.signOut') }).click();
+      await page.waitForURL(`${base}/`);
+      await page.getByRole('navigation', { name: es('language.label') }).waitFor();
+      expect(await page.getByRole('button', { name: spanish }).count()).toBe(0);
+      expect((await context.cookies()).some((c) => c.name === sessionCookie)).toBe(false);
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 describe('the breadcrumbs', () => {
   it('lead from a note back to the list, and shrink to the way back on a phone', async () => {
     const context = await watchedContext({ locale: 'es', colorScheme: 'light' });
@@ -351,7 +405,7 @@ describe('the command palette', () => {
     await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
     const page = await context.newPage();
     try {
-      await page.goto(`${base}/notes`, { waitUntil: 'networkidle' });
+      await page.goto(`${base}/`, { waitUntil: 'networkidle' });
 
       const t = textsIn('en');
       const dialog = page.getByRole('dialog', { name: t('palette.label') });

@@ -33,6 +33,13 @@
     outline-offset: var(--ds-focus-offset);
   }
 
+  @media (pointer: coarse) {
+    .ds-command-palette__trigger {
+      min-block-size: var(--ds-size-control-lg);
+      min-inline-size: var(--ds-size-control-lg);
+    }
+  }
+
   .ds-command-palette__trigger-icon {
     flex: none;
     inline-size: var(--ds-size-icon-sm);
