@@ -27,7 +27,7 @@ import * as z from 'zod';
 import { deadLetterTopicOf, defineConsumer } from './consumer.ts';
 import { defineEvent, type EventsOf } from './event.ts';
 import { createProducer, type Events, startEvents } from './events.ts';
-import { addToOutbox, type Database } from './outbox.ts';
+import { addToOutbox, type Database, startOutboxRelay } from './outbox.ts';
 import { clientOptions, type KafkaConnection } from './settings.ts';
 import { eventsOutbox, handledEvents } from './tables.ts';
 import { createTopics } from './testing.ts';
@@ -803,6 +803,47 @@ describe('the trace', () => {
 });
 
 describe('the outbox', () => {
+  it('lets a flush wait for the pass the relay began, so the relay never takes an event added after it', async () => {
+    let first = true;
+    const slowStart = {
+      transaction: async (...args: Parameters<Database['transaction']>) => {
+        if (first) {
+          first = false;
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+        return db.transaction(...args);
+      },
+    } as unknown as Database;
+    const sends: unknown[] = [];
+    const relay = startOutboxRelay({
+      db: slowStart,
+      producer: {
+        send: async (batch: unknown) => {
+          sends.push(batch);
+        },
+      } as unknown as Parameters<typeof startOutboxRelay>[0]['producer'],
+      sent: metrics.getMeter('events-test').createCounter('events.test.sent'),
+      logger,
+      interval: 60_000,
+    });
+    try {
+      expect(await relay.flush()).toBe(0);
+      await addToOutbox(db, {
+        topic: uniqueTopic('later'),
+        event: noteCreated,
+        data: { noteId, title: 'added after the flush' },
+      });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(eventsOutbox);
+      expect(row?.count).toBe(1);
+      expect(sends).toEqual([]);
+    } finally {
+      await relay.stop();
+      await db.delete(eventsOutbox);
+    }
+  });
+
   it('reports how many events wait, and how long the oldest has waited', async () => {
     const topic = await freshTopic('notes');
     await withEvents(
