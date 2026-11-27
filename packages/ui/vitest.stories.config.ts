@@ -1,23 +1,26 @@
 import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
-import { modes } from '@zigordev/tokens';
+import { modes, products } from '@zigordev/tokens';
 import { defineConfig } from 'vitest/config';
 import { prebundled } from './.storybook/main.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const configDir = fileURLToPath(new URL('./.storybook', import.meta.url));
 const floor = 90;
+const looks = ['template', ...products].flatMap((product) =>
+  modes.map((mode) => ({ product, mode }))
+);
 
 export default defineConfig({
   root,
   test: {
-    projects: modes.map((mode) => ({
+    projects: looks.map(({ product, mode }) => ({
       extends: true,
-      plugins: [storybookTest({ configDir, initialGlobals: { mode } })],
+      plugins: [storybookTest({ configDir, initialGlobals: { product, mode } })],
       optimizeDeps: { include: prebundled },
       test: {
-        name: `ui:stories ${mode}`,
+        name: `ui:stories ${product} ${mode}`,
         browser: {
           enabled: true,
           headless: true,

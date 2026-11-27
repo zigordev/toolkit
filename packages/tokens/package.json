@@ -22,6 +22,7 @@
   },
   "scripts": {
     "build": "terrazzo build --quiet && tsc -p tsconfig.build.json",
+    "generate": "node scripts/generate.ts && biome format --write src/tokens/color",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {

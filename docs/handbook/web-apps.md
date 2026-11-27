@@ -15,7 +15,7 @@ A product's web app is a Next.js app that shows what its API says. Every text a 
 | The `texts` rule   | `zigordev check`, in `pnpm check` and in CI             | Runs `inlang check`, which fails on a text missing or empty in one language, short of a variable, or used by no code                                           |
 | Fink               | A web editor at fink.inlang.com, run by inlang's makers | Lets a person who is not a developer change a text in the browser and push it to a branch, for a pull request. We host nothing. Step 6.5 tries it on this repo |
 
-| The design system | `@zigordev/ui` and its stylesheet, in every page | Every button, field, checkbox and message on a page, in light and in dark |
+| The design system | `@zigordev/ui` and its stylesheet, in every page | Every button, field, checkbox and message on a page, in light and in dark, in the product's own colours |
 | The proxy | `src/proxy.ts` in the web app | Gives each page a content security policy with a fresh nonce |
 | The page check | `browser/pages.test.ts` in the web app | Opens every page in Chromium, in both languages and both modes, and fails on an axe finding or on anything the policy blocks |
 
@@ -39,7 +39,7 @@ The address does not change with the language, as in November's apps. The page's
 
 ### The pages, on the design system
 
-The root layout loads the stylesheet of `@zigordev/ui` and its two fonts, from Fontsource, and sets `data-mode="system"` on `<html>`, so the page follows the person's light or dark setting. It draws a header, with the product's name and the language switch, and one `<main>`, which holds each page.
+The root layout loads the stylesheet of `@zigordev/ui` and its two fonts, from Fontsource, and sets `data-mode="system"` on `<html>`, so the page follows the person's light or dark setting. The template sets no `data-product`, so it wears the template's colours, lavender on anthracite. A product whose colours toolkit holds sets its own name there too, such as `data-product="gpool"`, as [record 0058](../adr/0058-each-product-wears-its-own-colours.md) says. It draws a header, with the product's name and the language switch, and one `<main>`, which holds each page.
 
 Every element comes from the design system: `TextField`, `TextArea`, `Checkbox`, `Button`, `LinkButton` and `Alert`. The app's own CSS Modules only place them, with the tokens: `layout.module.css` and `forms.module.css`.
 
