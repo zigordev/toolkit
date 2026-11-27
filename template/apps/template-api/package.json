@@ -32,6 +32,7 @@
     "@zigordev/email": "workspace:*",
     "@zigordev/events": "workspace:*",
     "@zigordev/flags": "workspace:*",
+    "@zigordev/live": "workspace:*",
     "@zigordev/notifications-events": "catalog:",
     "@zigordev/otel": "workspace:*",
     "drizzle-orm": "catalog:",

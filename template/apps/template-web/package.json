@@ -22,6 +22,7 @@
     "@tanstack/react-query": "catalog:",
     "@zigordev/auth": "workspace:*",
     "@zigordev/config": "workspace:*",
+    "@zigordev/live": "workspace:*",
     "@zigordev/otel": "workspace:*",
     "@zigordev/rum": "workspace:*",
     "@zigordev/ui": "workspace:*",

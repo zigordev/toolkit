@@ -82,6 +82,9 @@ const visits: readonly Visit[] = [
 const locales = ['en', 'es'] as const;
 const schemes = ['light', 'dark'] as const;
 
+const live = { holdOpen: false, streams: new Set<ServerResponse>() };
+let listed = [note];
+
 let api: Server;
 let app: ChildProcess;
 let output = '';
@@ -105,8 +108,20 @@ function standInApi(): Server {
       answer(response, { status: 'ok' });
     } else if (path === '/api/v1/notes' && request.method === 'POST') {
       answer(response, created, 201);
+    } else if (path === '/api/v1/live') {
+      response.writeHead(200, {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-cache, no-transform',
+      });
+      response.write(': ready\n\n');
+      if (live.holdOpen && (request.headers.cookie ?? '').includes(`${sessionCookie}=live-check`)) {
+        live.streams.add(response);
+        response.on('close', () => live.streams.delete(response));
+      } else {
+        response.end();
+      }
     } else if (path === '/api/v1/notes') {
-      answer(response, { items: [note] });
+      answer(response, { items: listed });
     } else if (path === `/api/v1/notes/${note.id}`) {
       answer(response, note);
     } else if (path === `/api/v1/notes/${created.id}`) {
@@ -276,6 +291,39 @@ describe('the notes', () => {
       expect(await page.getByRole('heading', { level: 1 }).textContent()).toBe('Bake bread');
       expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
     } finally {
+      await context.close();
+    }
+  });
+});
+
+describe('live updates', () => {
+  it('refresh the notes page when the API says a note changed, through the proxy', async () => {
+    live.holdOpen = true;
+    const context = await watchedContext({ locale: 'en' });
+    await context.addCookies([{ name: sessionCookie, value: 'live-check', url: base }]);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/notes`, { waitUntil: 'domcontentloaded' });
+      const deadline = Date.now() + 10_000;
+      while (live.streams.size === 0 && Date.now() < deadline) {
+        await page.waitForTimeout(50);
+      }
+      expect(live.streams.size).toBe(1);
+
+      listed = [{ ...note, title: 'Buy oat milk' }];
+      const change = { channel: 'notes:u1', changes: [{ type: 'note.updated', id: note.id }] };
+      for (const stream of live.streams) {
+        stream.write(`event: change\ndata: ${JSON.stringify(change)}\n\n`);
+      }
+
+      await page.getByText('Buy oat milk').waitFor({ timeout: 10_000 });
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      live.holdOpen = false;
+      listed = [note];
+      for (const stream of live.streams) {
+        stream.end();
+      }
       await context.close();
     }
   });

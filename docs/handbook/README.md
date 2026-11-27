@@ -38,7 +38,8 @@ The platform is built in eight phases, and a page is written in the phase that b
 | 18  | Sign-in                                             | Email, passkeys, two-factor and Google                                                            | In phase 6                                                                                                                                  |
 | 19  | [Feature flags](../../packages/flags/README.md)     | Shipping unfinished work switched off                                                             | Yes, as the README of `@zigordev/flags`                                                                                                     |
 | 20  | [Web apps](web-apps.md)                             | Pages, texts in two languages, and browser monitoring                                             | Yes                                                                                                                                         |
-| 21  | Operations                                          | The drills, the runbooks and the measures                                                         | In phase 7                                                                                                                                  |
+| 21  | [Live updates](../../packages/live/README.md)       | How a page hears at once that its data changed, and fetches it again                              | Yes, as the README of `@zigordev/live`                                                                                                      |
+| 22  | Operations                                          | The drills, the runbooks and the measures                                                         | In phase 7                                                                                                                                  |
 
 ## Reference
 

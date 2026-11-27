@@ -1,0 +1,10 @@
+{
+  "extends": "@zigordev/dev/tsconfig/node.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "${configDir}",
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "es2024"]
+  },
+  "include": ["${configDir}/src", "${configDir}/*.ts"]
+}

@@ -6,6 +6,7 @@ import { getNextAuth } from '../../../lib/auth.ts';
 import { notesApi } from '../../../lib/notes-api.ts';
 import styles from '../../layout.module.css';
 import { DeleteNote } from '../delete-note.client.tsx';
+import { LiveNotes } from '../live-notes.client.tsx';
 import { NoteForm } from '../note-form.client.tsx';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +30,7 @@ export default async function Note({ params }: NoteProps) {
   const t = await getTranslations('notes');
   return (
     <>
+      <LiveNotes noteId={data.id} />
       <div className={styles.actions}>
         <LinkButton render={<Link href="/notes" />} variant="ghost" tone="neutral" size="sm">
           {t('back')}

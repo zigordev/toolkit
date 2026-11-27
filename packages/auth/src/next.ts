@@ -93,10 +93,13 @@ export function forwardToApi(apiUrl: string, logger?: Logger): RouteHandler {
         headers,
         redirect: 'manual',
         cache: 'no-store',
+        signal: request.signal,
         ...(hasBody ? { body: await request.arrayBuffer() } : {}),
       });
     } catch (error) {
-      logger?.error({ event: 'auth.api_unreachable', error: maskedError(error) });
+      if (!request.signal.aborted) {
+        logger?.error({ event: 'auth.api_unreachable', error: maskedError(error) });
+      }
       return unavailable();
     }
     const responseHeaders = new Headers();

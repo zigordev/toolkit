@@ -6,6 +6,7 @@ import { getLogger } from '../../lib/logger.ts';
 import { hrefOf, type NotesSearch, queryOf, viewOf } from '../../lib/notes.ts';
 import { notesApi } from '../../lib/notes-api.ts';
 import styles from '../layout.module.css';
+import { LiveNotes } from './live-notes.client.tsx';
 import notes from './notes.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,7 @@ export default async function Notes({ searchParams }: NotesProps) {
   ];
   return (
     <>
+      <LiveNotes />
       <h1>{t('title')}</h1>
       <div className={styles.actions}>
         <LinkButton render={<Link href="/notes/new" />}>{t('new')}</LinkButton>

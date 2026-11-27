@@ -45,6 +45,7 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 | TanStack Query                   | The notes forms' writes from the browser, through `openapi-react-query` on the typed client              |
 | Playwright and axe               | Open every page in Chromium and check it for accessibility and for its content security policy           |
 | `@zigordev/rum`                  | Browser monitoring with Grafana Faro, once `RUM_URL` is set                                              |
+| `@zigordev/live`                 | Tells the notes pages at once that a note changed, so they fetch it again                                |
 | The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                       |
 | `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                 |
 | `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                             |
@@ -313,6 +314,15 @@ The pages follow the web rules. A server component reads the API on the server, 
 
 In containers the ingress sends `/api` to the API, so the browser's requests reach it at the page's own address. The dev server and the page check have no ingress, so `src/app/api/v1/[...path]/route.ts` hands those requests on to `API_URL`, as `src/app/api/auth/[...all]/route.ts` does for sign-in.
 
+## Live updates
+
+A notes page that is open hears at once when one of its notes changes, in another tab, on another device or through the API, and shows the change without a reload. [`@zigordev/live`](../packages/live/README.md) carries it, as [record 0044](../docs/adr/0044-live-updates-reach-pages-as-server-sent-events.md) says.
+
+- The API adds `GET /api/v1/live` when sign-in is on, in `apps/template-api/src/plugins/live.ts`. Each person hears only the channel of their own notes, `notes:<their id>`. An API key gets 403, because the stream is for pages.
+- The notes repository saves each new note, change and delete in a transaction that also sends a notice, `note.created`, `note.updated` or `note.deleted`, with the note's id. A note that belongs to nobody, made with an API key, sends none.
+- The web app's `apps/template-web/src/app/notes/live-notes.client.tsx` keeps the stream open on both notes pages. The list asks the server for the page again on any change, and a note's page on a change to that note.
+- The page check proves it on the built app: the stand-in API changes a note and sends the change, and the list shows the new title.
+
 ## The pages and their security
 
 Every page wears the design system, `@zigordev/ui`, and follows the person's light or dark setting. The root layout draws a header, with the product's name and the language switch, and one `<main>`. The forms use React Hook Form with the Zod schemas of `apps/template-web/src/lib/forms.ts`, so a field that fails says why under it, in the person's language. [Web apps](../docs/handbook/web-apps.md) explains each part.
@@ -464,8 +474,11 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 3, sign-in | Sign-in on `/api/auth/*`, `GET /api/v1/me`, the sign-in tables and the held emails, and the web app's pages                                             | `@zigordev/auth`, `@zigordev/email`                   | toolkit's step 6.3                                                |
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0 |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                       |
+| 7, live    | Live updates of the notes: the API's stream and notices, and the refresh of the notes pages                                                             | `@zigordev/live`                                      | toolkit's live-updates step                                       |
 
 Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, its third the design system, the content security policy and the page check, its fourth the notes pages, and its fifth browser monitoring, which needs `@zigordev/rum` on npm. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
+
+Slice 7 needs the people of slice 3 and the notes pages of slice 5, so a product that leaves out either leaves out slice 7 too. A product that copies the template before `@zigordev/live` is on npm leaves out slice 7.
 
 Slice 6 carries the emails of slice 3, so a product that leaves out slice 3 leaves out slice 6 too. A product that leaves out slice 6 alone gets back the emails that slice 3 held in the API, and its sign-in then runs only on the laptop.
 
