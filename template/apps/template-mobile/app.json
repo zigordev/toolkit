@@ -20,7 +20,8 @@
         {
           "faceIDPermission": false
         }
-      ]
+      ],
+      "./plugins/allow-local-http.cjs"
     ]
   }
 }

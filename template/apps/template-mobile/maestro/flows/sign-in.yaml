@@ -1,0 +1,35 @@
+appId: com.zigordev.template
+name: Sign in, stay signed in after a restart, and sign out
+---
+- runFlow: steps/start-clean.yaml
+- tapOn:
+    id: account
+- tapOn:
+    id: sign-in
+- assertVisible: Fill this in.
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MAESTRO_EMAIL}
+      PASSWORD: not-the-password-of-this-account
+- assertVisible: The email or the password is wrong.
+- tapOn:
+    id: password
+- eraseText: 40
+- inputText: ${MAESTRO_PASSWORD}
+- tapOn:
+    id: sign-in
+- assertVisible: ${MAESTRO_NAME}, ${MAESTRO_EMAIL}
+- stopApp
+- launchApp
+- tapOn:
+    id: account
+- assertVisible: ${MAESTRO_NAME}, ${MAESTRO_EMAIL}
+- tapOn:
+    id: sign-out
+- assertVisible:
+    id: greeting
+- tapOn:
+    id: account
+- assertVisible:
+    id: email

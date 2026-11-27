@@ -1,0 +1,45 @@
+appId: com.zigordev.template
+name: Page through the notes, filter them and search them
+---
+- runFlow: steps/start-clean.yaml
+- tapOn:
+    id: notes
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MAESTRO_LISTED_EMAIL}
+      PASSWORD: ${MAESTRO_LISTED_PASSWORD}
+- assertVisible: Note 21.*
+- scrollUntilVisible:
+    element:
+      id: more
+- tapOn:
+    id: more
+- scrollUntilVisible:
+    element: Note 01.*
+- assertNotVisible:
+    id: more
+- scrollUntilVisible:
+    element:
+      id: show-done
+    direction: UP
+- tapOn:
+    id: show-done
+- assertVisible: Note 20.*
+- assertNotVisible: Note 21.*
+- tapOn:
+    id: show-all
+- tapOn:
+    id: search
+- inputText: Note 1
+- tapOn:
+    id: find
+- assertVisible: Note 19.*
+- assertNotVisible: Note 21.*
+- tapOn:
+    id: search
+- eraseText: 10
+- inputText: zzz
+- tapOn:
+    id: find
+- assertVisible: No note matches.

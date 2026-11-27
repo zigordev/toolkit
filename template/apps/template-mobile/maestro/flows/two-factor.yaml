@@ -1,0 +1,21 @@
+appId: com.zigordev.template
+name: Sign in to an account with two-factor, with a backup code
+---
+- runFlow: steps/start-clean.yaml
+- tapOn:
+    id: account
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MAESTRO_GUARDED_EMAIL}
+      PASSWORD: ${MAESTRO_GUARDED_PASSWORD}
+- tapOn:
+    id: verify
+- assertVisible: Fill this in.
+- tapOn:
+    id: code
+- inputText: ${MAESTRO_BACKUP_CODE}
+- tapOn:
+    id: verify
+- assertVisible:
+    id: who

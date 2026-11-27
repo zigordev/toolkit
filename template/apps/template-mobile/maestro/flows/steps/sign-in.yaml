@@ -1,0 +1,10 @@
+appId: com.zigordev.template
+---
+- tapOn:
+    id: email
+- inputText: ${EMAIL}
+- tapOn:
+    id: password
+- inputText: ${PASSWORD}
+- tapOn:
+    id: sign-in

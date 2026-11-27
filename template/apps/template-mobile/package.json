@@ -13,7 +13,8 @@
     "dev": "expo start",
     "ios": "expo run:ios",
     "android": "expo run:android",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test:screens": "node maestro/run.ts"
   },
   "dependencies": {
     "@better-auth/expo": "catalog:",
@@ -38,8 +39,10 @@
     "use-intl": "catalog:"
   },
   "devDependencies": {
+    "@types/pg": "catalog:",
     "@types/react": "catalog:",
     "@zigordev/dev": "workspace:*",
+    "pg": "catalog:shipped",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
