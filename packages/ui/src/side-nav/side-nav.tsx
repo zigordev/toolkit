@@ -1,9 +1,10 @@
 'use client';
 
-import { type ReactElement, useState, useSyncExternalStore } from 'react';
+import { type ReactElement, useState } from 'react';
 import { Button } from '../button/button.tsx';
 import { Icon } from '../icon/icon.tsx';
 import { classNames } from '../internal/class-names.ts';
+import { useMediaQuery } from '../internal/use-media-query.ts';
 import { PlaceGroups } from '../places/place-groups.tsx';
 import type { Place, PlaceGroup } from '../places/places.ts';
 import { sideNavCookie } from './side-nav-cookie.ts';
@@ -18,22 +19,7 @@ export interface SideNavProps {
   readonly className?: string;
 }
 
-const wideScreen = '(width >= 75rem)';
 const aYear = 365 * 24 * 60 * 60 * 1000;
-
-function watchWidth(onChange: () => void) {
-  const query = window.matchMedia(wideScreen);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-}
-
-function isWide() {
-  return window.matchMedia(wideScreen).matches;
-}
-
-function wideOnTheServer() {
-  return true;
-}
 
 function stateOf(choice: boolean | undefined) {
   if (choice === undefined) return undefined;
@@ -62,7 +48,7 @@ export function SideNav({
   className,
 }: SideNavProps) {
   const [choice, setChoice] = useState(defaultOpen);
-  const wide = useSyncExternalStore(watchWidth, isWide, wideOnTheServer);
+  const wide = useMediaQuery('(width >= 75rem)', true);
   const open = choice ?? wide;
 
   function toggle() {

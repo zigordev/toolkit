@@ -1,10 +1,11 @@
 'use client';
 
 import { Drawer } from '@base-ui/react/drawer';
-import { type ReactElement, useState, useSyncExternalStore } from 'react';
+import { type ReactElement, useState } from 'react';
 import { Button } from '../button/button.tsx';
 import { Icon } from '../icon/icon.tsx';
 import { classNames } from '../internal/class-names.ts';
+import { useMediaQuery } from '../internal/use-media-query.ts';
 import { PlaceGroups } from '../places/place-groups.tsx';
 import type { Place, PlaceGroup } from '../places/places.ts';
 
@@ -19,22 +20,6 @@ export interface NavDrawerProps {
   readonly className?: string;
 }
 
-const phoneScreen = '(width < 37.5rem)';
-
-function watchWidth(onChange: () => void) {
-  const query = window.matchMedia(phoneScreen);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-}
-
-function isPhone() {
-  return window.matchMedia(phoneScreen).matches;
-}
-
-function phoneOnTheServer() {
-  return true;
-}
-
 export function NavDrawer({
   label,
   title,
@@ -47,7 +32,7 @@ export function NavDrawer({
 }: NavDrawerProps) {
   const [open, setOpen] = useState(false);
   const [openedAt, setOpenedAt] = useState(pathname);
-  const phone = useSyncExternalStore(watchWidth, isPhone, phoneOnTheServer);
+  const phone = useMediaQuery('(width < 37.5rem)', true);
   if (openedAt !== pathname) {
     setOpenedAt(pathname);
     setOpen(false);

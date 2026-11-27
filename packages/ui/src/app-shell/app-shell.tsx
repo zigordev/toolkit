@@ -16,14 +16,16 @@ export function SkipLink({ href, children }: SkipLinkProps) {
 
 export interface TopBarProps {
   readonly start: ReactNode;
+  readonly nav?: ReactNode;
   readonly end?: ReactNode;
   readonly className?: string;
 }
 
-export function TopBar({ start, end, className }: TopBarProps) {
+export function TopBar({ start, nav, end, className }: TopBarProps) {
   return (
     <header className={classNames('ds-top-bar', className)}>
       <div className="ds-top-bar__start">{start}</div>
+      {nav ? <div className="ds-top-bar__nav">{nav}</div> : null}
       {end ? <div className="ds-top-bar__end">{end}</div> : null}
     </header>
   );

@@ -111,6 +111,7 @@ describe('the CSS sources', () => {
     ['breadcrumbs.css', 'ds.components'],
     ['page-tabs.css', 'ds.components'],
     ['account-menu.css', 'ds.components'],
+    ['header-nav.css', 'ds.components'],
   ];
 
   it.each(files)('%s uses tokens only and stays in %s', (file, layer) => {
