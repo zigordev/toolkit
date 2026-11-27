@@ -150,7 +150,7 @@ export function startOutboxRelay(options: OutboxRelayOptions): OutboxRelay {
   let stopped = false;
   let wake: (() => void) | undefined;
 
-  const relayOnce = (): Promise<number> =>
+  const passOnce = (): Promise<number> =>
     options.db.transaction(async (tx) => {
       const rows = await tx
         .select({
@@ -176,6 +176,13 @@ export function startOutboxRelay(options: OutboxRelayOptions): OutboxRelay {
       );
       return rows.length;
     });
+
+  let previous: Promise<unknown> = Promise.resolve();
+  const relayOnce = (): Promise<number> => {
+    const pass = previous.then(passOnce, passOnce);
+    previous = pass.catch(() => undefined);
+    return pass;
+  };
 
   const pause = (ms: number): Promise<void> =>
     new Promise((resolve) => {

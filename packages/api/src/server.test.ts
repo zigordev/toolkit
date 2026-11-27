@@ -47,7 +47,12 @@ describe('serve', () => {
 describe('stop', () => {
   it('finishes the request in flight, closes the port, and ends with code 0', async () => {
     app = Fastify();
+    let arrived: () => void = () => {};
+    const received = new Promise<void>((resolve) => {
+      arrived = resolve;
+    });
     app.get('/slow', async () => {
+      arrived();
       await new Promise((resolve) => setTimeout(resolve, 200));
       return { done: true };
     });
@@ -55,7 +60,7 @@ describe('stop', () => {
     const base = `http://127.0.0.1:${portOf(app)}`;
 
     const inFlight = fetch(`${base}/slow`);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await received;
     const code = await server.stop('SIGTERM');
 
     expect(code).toBe(0);

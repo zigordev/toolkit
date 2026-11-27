@@ -64,7 +64,7 @@ A change to what an event holds gets a new version, such as `note.created` versi
 
 ### The outbox and the relay
 
-`addToOutbox` writes one row in `events_outbox`: the topic, the key, the event, and the trace of the request that saved it. The relay reads up to 100 rows each second, oldest first, sends them, and deletes them in the same transaction. It locks what it reads with `FOR UPDATE SKIP LOCKED`, so two running copies of the app, as during a deploy, never send the same rows at once. When a send fails, the rows stay, the relay writes `events.relay_failed`, and it tries again after a pause that doubles each time, up to 30 seconds.
+`addToOutbox` writes one row in `events_outbox`: the topic, the key, the event, and the trace of the request that saved it. The relay reads up to 100 rows each second, oldest first, sends them, and deletes them in the same transaction. It locks what it reads with `FOR UPDATE SKIP LOCKED`, so two running copies of the app, as during a deploy, never send the same rows at once. Within one copy, its passes never overlap: `flush()`, which sends what waits now, first waits for the pass already running. When a send fails, the rows stay, the relay writes `events.relay_failed`, and it tries again after a pause that doubles each time, up to 30 seconds.
 
 ### The consumer
 
@@ -213,7 +213,7 @@ app.addHook('onClose', () => events.stop());
 
 In tests, [`@zigordev/test/kafka`](../test/README.md) starts a real Kafka 4.4.0 with a signed-in user, the same way `@zigordev/test/postgres` starts PostgreSQL.
 
-That Kafka creates no topic by itself, the same as in production. `createTopics` from `@zigordev/events/testing` creates the topics a test needs, with one partition and one replica unless the options say more. It leaves a topic that exists, so two test files can ask for the same one, and it fails on a name that Kafka refuses. It is the one way a test creates topics, so a test never imports the Kafka client either:
+That Kafka creates no topic by itself, the same as in production. `createTopics` from `@zigordev/events/testing` creates the topics a test needs, with one partition and one replica unless the options say more. It leaves a topic that exists, so two test files can ask for the same one, and it fails on a name that Kafka refuses. It returns only once Kafka lists every topic it made, because Kafka confirms a new topic a moment before it lists it. It is the one way a test creates topics, so a test never imports the Kafka client either:
 
 ```ts
 import { deadLetterTopicOf } from '@zigordev/events';
