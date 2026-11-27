@@ -13,6 +13,16 @@ export interface Sandbox {
 
 export const owner = 'zigordev <zigordev@gmail.com>';
 
+function gitEnv(extra: Readonly<Record<string, string>> = {}): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const [name, value] of Object.entries(process.env)) {
+    if (!name.startsWith('GIT_')) {
+      env[name] = value;
+    }
+  }
+  return { ...env, ...extra };
+}
+
 function identityOf(who: string): { name: string; email: string } {
   const match = /^(.*) <(.*)>$/.exec(who);
   return { name: match?.[1] ?? '', email: match?.[2] ?? '' };
@@ -32,6 +42,7 @@ export function sandbox(files: Readonly<Record<string, string>> = {}): Sandbox {
         cwd: root,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
+        env: gitEnv(),
       }).trim();
     },
     commit(message, author = owner, committer = author) {
@@ -40,13 +51,12 @@ export function sandbox(files: Readonly<Record<string, string>> = {}): Sandbox {
       execFileSync('git', ['commit', '-q', '--allow-empty', '-m', message], {
         cwd: root,
         stdio: 'ignore',
-        env: {
-          ...process.env,
+        env: gitEnv({
           GIT_AUTHOR_NAME: by.name,
           GIT_AUTHOR_EMAIL: by.email,
           GIT_COMMITTER_NAME: through.name,
           GIT_COMMITTER_EMAIL: through.email,
-        },
+        }),
       });
     },
     remove() {

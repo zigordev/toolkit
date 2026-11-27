@@ -33,4 +33,4 @@ pre-push:
       run: "! grep -q ' refs/heads/main '"
     check:
       priority: 2
-      run: pnpm run check:quick
+      run: env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_COMMON_DIR -u GIT_OBJECT_DIRECTORY pnpm run check:quick
