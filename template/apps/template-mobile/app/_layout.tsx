@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@zigordev/ui-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -6,9 +6,10 @@ import { useState } from 'react';
 import { IntlProvider } from 'use-intl';
 import { deviceLocale } from '../src/locale';
 import { messages } from '../src/messages';
+import { createQueryClient } from '../src/query-client';
 
 export default function RootLayout() {
-  const [client] = useState(() => new QueryClient());
+  const [client] = useState(createQueryClient);
   const locale = deviceLocale();
   return (
     <IntlProvider
