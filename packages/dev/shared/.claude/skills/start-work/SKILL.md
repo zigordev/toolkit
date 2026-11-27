@@ -8,7 +8,8 @@ description: Start a change in a zigordev repo. Checks that the folder is clean 
 Run these steps in order, in the repo's own folder. Stop at the first one that fails, and say why.
 
 1. **Look for anything that waits for the owner.** An infrastructure change, a migration that deletes data, a new tool or service, a new major version and a change to repo settings each need a yes first. Ask now, before building.
-2. **Check the folder.** `git status --short --branch` must show `main` with nothing uncommitted. If it shows anything else, stop and ask. Never stash, commit or carry changes you did not make. Never work in a worktree or in a second copy of the repo.
+2. **Check the folder.** `git status --short --branch` must show `main` with nothing uncommitted. If it shows anything else, stop and ask. Never stash, commit or carry changes you did not make. Never work in a second copy of the repo.
+   - The one exception is `toolkit` while another session works in its folder. If this change touches other folders under `packages/` or `template/` than that session's, run `git fetch origin` and `git worktree add ~/Desktop/Personal/zigordev/.worktrees/toolkit-<short-summary> -b <type>/<short-summary> origin/main` from the toolkit folder. Do every later step inside that worktree, where step 5's branch already exists.
 3. **Check the identity.** `git config user.name` and `git config user.email` must print `zigordev` and `zigordev@gmail.com`. If either is missing or different, set both in this repo: `git config user.name zigordev` and `git config user.email zigordev@gmail.com`.
 4. **Check the account.** `gh config get user -h github.com` must print `zigordev`. If it prints another account, run `gh auth switch -u zigordev` and say that you did.
 5. **Branch.** Run `git fetch origin`, then `git switch -c <type>/<short-summary> origin/main`. The type is a Conventional Commits type, as in `fix/login-redirect`.
