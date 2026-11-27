@@ -26,7 +26,7 @@ catalog:
   "@tanstack/react-query": 5.108.4
   "@terrazzo/cli": 2.10.0
   "@terrazzo/plugin-css": 2.10.0
-  "@types/node": 26.6.10
+  "@types/node": 26.6.11
   "@types/pg": 8.23.1
   "@types/react": 19.3.3
   "@types/react-dom": 19.3.0
