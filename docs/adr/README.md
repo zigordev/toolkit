@@ -69,3 +69,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0059](0059-the-mobile-app-keeps-the-react-version-of-its-expo-sdk.md)                | The mobile app keeps the React version of its Expo SDK                   | 2026-11-27 | accepted                            |
 | [0060](0060-every-app-navigates-from-one-list-of-places.md)                           | Every app navigates from one list of places                              | 2026-11-27 | accepted                            |
 | [0061](0061-react-native-reads-the-tokens-as-javascript-values.md)                    | React Native reads the tokens as JavaScript values                       | 2026-11-27 | accepted                            |
+| [0062](0062-native-components-ship-as-their-own-package.md)                           | Native components ship as their own package                              | 2026-11-27 | accepted                            |

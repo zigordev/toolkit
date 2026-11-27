@@ -18,6 +18,8 @@
   "dependencies": {
     "@expo/metro-runtime": "catalog:",
     "@tanstack/react-query": "catalog:",
+    "@zigordev/tokens": "workspace:*",
+    "@zigordev/ui-native": "workspace:*",
     "expo": "catalog:",
     "expo-constants": "catalog:",
     "expo-linking": "catalog:",
