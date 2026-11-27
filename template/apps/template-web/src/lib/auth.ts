@@ -12,3 +12,12 @@ export function getNextAuth(): NextAuth {
   });
   return nextAuth;
 }
+
+export async function signedInUser() {
+  try {
+    return await getNextAuth().getUser();
+  } catch (error) {
+    getLogger().warn({ event: 'api.unreachable', error });
+    return null;
+  }
+}

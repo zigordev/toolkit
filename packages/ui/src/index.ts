@@ -1,3 +1,5 @@
+export type { AccountMenuProps, MenuChoice, MenuOption } from './account-menu/account-menu.tsx';
+export { AccountMenu, initialsOf } from './account-menu/account-menu.tsx';
 export type { AlertProps, AlertTone } from './alert/alert.tsx';
 export { Alert } from './alert/alert.tsx';
 export type { AppNavProps } from './app-shell/app-nav.tsx';

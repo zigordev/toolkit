@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { chooseLanguage } from './language.ts';
+import { chooseLanguage, setLanguage } from './language.ts';
 
 const jar = vi.hoisted(() => ({ set: vi.fn() }));
 
@@ -29,7 +29,19 @@ describe('choosing a language', () => {
 
   it('ignores a language it does not know', async () => {
     await chooseLanguage(form('fr'));
+    await setLanguage(undefined);
 
     expect(jar.set).not.toHaveBeenCalled();
+  });
+
+  it('takes the language as a value too, from the palette and the account menu', async () => {
+    await setLanguage('en');
+
+    expect(jar.set).toHaveBeenCalledWith('template.locale', 'en', {
+      path: '/',
+      maxAge: 31_536_000,
+      sameSite: 'lax',
+      httpOnly: true,
+    });
   });
 });

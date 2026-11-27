@@ -1,33 +1,35 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the side navigation with its drawer, breadcrumbs and page tabs, the command palette, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the side navigation with its drawer, breadcrumbs and page tabs, the command palette, the account menu, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
-| Export           | What it is                                                                                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state         |
-| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                        |
-| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                                  |
-| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                              |
-| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                                       |
-| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                                      |
-| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                           |
-| `TopBar`         | The bar at the top of a page: the product's name at the start, and actions such as the command palette and the language switch at the end                                               |
-| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                                       |
-| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                               |
-| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                        |
-| `SideNav`        | The side navigation of a tool with many sections: the app's places in groups, as a rail from 600 px wide, and from 840 px as a sidebar that closes to the rail and remembers the choice |
-| `NavDrawer`      | The menu button for the top bar of a phone, and the drawer it opens, with the same groups as `SideNav`                                                                                  |
-| `PlaceGroup`     | The type of a group of places, under an optional label                                                                                                                                  |
-| `sideNavCookie`  | The name of the cookie that keeps the person's choice for `SideNav`. `sideNavOpen` reads its value on the server                                                                        |
-| `Breadcrumbs`    | The way back from a deep page: the pages above it, as links, and its own name. On a phone, only the page above it                                                                       |
-| `PageTabs`       | The sections of one page, as links with their own addresses. It marks the current one                                                                                                   |
-| `PageLink`       | The type of a link with an address and a label, for `Breadcrumbs` and `PageTabs`. `Place` adds an icon to it                                                                            |
-| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                                   |
-| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                             |
-| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                              |
-| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                               |
+| Export           | What it is                                                                                                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state          |
+| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                         |
+| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                                   |
+| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                               |
+| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                                        |
+| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                                       |
+| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                            |
+| `TopBar`         | The bar at the top of a page: the product's name at the start, and actions such as the command palette and the language switch at the end                                                |
+| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                                        |
+| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                                |
+| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                         |
+| `SideNav`        | The side navigation of a tool with many sections: the app's places in groups, as a rail from 600 px wide, and from 840 px as a sidebar that closes to the rail and remembers the choice  |
+| `NavDrawer`      | The menu button for the top bar of a phone, and the drawer it opens, with the same groups as `SideNav`                                                                                   |
+| `PlaceGroup`     | The type of a group of places, under an optional label                                                                                                                                   |
+| `sideNavCookie`  | The name of the cookie that keeps the person's choice for `SideNav`. `sideNavOpen` reads its value on the server                                                                         |
+| `Breadcrumbs`    | The way back from a deep page: the pages above it, as links, and its own name. On a phone, only the page above it                                                                        |
+| `PageTabs`       | The sections of one page, as links with their own addresses. It marks the current one                                                                                                    |
+| `PageLink`       | The type of a link with an address and a label, for `Breadcrumbs` and `PageTabs`. `Place` adds an icon to it                                                                             |
+| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                                    |
+| `AccountMenu`    | The person's menu in the top bar: a button with their initials, which opens their name, their choices such as the language and light or dark, links such as their settings, and sign out |
+| `MenuChoice`     | The type of one choice in `AccountMenu`, such as the language: its label, the value chosen, the options and what runs on a change. `MenuOption` is one option                            |
+| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                              |
+| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                               |
+| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                                |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
 
@@ -104,6 +106,19 @@ A group's label names its list for assistive technology, in the rail too, where 
 A command is data: an id, a label, an icon from the list, keywords, a `lang` for a label in another language, and `onSelect`, which runs when the command is chosen and the palette closes. The app builds its commands from its places and its actions, so the palette finds the same places as `AppNav`. The app passes every text, so the palette speaks its language.
 
 Until it opens, the palette renders its button alone, which a server can render. The keys on the button come from the browser after the page starts, and the stylesheet draws them from a data attribute. So the server's HTML matches the browser's first render, and the keys are not part of the button's name, which is the label.
+
+### The account menu
+
+`AccountMenu` holds what belongs to the person signed in, as [record 0066](../../docs/adr/0066-the-account-menu-holds-the-persons-own-choices.md) says. Its button in the top bar shows their initials, which the stylesheet draws from a data attribute, so the button's name is the label the app passes, such as "Your account, Ada Lovelace".
+
+| Part     | What it shows                                                                                                                                                |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Who      | The person's name, and a detail such as their email                                                                                                          |
+| Choices  | One group per choice, such as the language and light or dark. The chosen option wears a check, and choosing another runs `onValueChange` and closes the menu |
+| Links    | Pages of the account, such as its settings, each with an icon, through the router's own link                                                                 |
+| Sign out | Runs `onSignOut`                                                                                                                                             |
+
+It is Base UI's menu: the arrow keys, Home and End move, Enter or a click chooses, Escape closes, and the focus goes back to the button. The open menu sits beside its button in the page, so it stays inside the top bar's landmark, where assistive technology expects it. A row is 40 px high, and the button and every row are 48 px on a touch screen. Until it opens, the menu renders its button alone, which a server can render.
 
 ### The icons
 
@@ -363,6 +378,41 @@ export function StrategyTabs({ tabs }: { tabs: readonly PageLink[] }) {
       tabs={tabs}
       pathname={usePathname()}
       renderLink={(tab) => <Link href={tab.href} />}
+    />
+  );
+}
+```
+
+The account menu runs in the browser, so it sits in a small client component. The app passes its texts and what each choice does:
+
+```tsx
+'use client';
+
+import { AccountMenu } from '@zigordev/ui';
+import Link from 'next/link';
+
+export function Account({ name, email, mode }: { name: string; email: string; mode: string }) {
+  return (
+    <AccountMenu
+      label={`Your account, ${name}`}
+      name={name}
+      detail={email}
+      choices={[
+        {
+          label: 'Appearance',
+          value: mode,
+          options: [
+            { value: 'system', label: 'System' },
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+          ],
+          onValueChange: saveMode,
+        },
+      ]}
+      links={[{ href: '/account', label: 'Account settings', icon: 'settings' }]}
+      renderLink={(place) => <Link href={place.href} />}
+      signOutLabel="Sign out"
+      onSignOut={signOut}
     />
   );
 }

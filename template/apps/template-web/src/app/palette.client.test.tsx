@@ -6,7 +6,7 @@ import type { Locale } from '../i18n/locales.ts';
 import { Palette } from './palette.client.tsx';
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
-const language = vi.hoisted(() => ({ chooseLanguage: vi.fn(async (_form: FormData) => {}) }));
+const language = vi.hoisted(() => ({ setLanguage: vi.fn(async (_locale: unknown) => {}) }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('./language.ts', () => language);
@@ -59,7 +59,7 @@ describe('the command palette', () => {
 
     expect(router.push).toHaveBeenCalledWith('/notes');
     await expect.element(dialog).not.toBeInTheDocument();
-    expect(language.chooseLanguage).not.toHaveBeenCalled();
+    expect(language.setLanguage).not.toHaveBeenCalled();
   });
 
   it('offers the other language only, in Spanish, and switches through the server action', async () => {
@@ -79,8 +79,8 @@ describe('the command palette', () => {
     await expect.element(english).toHaveAttribute('data-highlighted');
     await userEvent.keyboard('{Enter}');
 
-    await vi.waitFor(() => expect(language.chooseLanguage).toHaveBeenCalledOnce());
-    expect(language.chooseLanguage.mock.calls[0]?.[0].get('locale')).toBe('en');
+    await vi.waitFor(() => expect(language.setLanguage).toHaveBeenCalledOnce());
+    expect(language.setLanguage).toHaveBeenCalledWith('en');
     expect(router.push).not.toHaveBeenCalled();
   });
 });

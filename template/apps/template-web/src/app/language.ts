@@ -5,8 +5,7 @@ import { isLocale, localeCookie } from '../i18n/locales.ts';
 
 const aYear = 60 * 60 * 24 * 365;
 
-export async function chooseLanguage(form: FormData): Promise<void> {
-  const locale = form.get('locale');
+export async function setLanguage(locale: unknown): Promise<void> {
   if (isLocale(locale)) {
     (await cookies()).set(localeCookie, locale, {
       path: '/',
@@ -15,4 +14,8 @@ export async function chooseLanguage(form: FormData): Promise<void> {
       httpOnly: true,
     });
   }
+}
+
+export async function chooseLanguage(form: FormData): Promise<void> {
+  await setLanguage(form.get('locale'));
 }

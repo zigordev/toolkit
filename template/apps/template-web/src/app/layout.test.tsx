@@ -4,7 +4,19 @@ import { testLocale } from '../../test/locale.ts';
 import { asHtml, textsIn } from '../../test/texts.ts';
 import { generateMetadata } from './layout.tsx';
 
+const request = vi.hoisted(() => ({
+  mode: undefined as string | undefined,
+  user: null as { readonly name: string; readonly email: string } | null,
+}));
+
 vi.mock('next/navigation', () => ({ usePathname: () => '/notes', useRouter: () => ({}) }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    get: (name: string) =>
+      name === 'template.mode' && request.mode !== undefined ? { value: request.mode } : undefined,
+  }),
+}));
+vi.mock('../lib/auth.ts', () => ({ signedInUser: async () => request.user }));
 
 beforeEach(() => {
   vi.stubEnv('OTEL_SERVICE_NAME', 'template-web');
@@ -12,6 +24,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  request.mode = undefined;
+  request.user = null;
   vi.unstubAllEnvs();
   vi.resetModules();
 });
@@ -67,6 +81,33 @@ describe('the root layout', () => {
     expect(await layout('page')).toMatch(
       /<main id="main" tabindex="-1" class="ds-app-shell__main"><div class="[^"]+">page<\/div><\/main>/
     );
+  });
+
+  it('puts the account menu in place of the language switch for someone signed in', async () => {
+    request.user = { name: 'Ada Lovelace', email: 'ada@example.com' };
+    const t = textsIn('en');
+
+    const html = await layout('page');
+
+    expect(html).toMatch(
+      new RegExp(
+        `<button type="button"[^>]* aria-haspopup="menu" aria-expanded="false"[^>]* aria-label="${asHtml(t('accountMenu.label', { name: 'Ada Lovelace' }))}" class="ds-account-menu__trigger">`
+      )
+    );
+    expect(html).toContain(
+      '<span class="ds-account-menu__avatar" aria-hidden="true" data-initials="AL"></span>'
+    );
+    expect(html).not.toContain(`<nav aria-label="${asHtml(t('language.label'))}">`);
+    expect(html).not.toContain('ada@example.com');
+    expect(html).not.toContain('role="menu"');
+  });
+
+  it('draws the page in the mode the person chose, and in the system setting otherwise', async () => {
+    request.mode = 'dark';
+    expect(await layout('page')).toMatch(/^<html lang="en" data-mode="dark">/);
+
+    request.mode = 'sepia';
+    expect(await layout('page')).toMatch(/^<html lang="en" data-mode="system">/);
   });
 
   it('says it all in Spanish when Spanish is chosen', async () => {
