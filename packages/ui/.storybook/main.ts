@@ -5,6 +5,7 @@ export const prebundled = [
   '@base-ui/react/autocomplete',
   '@base-ui/react/button',
   '@base-ui/react/dialog',
+  '@base-ui/react/drawer',
   '@base-ui/react/field',
   '@base-ui/react/use-render',
   'lucide-react',

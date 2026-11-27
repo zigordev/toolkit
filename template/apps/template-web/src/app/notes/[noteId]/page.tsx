@@ -1,10 +1,9 @@
-import { LinkButton } from '@zigordev/ui';
+import { Breadcrumbs } from '@zigordev/ui';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getNextAuth } from '../../../lib/auth.ts';
 import { notesApi } from '../../../lib/notes-api.ts';
-import styles from '../../layout.module.css';
 import { DeleteNote } from '../delete-note.client.tsx';
 import { LiveNotes } from '../live-notes.client.tsx';
 import { NoteForm } from '../note-form.client.tsx';
@@ -27,15 +26,16 @@ export default async function Note({ params }: NoteProps) {
   if (data === undefined) {
     throw new Error(`the API answered ${response.status} for a note`);
   }
-  const t = await getTranslations('notes');
+  const nav = await getTranslations('nav');
   return (
     <>
       <LiveNotes noteId={data.id} />
-      <div className={styles.actions}>
-        <LinkButton render={<Link href="/notes" />} variant="ghost" tone="neutral" size="sm">
-          {t('back')}
-        </LinkButton>
-      </div>
+      <Breadcrumbs
+        label={nav('breadcrumbs')}
+        links={[{ href: '/notes', label: nav('notes') }]}
+        current={data.title}
+        renderLink={(link) => <Link href={link.href} />}
+      />
       <h1>{data.title}</h1>
       <NoteForm note={data} />
       <DeleteNote id={data.id} />

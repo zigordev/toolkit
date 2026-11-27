@@ -13,7 +13,8 @@
     "label": "Main",
     "home": "Home",
     "notes": "Notes",
-    "account": "Account"
+    "account": "Account",
+    "breadcrumbs": "Breadcrumb"
   },
   "palette": {
     "label": "Search",
@@ -128,7 +129,6 @@
     "save": "Save note",
     "saved": "Note saved.",
     "saveFailed": "The note was not saved. Try again.",
-    "back": "All notes",
     "delete": "Delete note",
     "deleteQuestion": "Delete this note for good?",
     "deleteForGood": "Delete it",

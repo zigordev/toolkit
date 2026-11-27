@@ -26,9 +26,10 @@
     },
     "nav": {
       "$type": "dimension",
-      "$description": "The app's main navigation: the height of the bar at the bottom of a phone, the width of the rail beside the content, and the pill behind the current place.",
+      "$description": "The app's main navigation: the height of the bar at the bottom of a phone, the width of the rail beside the content, the width of the open sidebar, and the pill behind the current place.",
       "bar": { "$value": { "value": 4, "unit": "rem" } },
       "rail": { "$value": { "value": 5, "unit": "rem" } },
+      "sidebar": { "$value": { "value": 16, "unit": "rem" } },
       "indicator-inline": { "$value": { "value": 3.5, "unit": "rem" } },
       "indicator-block": { "$value": { "value": 2, "unit": "rem" } }
     },

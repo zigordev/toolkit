@@ -52,6 +52,11 @@ const preview: Preview = {
       options: {
         phone: { name: 'Phone', styles: { width: '390px', height: '844px' }, type: 'mobile' },
         tablet: { name: 'Tablet', styles: { width: '834px', height: '1112px' }, type: 'tablet' },
+        laptop: {
+          name: 'Small computer',
+          styles: { width: '1024px', height: '768px' },
+          type: 'desktop',
+        },
         computer: {
           name: 'Computer',
           styles: { width: '1280px', height: '800px' },

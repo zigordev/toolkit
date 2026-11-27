@@ -158,7 +158,7 @@ describe('one note', () => {
     return Note({ params: Promise.resolve({ noteId }) });
   }
 
-  it('shows the note in its form, with the way back and the delete button', async () => {
+  it('shows the note in its form, with the breadcrumbs back to the list and the delete button', async () => {
     answerNotes = (_url, response) => json(response, 200, note);
 
     const html = render(await one(note.id));
@@ -167,7 +167,14 @@ describe('one note', () => {
     expect(html).toContain('value="Buy milk"');
     expect(html).toContain('Two litres</textarea>');
     expect(html).toContain(`>${asHtml(t('notes.delete'))}</button>`);
-    expect(html).toContain('href="/notes"');
+    expect(html).toContain(
+      `<nav aria-label="${asHtml(t('nav.breadcrumbs'))}" class="ds-breadcrumbs">`
+    );
+    expect(html).toMatch(/<a [^>]*href="\/notes"[^>]*>/);
+    expect(html).toContain(`<span class="ds-breadcrumbs__text">${asHtml(t('nav.notes'))}</span>`);
+    expect(html).toContain(
+      '<span class="ds-breadcrumbs__current" aria-current="page">Buy milk</span>'
+    );
   });
 
   it("answers 404 for a note that is missing or someone else's, and for an id that is not one", async () => {
@@ -194,6 +201,10 @@ describe('a new note', () => {
     const html = render(await NewNote());
 
     expect(html).toContain(`<h1>${asHtml(t('notes.newTitle'))}</h1>`);
+    expect(html).toContain(
+      `<span class="ds-breadcrumbs__current" aria-current="page">${asHtml(t('notes.newTitle'))}</span>`
+    );
+    expect(html).toMatch(/<a [^>]*href="\/notes"[^>]*>/);
     expect(html).toContain(asHtml(t('notes.titleLabel')));
     expect(html).not.toContain('type="checkbox"');
     expect(html).toContain(`>${asHtml(t('notes.save'))}</button>`);
