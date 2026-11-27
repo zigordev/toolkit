@@ -100,6 +100,14 @@ function roundTo(value: number, digits: number): number {
   return Math.round(value * factor) / factor;
 }
 
+export function rgbOf(color: Oklch): [number, number, number] {
+  return srgb(color).map((channel) => Math.min(255, Math.max(0, Math.round(channel * 255)))) as [
+    number,
+    number,
+    number,
+  ];
+}
+
 function hexOf(color: Oklch): string {
   const digits = srgb(color).map((channel) =>
     Math.round(channel * 255)

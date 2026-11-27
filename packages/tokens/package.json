@@ -18,11 +18,15 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "default": "./dist/native.js"
+    },
     "./tokens.css": "./dist/tokens.css"
   },
   "scripts": {
     "build": "terrazzo build --quiet && tsc -p tsconfig.build.json",
-    "generate": "node scripts/generate.ts && biome format --write src/tokens/color",
+    "generate": "node scripts/generate.ts && biome format --write src/tokens/color && terrazzo build --quiet && node scripts/generate-native.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {

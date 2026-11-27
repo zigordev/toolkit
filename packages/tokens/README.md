@@ -6,13 +6,14 @@ The design tokens of every zigordev app: the colours, the type, the spacing, the
 
 A design token is one named design value, such as `--ds-color-accent-solid` or `--ds-radius-button`. A component and an app's own CSS use the name, never the value, so the value can change in one place.
 
-| Export            | What it is                                                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `tokens.css`      | Every token as a CSS custom property, in the layer `ds.tokens`                                                           |
-| `modes`           | `['light', 'dark']`                                                                                                      |
-| `products`        | `['gpool', 'trading-bot', 'cv']`, the products that wear their own colours                                               |
-| `defaultTheme`    | `{ mode: 'dark' }`: dark, in the template's colours                                                                      |
-| `themeAttributes` | `{ mode: 'data-mode', product: 'data-product' }`, the attributes on the page's root that choose the mode and the colours |
+| Export                    | What it is                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `tokens.css`              | Every token as a CSS custom property, in the layer `ds.tokens`                                                                      |
+| `modes`                   | `['light', 'dark']`                                                                                                                 |
+| `products`                | `['gpool', 'trading-bot', 'cv']`, the products that wear their own colours                                                          |
+| `defaultTheme`            | `{ mode: 'dark' }`: dark, in the template's colours                                                                                 |
+| `themeAttributes`         | `{ mode: 'data-mode', product: 'data-product' }`, the attributes on the page's root that choose the mode and the colours            |
+| `@zigordev/tokens/native` | The same tokens as JavaScript values for React Native: `nativeTokens`, `nativeTheme({ mode, product })` and the type `NativeTokens` |
 
 [`@zigordev/ui`](../ui/README.md) bundles `tokens.css` into its own stylesheet, so an app that loads `@zigordev/ui/ui.css` has every token.
 
@@ -28,6 +29,8 @@ Every app shares one set of components, with the same type, spacing and corners:
 | cv                       | Midnight, a deep navy         | Lavender |
 
 Without the tokens, each app would copy the values, and the copies would drift.
+
+The mobile apps' native components cannot read CSS variables, so the same values also ship as JavaScript, from the same files, as [record 0061](../../docs/adr/0061-react-native-reads-the-tokens-as-javascript-values.md) says.
 
 ## How it works here
 
@@ -85,6 +88,25 @@ import { themeAttributes } from '@zigordev/tokens';
 ```
 
 A new product's colours start in toolkit: add its name to `products` in `src/index.ts`, its seeds to `src/palette/seeds.ts`, its context to `src/tokens/resolver.json`, then run `pnpm --dir packages/tokens run generate`. Until a release carries them, the product wears the template's colours.
+
+### In a React Native app
+
+React Native reads no CSS, no `oklch()` and no `rem`, so `@zigordev/tokens/native` gives every token as a value it can use, under the name of its CSS variable without `--ds-`:
+
+| Kind of token            | In CSS                                 | In `@zigordev/tokens/native`                            |
+| ------------------------ | -------------------------------------- | ------------------------------------------------------- |
+| Colour                   | `oklch(76% 0.12 295)`                  | `'#b7a1f5'`, or `'rgba(0, 0, 0, 0.6)'` when see-through |
+| Length                   | `1rem`, `2px`                          | `16`, `2`: pixels, at 16 pixels a rem                   |
+| Duration                 | `120ms`                                | `120`: milliseconds                                     |
+| Font weight              | `600`                                  | `'600'`, the string React Native takes                  |
+| Easing                   | `cubic-bezier(0.2, 0, 0, 1)`           | `[0.2, 0, 0, 1]`, for `Easing.bezier`                   |
+| Line height and tracking | `1.5`, `-0.02`                         | The same numbers: multiply by the font size             |
+| Font family              | `"Mona Sans Variable", "Mona Sans", …` | `'Mona Sans'`: the first family a phone can load        |
+| Shadow                   | `0px 1px 2px oklch(…)`                 | The same, with its colours in `rgba()`                  |
+
+Every value is resolved for each product and mode: `nativeTokens.gpool.dark['color-accent-solid']`, or `nativeTheme({ mode: 'dark', product: 'gpool' })`. The palettes behind the colour scales stay out: a component uses the roles, and a scale step where no role fits. The type `NativeTokens` names every token, so a renamed token fails the type check of the code that uses it.
+
+`src/generated/native.ts` holds the values. `pnpm --dir packages/tokens run generate` writes it from `dist/tokens.css`, after the colour files and the build, and a test fails while it differs from what the generator writes.
 
 ## How to check that it works
 
