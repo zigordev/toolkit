@@ -100,7 +100,7 @@ The root layout renders a small client component, `src/app/rum.client.tsx`, whic
 
 The requests of a page to its own origin carry `traceparent`, so the API continues the trace that began in the browser. An interaction that the app tracks is on its list in `src/lib/interactions.ts`, and the code records it where it happens: the template records `note.created` and `note.deleted`. Any other name is dropped in the browser.
 
-Platform's shared services do not route the path to Alloy yet, so the template leaves `RUM_URL` out of its compose files. When `platform` has Alloy's Faro receiver and the route on each product's address, a small pull request sets it, as [record 0055](../adr/0055-browser-monitoring-carries-over-novembers-rum.md) says.
+Platform's shared services route `/rum` on every product's address to Alloy's Faro receiver, since platform#97 on 2026-11-26, and on the laptop from `@zigordev/stack` 1.11.0 on. So the template's compose files set `RUM_URL` to `/rum`, as [record 0055](../adr/0055-browser-monitoring-carries-over-novembers-rum.md) planned. In Grafana, `{source="browser", app_name="<app>"}` finds an app's browser lines in Loki.
 
 ### The browser tests
 

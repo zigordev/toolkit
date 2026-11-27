@@ -321,7 +321,7 @@ Every page wears the design system, `@zigordev/ui`, and follows the person's lig
 
 `pnpm test:browser`, from the root, runs the web app's browser tests and then its page check, in Chromium. The browser tests render each form and the account's buttons, click and type as a person would, and cover every module named `*.client.tsx`, which `pnpm check` leaves out of its coverage, against the same floor of 90%. The page check starts the web app from its build with a stand-in for the API, and opens every page: in English and Spanish, in light and in dark. It fails on any finding of axe, on anything the policy blocks and on any error in the browser. The pipeline's Browser job runs both on every pull request. Run `pnpm build` first.
 
-Browser monitoring starts on every page once `RUM_URL` names a path on the product's own address, such as `/rum`. [`@zigordev/rum`](../packages/rum/README.md) runs Grafana Faro and keeps every query, user and console line in the browser. The template tracks two interactions, `note.created` and `note.deleted`, listed in `apps/template-web/src/lib/interactions.ts`.
+Browser monitoring starts on every page once `RUM_URL` names a path on the product's own address. The compose files set it to `/rum`, which platform's shared services route to Alloy's Faro receiver on every address, the laptop's from `@zigordev/stack` 1.11.0 on. [`@zigordev/rum`](../packages/rum/README.md) runs Grafana Faro and keeps every query, user and console line in the browser. The template tracks two interactions, `note.created` and `note.deleted`, listed in `apps/template-web/src/lib/interactions.ts`.
 
 A test of the web app never writes out a text: it reads it from the messages with `textsIn` from `apps/template-web/test/texts.ts`, so a translator who changes a text in Fink breaks no test.
 
@@ -485,7 +485,6 @@ Without the web app's code, the coverage of branches comes close to the floor of
 
 ## What is left for later
 
-- **Browser monitoring on the laptop and in production:** the web app carries `@zigordev/rum`, and starts it once `RUM_URL` is set. The compose files leave it out until `platform` routes the path to Alloy's Faro receiver, as [record 0055](../docs/adr/0055-browser-monitoring-carries-over-novembers-rum.md) says.
 - **What a failed email changes:** the API logs `email.failed`, and nothing more. Telling the person, such as on `/account`, is left to the product.
 
 ## Known limits

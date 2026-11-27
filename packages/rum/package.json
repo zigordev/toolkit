@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/rum",
   "version": "0.0.0",
-  "private": true,
   "description": "Browser monitoring for zigordev web apps: Grafana Faro in the page, sending to the product's own address, with no personal data leaving the browser",
   "license": "UNLICENSED",
   "type": "module",
@@ -30,5 +29,13 @@
     "@zigordev/dev": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/rum"
   }
 }
