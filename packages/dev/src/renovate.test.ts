@@ -139,6 +139,35 @@ describe('the Renovate preset', () => {
     expect(rules.indexOf(generator[0] ?? {})).toBeLessThan(rules.length - 1);
   });
 
+  it('moves Expo and React Native together, as one SDK', () => {
+    const expo = rules.find((rule) => rule.groupName === 'expo');
+
+    expect(expo?.matchPackageNames).toEqual([
+      'expo',
+      'expo-*',
+      '@expo/*',
+      'react-native',
+      'react-native-*',
+    ]);
+    expect(rules.indexOf(expo ?? {})).toBeLessThan(rules.length - 1);
+  });
+
+  it('leaves React in the catalog of the mobile app where the Expo SDK puts it', () => {
+    const mobile = rules.filter(
+      (rule) =>
+        Array.isArray(rule.matchDepTypes) && rule.matchDepTypes.includes('pnpm.catalog.mobile')
+    );
+
+    expect(mobile).toEqual([
+      {
+        description: expect.stringContaining('Expo'),
+        matchDepTypes: ['pnpm.catalog.mobile'],
+        matchPackageNames: ['react', 'react-dom'],
+        enabled: false,
+      },
+    ]);
+  });
+
   it("leaves every other title to Renovate's recommended preset, which says chore", () => {
     expect(preset.extends).toContain('config:recommended');
     expect(preset.semanticCommitType).toBeUndefined();

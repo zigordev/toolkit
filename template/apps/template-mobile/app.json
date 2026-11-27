@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Template",
+    "slug": "template",
+    "scheme": "template",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.zigordev.template",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.zigordev.template"
+    },
+    "plugins": ["expo-router"]
+  }
+}

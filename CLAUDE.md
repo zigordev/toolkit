@@ -40,6 +40,7 @@ The shared base of every zigordev repo: the packages published as `@zigordev/*`,
 - `pnpm exec vitest run <path>` runs one test file.
 - `pnpm --dir template run local:up` starts the shared services from `@zigordev/stack` and the template in containers. `local:down` stops the template only.
 - `pnpm --dir template dev web` or `pnpm --dir template dev api` runs that one app on this Mac with hot reload, beside the containers. Its settings are in the app's `.env.development`.
+- `pnpm --dir template/apps/template-mobile run ios` or `run android` builds the mobile app and starts it on the iOS simulator or the Android emulator. `pnpm --dir template dev mobile` starts Expo's development server alone. The app asks the API at `EXPO_PUBLIC_API_URL`, and `http://localhost:3000` without it.
 - `pnpm --dir template/apps/template-api run db:generate --name <change>` writes the SQL of a change to the API's schema into its `drizzle/` folder. `run openapi` rewrites its `openapi.json`, and a test fails while the file and the code differ.
 - `pnpm --dir template/packages/template-api-client run generate` writes the client's types from the API's `openapi.json`. A test fails while they differ. The generator alone runs on TypeScript 5.9.3, as record 0036 says.
 - `pnpm --dir template run check:contract` builds the template's images and holds both apps to the platform contract. It needs Docker running, and the pipeline's Contract job runs the same.

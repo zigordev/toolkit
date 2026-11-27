@@ -62,6 +62,17 @@
       "allowedVersions": "<6"
     },
     {
+      "description": "Expo's libraries and React Native are one SDK, so they move together, in one pull request.",
+      "matchPackageNames": ["expo", "expo-*", "@expo/*", "react-native", "react-native-*"],
+      "groupName": "expo"
+    },
+    {
+      "description": "React Native runs only the React version it carries, which Expo names for each SDK. So React in the catalog named mobile moves only with the Expo SDK, by hand, and Renovate leaves it.",
+      "matchDepTypes": ["pnpm.catalog.mobile"],
+      "matchPackageNames": ["react", "react-dom"],
+      "enabled": false
+    },
+    {
       "description": "Our own packages and the pipeline a repo calls arrive at once, in one pull request. This rule stays last, so it also lifts the month a major version waits.",
       "matchDepNames": ["@zigordev/**", "zigordev/toolkit"],
       "groupName": "zigordev",
