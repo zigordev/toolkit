@@ -383,6 +383,14 @@ describe('template-api and the broker', () => {
   });
 });
 
+describe('template-web and browser monitoring', () => {
+  it("sends what Faro measures to /rum on the product's own address, which platform routes to Alloy's receiver", () => {
+    expect(everywhere.services['template-web']?.environment?.RUM_URL).toBe('/rum');
+    expect(laptop.services['template-web']?.environment?.RUM_URL).toBe('/rum');
+    expect(production.services['template-web']?.environment?.RUM_URL).toBe('/rum');
+  });
+});
+
 describe('the secrets of production', () => {
   it('are named in .env.production.example, and only named', () => {
     const example = parseEnv(readFileSync(`${folder}.env.production.example`, 'utf8'));

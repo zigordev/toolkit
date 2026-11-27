@@ -30,7 +30,7 @@ The filter is the reason for a package of our own. Faro's defaults would send fu
 | Faro's own events                   | Sends them: session, view, navigation, page speed, the traces of requests, and the policy's violations |
 | The visitor's location              | Faro asks the receiver not to look it up                                                               |
 
-Faro sends to `url`, which is a path on the product's own address, such as `/rum`, so the page's content security policy, `connect-src 'self'`, lets it through. On the laptop and on the host, the shared services route that path to Alloy's Faro receiver, which forwards the logs to Loki and the traces to Tempo. Until `platform` has that receiver and its route, a product leaves the setting out and nothing starts.
+Faro sends to `url`, which is a path on the product's own address, such as `/rum`, so the page's content security policy, `connect-src 'self'`, lets it through. On the laptop and on the host, the shared services route that path to Alloy's Faro receiver, which forwards the logs to Loki and the traces to Tempo. They do so from `@zigordev/stack` 1.11.0 on, and in production since platform#97 on 2026-11-26. Each line reaches Loki labelled `source="browser"`, `app_name` and `kind`.
 
 The requests to the page's own origin carry `traceparent`, so the API continues the browser's trace. An API on another origin carries it only when `apiOrigins` names it, and its CORS headers allow the header.
 
@@ -72,8 +72,8 @@ Names follow the log events' form, `area.what_happened`. A name missing from `in
 - The template's page check, which `pnpm test:browser` runs, starts the web app with browser monitoring on, takes what Faro posts, and checks that it names the app and carries no query from the address, under the content security policy.
 - Once the shared services have the receiver, Grafana's Explore shows the browser's lines in Loki under the app's name, and its traces in Tempo beside the API's.
 
-| What you see                                        | Why                                                    | What to do                                              |
-| --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
-| The page check names `connect-src` and the receiver | `url` points at another origin                         | Use a path on the product's own address                 |
-| An interaction never arrives                        | Its name is not in `interactions`                      | Add it to the app's list                                |
-| Faro's posts answer 404 on the laptop               | The shared services do not route the path to Alloy yet | Leave the setting out until `platform` has the receiver |
+| What you see                                        | Why                                                                                    | What to do                                         |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| The page check names `connect-src` and the receiver | `url` points at another origin                                                         | Use a path on the product's own address            |
+| An interaction never arrives                        | Its name is not in `interactions`                                                      | Add it to the app's list                           |
+| Faro's posts answer 404 on the laptop               | The laptop runs a `@zigordev/stack` older than 1.11.0, which has no route for the path | Update `@zigordev/stack`, then run `pnpm local:up` |
