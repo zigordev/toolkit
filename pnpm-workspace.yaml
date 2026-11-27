@@ -33,7 +33,7 @@ catalog:
   "@vitejs/plugin-react": 6.3.0
   "@vitest/browser-playwright": 5.1.2
   "@vitest/coverage-v8": 5.1.2
-  "@zigordev/notifications-events": 1.4.0
+  "@zigordev/notifications-events": 1.5.0
   "@zigordev/stack": 1.11.0
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4

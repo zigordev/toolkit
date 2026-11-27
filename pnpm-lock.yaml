@@ -268,8 +268,8 @@ catalogs:
       specifier: 5.1.2
       version: 5.1.2
     '@zigordev/notifications-events':
-      specifier: 1.4.0
-      version: 1.4.0
+      specifier: 1.5.0
+      version: 1.5.0
     '@zigordev/stack':
       specifier: 1.11.0
       version: 1.11.0
@@ -1029,7 +1029,7 @@ importers:
         version: link:../../../packages/flags
       '@zigordev/notifications-events':
         specifier: 'catalog:'
-        version: 1.4.0(@zigordev/events@packages+events)(zod@4.6.7)
+        version: 1.5.0(@zigordev/events@packages+events)(zod@4.6.7)
       '@zigordev/otel':
         specifier: workspace:*
         version: link:../../../packages/otel
@@ -4190,8 +4190,8 @@ packages:
   '@webcontainer/env@1.1.1':
     resolution: {integrity: sha512-6aN99yL695Hi9SuIk1oC88l9o0gmxL1nGWWQ/kNy81HigJ0FoaoTXpytCj6ItzgyCEwA9kF1wixsTuv5cjsgng==}
 
-  '@zigordev/notifications-events@1.4.0':
-    resolution: {integrity: sha512-e7XD8nfYFKRpfVBBqPB4LIdwZoLv7SqX8wKnEhFlsIPKJMaTxwBms2aHxrIOFwXiW5KGJRbeTjb7OmqIzSQMvQ==}
+  '@zigordev/notifications-events@1.5.0':
+    resolution: {integrity: sha512-vQPtQVj8HBULy9OY/KjxQA4ZW6doc2IOoOOiYwN2poLtINK2Y7LqqksYtab6WWUgKDBz6mSsHC0tbBxdDh6ZwQ==}
     engines: {node: '>=26'}
     peerDependencies:
       '@zigordev/events': ^1.26.0
@@ -10385,7 +10385,7 @@ snapshots:
 
   '@webcontainer/env@1.1.1': {}
 
-  '@zigordev/notifications-events@1.4.0(@zigordev/events@packages+events)(zod@4.6.7)':
+  '@zigordev/notifications-events@1.5.0(@zigordev/events@packages+events)(zod@4.6.7)':
     dependencies:
       '@zigordev/events': link:packages/events
       zod: 4.6.7
