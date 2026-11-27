@@ -405,8 +405,8 @@ catalogs:
       specifier: 3.1.1
       version: 3.1.1
     '@platformatic/kafka':
-      specifier: 2.19.0
-      version: 2.19.0
+      specifier: 2.20.0
+      version: 2.20.0
     '@testcontainers/postgresql':
       specifier: 12.2.2
       version: 12.2.2
@@ -684,7 +684,7 @@ importers:
     dependencies:
       '@platformatic/kafka':
         specifier: catalog:shipped
-        version: 2.19.0(supports-color@10.2.2)
+        version: 2.20.0(supports-color@10.2.2)
     devDependencies:
       '@opentelemetry/api':
         specifier: 'catalog:'
@@ -869,7 +869,7 @@ importers:
     devDependencies:
       '@platformatic/kafka':
         specifier: catalog:shipped
-        version: 2.19.0(supports-color@7.2.0)
+        version: 2.20.0(supports-color@7.2.0)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.10
@@ -3386,8 +3386,8 @@ packages:
     resolution: {integrity: sha512-EhSFuWB7UJ5rRu0BWHo7p/fkiNbPAR4WMTtxoLLy24LsjT4Zae3Z6q/rY+TT0sqhr8OKaveTbEwsceJobD2FOQ==}
     engines: {node: '>= 22.19.0'}
 
-  '@platformatic/kafka@2.19.0':
-    resolution: {integrity: sha512-XhPm9zXLNdhSPqX3+g3h4f1j1Qr1tShLTiJRsUZyDTpWprZcMn60yrF882f3zuTE91XxxyppzqjQrFGnVN+QQw==}
+  '@platformatic/kafka@2.20.0':
+    resolution: {integrity: sha512-4xDLiPu6Jjz1nivf8YhIGWKwPNSkSTX3GQRFfbc1QXy73VX+xzcP026Pfqjgj+iuL9FEMm7zP0qEsIHl6BAs+Q==}
     engines: {node: '>= 22.22.0 || >= 24.6.0'}
 
   '@platformatic/wasm-utils@0.5.0':
@@ -9548,7 +9548,7 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  '@platformatic/kafka@2.19.0(supports-color@10.2.2)':
+  '@platformatic/kafka@2.20.0(supports-color@10.2.2)':
     dependencies:
       '@platformatic/dynamic-buffer': 0.6.0
       '@platformatic/wasm-utils': 0.5.0
@@ -9565,7 +9565,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@platformatic/kafka@2.19.0(supports-color@7.2.0)':
+  '@platformatic/kafka@2.20.0(supports-color@7.2.0)':
     dependencies:
       '@platformatic/dynamic-buffer': 0.6.0
       '@platformatic/wasm-utils': 0.5.0
