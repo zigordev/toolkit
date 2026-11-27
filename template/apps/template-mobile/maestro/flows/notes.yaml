@@ -1,0 +1,47 @@
+appId: com.zigordev.template
+name: Write a note, change it and delete it
+---
+- runFlow: steps/start-clean.yaml
+- tapOn:
+    id: notes
+- runFlow:
+    file: steps/sign-in.yaml
+    env:
+      EMAIL: ${MAESTRO_EMAIL}
+      PASSWORD: ${MAESTRO_PASSWORD}
+- assertVisible: No notes yet. Write the first one.
+- tapOn:
+    id: new-note
+- tapOn:
+    id: save
+- assertVisible: Fill this in.
+- tapOn:
+    id: title
+- inputText: Milk from the screen test
+- tapOn:
+    id: body
+- inputText: Two bottles
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - hideKeyboard
+- tapOn:
+    id: save
+- assertVisible:
+    id: delete
+- tapOn:
+    id: done
+- tapOn:
+    id: save
+- assertVisible: Note saved.
+- tapOn:
+    id: delete
+- assertVisible: Delete this note for good?
+- tapOn: (?i)keep it
+- assertVisible:
+    id: delete
+- tapOn:
+    id: delete
+- tapOn: (?i)delete it
+- assertVisible: No notes yet. Write the first one.

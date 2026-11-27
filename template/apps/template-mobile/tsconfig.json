@@ -4,6 +4,6 @@
     "strict": true,
     "noEmit": true
   },
-  "include": ["${configDir}/app", "${configDir}/src", "${configDir}/*.ts"],
+  "include": ["${configDir}/app", "${configDir}/src", "${configDir}/maestro", "${configDir}/*.ts"],
   "exclude": ["${configDir}/ios", "${configDir}/android", "${configDir}/dist"]
 }

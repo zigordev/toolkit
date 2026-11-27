@@ -1,0 +1,9 @@
+appId: com.zigordev.template
+---
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - clearKeychain
+- launchApp:
+    clearState: true
