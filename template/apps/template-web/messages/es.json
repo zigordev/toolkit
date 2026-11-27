@@ -13,7 +13,8 @@
     "label": "Principal",
     "home": "Inicio",
     "notes": "Notas",
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "breadcrumbs": "Ruta de navegación"
   },
   "palette": {
     "label": "Buscar",
@@ -128,7 +129,6 @@
     "save": "Guardar la nota",
     "saved": "Nota guardada.",
     "saveFailed": "La nota no se ha guardado. Vuelve a intentarlo.",
-    "back": "Todas las notas",
     "delete": "Borrar la nota",
     "deleteQuestion": "¿Borrar esta nota para siempre?",
     "deleteForGood": "Borrarla",

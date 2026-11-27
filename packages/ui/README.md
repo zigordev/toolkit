@@ -1,26 +1,33 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the command palette, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the side navigation with its drawer, breadcrumbs and page tabs, the command palette, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
-| Export           | What it is                                                                                                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state |
-| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                |
-| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                          |
-| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                      |
-| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                               |
-| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
-| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                   |
-| `TopBar`         | The bar at the top of a page: the product's name at the start, and actions such as the command palette and the language switch at the end                                       |
-| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                               |
-| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                       |
-| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                |
-| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                           |
-| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                     |
-| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                      |
-| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
+| Export           | What it is                                                                                                                                                                              |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state         |
+| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                        |
+| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                                  |
+| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                              |
+| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                                       |
+| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                                      |
+| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                           |
+| `TopBar`         | The bar at the top of a page: the product's name at the start, and actions such as the command palette and the language switch at the end                                               |
+| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                                       |
+| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                               |
+| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                        |
+| `SideNav`        | The side navigation of a tool with many sections: the app's places in groups, as a rail from 600 px wide, and from 840 px as a sidebar that closes to the rail and remembers the choice |
+| `NavDrawer`      | The menu button for the top bar of a phone, and the drawer it opens, with the same groups as `SideNav`                                                                                  |
+| `PlaceGroup`     | The type of a group of places, under an optional label                                                                                                                                  |
+| `sideNavCookie`  | The name of the cookie that keeps the person's choice for `SideNav`. `sideNavOpen` reads its value on the server                                                                        |
+| `Breadcrumbs`    | The way back from a deep page: the pages above it, as links, and its own name. On a phone, only the page above it                                                                       |
+| `PageTabs`       | The sections of one page, as links with their own addresses. It marks the current one                                                                                                   |
+| `PageLink`       | The type of a link with an address and a label, for `Breadcrumbs` and `PageTabs`. `Place` adds an icon to it                                                                            |
+| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                                   |
+| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                             |
+| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                              |
+| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                               |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
 
@@ -57,7 +64,30 @@ Every app frames its pages the same way, as [record 0060](../../docs/adr/0060-ev
 
 The width is Material Design's line between compact and medium windows. `AppNav` takes the app's places, the address of the page shown, and an optional `renderLink`, which hands each place to a router's own link, as `LinkButton`'s `render` does. A place is current on its own address and on every address under it, so Notes is current on `/notes/42`, and the start page only on `/`. The current place says `aria-current="page"` and wears the accent's soft fill. Each place shows its icon and its label, so a tap target is never an icon alone, and a label too long for its slot ends in an ellipsis while its full text stays readable to assistive technology.
 
-The links are plain links, so the navigation works before any script loads. `AppShell`, `TopBar` and `SkipLink` hold no state, and a server component can render them. `AppNav` runs in the browser too, so it can follow the address.
+The links are plain links, so the navigation works before any script loads. `AppShell`, `TopBar`, `SkipLink` and `Breadcrumbs` hold no state, and a server component can render them. `AppNav` runs in the browser too, so it can follow the address. When two places match the address, the longer one is current, so on `/notes/shared/7` a place at `/notes/shared` wins over one at `/notes`.
+
+### The side navigation, for tools with many sections
+
+A tool that people work in for hours, with groups of sections, uses `SideNav` and `NavDrawer` in place of `AppNav`, as [record 0064](../../docs/adr/0064-tools-with-many-sections-navigate-from-a-side-navigation.md) says. Both take the same groups of places. The template keeps `AppNav`, because three places fit in a bar.
+
+| Width                 | `SideNav`                                                                                                              | `NavDrawer`                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Below 600 px, a phone | Hidden                                                                                                                 | A menu button in the top bar, which opens the drawer with every group |
+| 600 to 839 px         | A rail: each place's icon, with its label below                                                                        | Hidden                                                                |
+| 840 to 1199 px        | The rail, which the button at its top opens into a sidebar                                                             | Hidden                                                                |
+| From 1200 px          | A sidebar: the groups under their labels, each place's icon with its label beside it. The button closes it to the rail | Hidden                                                                |
+
+The button at the top of `SideNav` says `aria-expanded`, and keeps the person's choice for a year in the cookie `ds-side-nav`, through the browser's Cookie Store API. The cookie holds `open` or `closed` and nothing else. The root layout reads it with `sideNavOpen` and passes it as `defaultOpen`, so the server draws the sidebar as the person left it and the page does not jump while it loads. Without the cookie the width decides: a rail below 1200 px and a sidebar from there, which the stylesheet draws before any script runs.
+
+A group's label names its list for assistive technology, in the rail too, where the label is hidden. A group with no places is left out. Each place shows its icon and its label at every width, so a target is never an icon alone. A row of the sidebar is 40 px high, and 48 px on a touch screen.
+
+`NavDrawer` is Base UI's drawer, from the left. While it is open, the focus stays inside and the page behind it does not scroll. A swipe to the left, Escape, its close button or a tap beside it closes it, and the focus goes back to the menu button. Choosing a place closes it, and so does any change of address. On a screen 600 px wide or more the menu button hides, and the drawer closes if it is open.
+
+### Breadcrumbs and page tabs
+
+`Breadcrumbs` shows the way back from a deep page, such as a run inside a strategy: the pages above it as links, from the top, and its own name, which says `aria-current="page"`. A server component renders it, and `renderLink` hands each link to the router's own link. From 600 px every step shows, with a chevron between two. On a phone only the page above shows, with a back arrow, so the way back stays one tap. Its links are underlined, so they read as links on a touch screen too, where nothing hovers. A page with nothing above it renders no breadcrumbs. A long name ends in an ellipsis, and its full text stays readable to assistive technology.
+
+`PageTabs` shows the sections of one page, such as a strategy's overview, runs and settings. Each section has its own address, so a tab can be shared and reloaded. That is why the tabs are links in a named navigation, with `aria-current="page"` on the current one, and not the tab widget of ARIA, which the W3C keeps for panels on one page. The current tab is the longest address that matches, and wears a line in the accent. When the tabs do not fit, they scroll sideways, and the current one scrolls into view.
 
 ### The command palette
 
@@ -239,6 +269,103 @@ export function Palette({ places }: { places: readonly Place[] }) {
   start={<LinkButton render={<Link href="/" />}>{t('name')}</LinkButton>}
   end={<Palette places={places} />}
 />;
+```
+
+A tool with many sections passes its groups of places to `SideNav` and `NavDrawer`. Both follow the address, so they sit in a small client component of the app:
+
+```tsx
+'use client';
+
+import { NavDrawer, type Place, type PlaceGroup, SideNav } from '@zigordev/ui';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+function link(place: Place) {
+  return <Link href={place.href} />;
+}
+
+export function Sidebar({ groups, open }: { groups: readonly PlaceGroup[]; open?: boolean }) {
+  return (
+    <SideNav
+      label="Main"
+      toggleLabel="Sidebar"
+      groups={groups}
+      pathname={usePathname()}
+      defaultOpen={open}
+      renderLink={link}
+    />
+  );
+}
+
+export function Menu({ groups }: { groups: readonly PlaceGroup[] }) {
+  return (
+    <NavDrawer
+      label="Main"
+      title="Console"
+      menuLabel="Menu"
+      closeLabel="Close"
+      groups={groups}
+      pathname={usePathname()}
+      renderLink={link}
+    />
+  );
+}
+```
+
+The root layout reads the person's choice from the cookie, puts the menu button in the top bar and the side navigation in the shell:
+
+```tsx
+import { sideNavCookie, sideNavOpen } from '@zigordev/ui';
+import { cookies } from 'next/headers';
+
+const open = sideNavOpen((await cookies()).get(sideNavCookie)?.value);
+
+<AppShell
+  skipLinkLabel={t('skipToContent')}
+  topBar={
+    <TopBar
+      start={
+        <>
+          <Menu groups={groups} />
+          <LinkButton render={<Link href="/" />}>{t('name')}</LinkButton>
+        </>
+      }
+    />
+  }
+  nav={<Sidebar groups={groups} open={open} />}
+>
+  {children}
+</AppShell>;
+```
+
+A server page renders its own breadcrumbs. Page tabs follow the address, so they sit in a client component, often in the layout of the section they divide:
+
+```tsx
+<Breadcrumbs
+  label={t('breadcrumbs')}
+  links={[{ href: '/notes', label: t('notes') }]}
+  current={note.title}
+  renderLink={(link) => <Link href={link.href} />}
+/>;
+```
+
+```tsx
+'use client';
+
+import { type PageLink, PageTabs } from '@zigordev/ui';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export function StrategyTabs({ tabs }: { tabs: readonly PageLink[] }) {
+  return (
+    <PageTabs
+      label="Mean reversion"
+      tabs={tabs}
+      pathname={usePathname()}
+      renderLink={(tab) => <Link href={tab.href} />}
+    />
+  );
+}
 ```
 
 A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state, which the tests then run in every product's colours and both modes.

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ComponentPropsWithRef } from 'react';
 import { expect } from 'storybook/test';
 import { Button, LinkButton } from '../button/button.tsx';
-import { AppNav, isCurrentPlace, type Place } from './app-nav.tsx';
+import { currentHref, isCurrentPlace, type Place } from '../places/places.ts';
+import { AppNav } from './app-nav.tsx';
 import { AppShell, TopBar } from './app-shell.tsx';
 
 const places: Place[] = [
@@ -218,5 +219,11 @@ export const CurrentPlace: Story = {
     await expect(isCurrentPlace('/notes', '/notes')).toBe(true);
     await expect(isCurrentPlace('/notes', '/notes/42')).toBe(true);
     await expect(isCurrentPlace('/notes', '/notebook')).toBe(false);
+    await expect(currentHref(['/', '/notes', '/notes/shared'], '/notes/shared/7')).toBe(
+      '/notes/shared'
+    );
+    await expect(currentHref(['/notes/shared', '/notes'], '/notes/7')).toBe('/notes');
+    await expect(currentHref(['/', '/notes'], '/')).toBe('/');
+    await expect(currentHref(['/notes'], '/account')).toBeUndefined();
   },
 };

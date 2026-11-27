@@ -315,6 +315,36 @@ describe('the main navigation', () => {
   });
 });
 
+describe('the breadcrumbs', () => {
+  it('lead from a note back to the list, and shrink to the way back on a phone', async () => {
+    const context = await watchedContext({ locale: 'es', colorScheme: 'light' });
+    await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/notes/${note.id}`, { waitUntil: 'networkidle' });
+
+      const t = textsIn('es');
+      const trail = page.getByRole('navigation', { name: t('nav.breadcrumbs') });
+      const current = trail.getByText(note.title);
+      const back = trail.getByRole('link', { name: t('nav.notes') });
+      expect(await current.getAttribute('aria-current')).toBe('page');
+      expect(await current.isVisible()).toBe(true);
+      expect(await back.getAttribute('href')).toBe('/notes');
+
+      await page.setViewportSize({ width: 390, height: 844 });
+      expect(await current.isVisible()).toBe(false);
+      expect(await back.isVisible()).toBe(true);
+      expect((await back.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(32);
+
+      await back.click();
+      await page.waitForURL(`${base}/notes`);
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 describe('the command palette', () => {
   it('opens with the shortcut, goes to a place and switches the language, under the policy', async () => {
     const context = await watchedContext({ locale: 'en', colorScheme: 'light' });

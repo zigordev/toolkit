@@ -223,6 +223,7 @@ export interface NativeTokens {
   readonly 'size-nav-indicator-block': number;
   readonly 'size-nav-indicator-inline': number;
   readonly 'size-nav-rail': number;
+  readonly 'size-nav-sidebar': number;
   readonly 'size-overlay-dialog-lg': number;
   readonly 'size-overlay-dialog-md': number;
   readonly 'size-overlay-dialog-sm': number;
@@ -482,6 +483,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -738,6 +740,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -996,6 +999,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -1252,6 +1256,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -1510,6 +1515,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -1766,6 +1772,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -2024,6 +2031,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
@@ -2280,6 +2288,7 @@ export const nativeTokens: Readonly<Record<'default' | Product, Readonly<Record<
       "size-nav-indicator-block": 32,
       "size-nav-indicator-inline": 56,
       "size-nav-rail": 80,
+      "size-nav-sidebar": 256,
       "size-overlay-dialog-lg": 768,
       "size-overlay-dialog-md": 512,
       "size-overlay-dialog-sm": 384,
