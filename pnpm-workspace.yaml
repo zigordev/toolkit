@@ -107,6 +107,7 @@ catalogMode: strict
 
 overrides:
   "@esbuild-kit/core-utils>esbuild": 0.28.2
+  "@expo/fingerprint>minimatch": 11.0.9
   "@joshwooding/vite-plugin-react-docgen-typescript>glob": 14.0.6
   archiver-utils>glob: 14.0.6
   katex: 0.19.1
