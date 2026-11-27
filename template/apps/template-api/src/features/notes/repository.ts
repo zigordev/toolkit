@@ -2,6 +2,7 @@ import { afterCursor, type CursorValue, keysetOrder, type SortDirection } from '
 import { and, eq, ilike, type SQL, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { notes } from '../../db/schema.ts';
+import { announceNote } from './live.ts';
 import type { CreateNote, UpdateNote } from './schemas.ts';
 
 export type NoteRow = typeof notes.$inferSelect;
@@ -54,23 +55,32 @@ export function notesRepository(db: Database) {
       return row;
     },
     async create(note: NewNote): Promise<NoteRow> {
-      const [row] = await db.insert(notes).values(note).returning();
-      return row as NoteRow;
+      return db.transaction(async (tx) => {
+        const [row] = await tx.insert(notes).values(note).returning();
+        await announceNote(tx, 'note.created', row);
+        return row as NoteRow;
+      });
     },
     async update(id: string, change: UpdateNote, reach: Reach): Promise<NoteRow | undefined> {
-      const [row] = await db
-        .update(notes)
-        .set({ ...change, updatedAt: sql`now()` })
-        .where(and(eq(notes.id, id), within(reach)))
-        .returning();
-      return row;
+      return db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(notes)
+          .set({ ...change, updatedAt: sql`now()` })
+          .where(and(eq(notes.id, id), within(reach)))
+          .returning();
+        await announceNote(tx, 'note.updated', row);
+        return row;
+      });
     },
     async remove(id: string, reach: Reach): Promise<boolean> {
-      const removed = await db
-        .delete(notes)
-        .where(and(eq(notes.id, id), within(reach)))
-        .returning({ id: notes.id });
-      return removed.length > 0;
+      return db.transaction(async (tx) => {
+        const [row] = await tx
+          .delete(notes)
+          .where(and(eq(notes.id, id), within(reach)))
+          .returning({ id: notes.id, ownerId: notes.ownerId });
+        await announceNote(tx, 'note.deleted', row);
+        return row !== undefined;
+      });
     },
   };
 }

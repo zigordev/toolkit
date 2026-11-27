@@ -10,6 +10,14 @@
           "react": "none"
         }
       }
+    },
+    {
+      "includes": ["packages/live/**", "!packages/live/src/**/*.client.*"],
+      "linter": {
+        "domains": {
+          "react": "none"
+        }
+      }
     }
   ]
 }

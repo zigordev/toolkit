@@ -15,4 +15,10 @@ export { captureOutput } from './output.ts';
 export { logProcessCrashes, logStarted, logStopping } from './process-events.ts';
 export { nameRoute } from './route.ts';
 export type { Telemetry, TelemetryOptions } from './telemetry.ts';
-export { isProbeRequest, shutdownTelemetry, startTelemetry } from './telemetry.ts';
+export {
+  isProbeRequest,
+  isUntracedRequest,
+  shutdownTelemetry,
+  startTelemetry,
+  streamPaths,
+} from './telemetry.ts';

@@ -142,7 +142,7 @@ class Browser {
   private readonly jar = new Map<string, string>();
   private readonly ip = `10.1.${randomInt(256)}.${randomInt(1, 255)}`;
 
-  private headers(): Record<string, string> {
+  headers(): Record<string, string> {
     const cookie = [...this.jar].map(([name, value]) => `${name}=${value}`).join('; ');
     return { origin: appUrl, 'x-forwarded-for': this.ip, ...(cookie === '' ? {} : { cookie }) };
   }
@@ -527,6 +527,106 @@ describe('the notes of a signed-in person', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ title: 'Check the orbit' });
+  });
+});
+
+interface Frame {
+  readonly event?: string;
+  readonly data?: string;
+}
+
+interface Stream {
+  readonly status: number;
+  readonly changes: () => unknown[];
+  readonly leave: () => void;
+}
+
+async function liveAddress(): Promise<string> {
+  if (!server.app.server.listening) {
+    await server.app.listen({ port: 0, host: '127.0.0.1' });
+  }
+  const address = server.app.server.address();
+  const port = typeof address === 'object' && address !== null ? address.port : 0;
+  return `http://127.0.0.1:${port}/api/v1/live`;
+}
+
+async function openStream(headers: Record<string, string>): Promise<Stream> {
+  const controller = new AbortController();
+  const response = await fetch(await liveAddress(), { headers, signal: controller.signal });
+  const frames: Frame[] = [];
+  if (response.ok && response.body !== null) {
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    void (async () => {
+      let buffer = '';
+      try {
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) {
+            return;
+          }
+          buffer += value;
+          for (let end = buffer.indexOf('\n\n'); end !== -1; end = buffer.indexOf('\n\n')) {
+            const lines = buffer.slice(0, end).split('\n');
+            buffer = buffer.slice(end + 2);
+            const event = lines.find((line) => line.startsWith('event: '))?.slice(7);
+            const data = lines.find((line) => line.startsWith('data: '))?.slice(6);
+            frames.push({ event, data });
+          }
+        }
+      } catch {
+        return;
+      }
+    })();
+  } else {
+    await response.body?.cancel();
+  }
+  return {
+    status: response.status,
+    changes: () =>
+      frames
+        .filter((frame) => frame.event === 'change')
+        .map((frame) => JSON.parse(frame.data ?? 'null') as unknown),
+    leave: () => controller.abort(),
+  };
+}
+
+describe('live updates of notes', () => {
+  it('tell a signed-in person, and nobody else, what changed in their notes', async () => {
+    const mary = await signUp('mary.live@example.com');
+    const john = await signUp('john.live@example.com');
+    const maryId = ((await mary.get('/api/v1/me')).json() as { id: string }).id;
+    const marys = await openStream(mary.headers());
+    const johns = await openStream(john.headers());
+    expect(marys.status).toBe(200);
+
+    const note = (
+      await mary.post('/api/v1/notes', { title: 'Plot the course' })
+    ).json() as NoteBody;
+    const first = await eventually('the change of the new note', () => marys.changes()[0]);
+    await mary.patch(`/api/v1/notes/${note.id}`, { status: 'done' });
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    await mary.delete(`/api/v1/notes/${note.id}`);
+    await eventually('the change of the deleted note', () => marys.changes()[2]);
+
+    expect(first).toEqual({
+      channel: `notes:${maryId}`,
+      changes: [{ type: 'note.created', id: note.id }],
+    });
+    expect(marys.changes().slice(1)).toEqual([
+      { channel: `notes:${maryId}`, changes: [{ type: 'note.updated', id: note.id }] },
+      { channel: `notes:${maryId}`, changes: [{ type: 'note.deleted', id: note.id }] },
+    ]);
+    expect(johns.changes()).toEqual([]);
+    marys.leave();
+    johns.leave();
+  });
+
+  it('refuse a stream to an API key and to nobody', async () => {
+    const withKey = await openStream({ authorization: `Bearer ${reader}` });
+    const nobody = await openStream({});
+
+    expect(withKey.status).toBe(403);
+    expect(nobody.status).toBe(401);
   });
 });
 

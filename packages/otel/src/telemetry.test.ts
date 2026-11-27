@@ -70,7 +70,9 @@ vi.mock('@opentelemetry/core', async (importOriginal) => ({
   setGlobalErrorHandler: sdk.setGlobalErrorHandler,
 }));
 
-const { isProbeRequest, shutdownTelemetry, startTelemetry } = await import('./index.ts');
+const { isProbeRequest, isUntracedRequest, shutdownTelemetry, startTelemetry } = await import(
+  './index.ts'
+);
 const { probeAwareSampler, runtimeDetector } = await import('./telemetry.ts');
 
 type StartOptions = {
@@ -242,6 +244,7 @@ describe('startTelemetry', () => {
       url?: string;
     }) => boolean;
     expect(ignore({ url: '/health' })).toBe(true);
+    expect(ignore({ url: '/api/v1/live' })).toBe(true);
     expect(ignore({ url: '/api/v1/pools' })).toBe(false);
   });
 
@@ -332,6 +335,19 @@ describe('isProbeRequest', () => {
   });
 });
 
+describe('isUntracedRequest', () => {
+  it.each([
+    ['/health', true],
+    ['/api/v1/live', true],
+    ['/api/v1/live?since=1', true],
+    ['/api/v1/live/other', false],
+    ['/api/v1/pools', false],
+    [undefined, false],
+  ])('leaves %s without a trace: %s', (url, expected) => {
+    expect(isUntracedRequest(url)).toBe(expected);
+  });
+});
+
 describe('probeAwareSampler', () => {
   function decide(kind: SpanKind, attributes: Record<string, string>, parent = ROOT_CONTEXT) {
     return probeAwareSampler.shouldSample(parent, 'a'.repeat(32), 'span', kind, attributes, [])
@@ -350,6 +366,12 @@ describe('probeAwareSampler', () => {
   it('drops server spans for probe paths, whichever tracer starts them', () => {
     expect(decide(SpanKind.SERVER, { 'url.path': '/health' })).toBe(SamplingDecision.NOT_RECORD);
     expect(decide(SpanKind.SERVER, { 'http.target': '/health?probe=1' })).toBe(
+      SamplingDecision.NOT_RECORD
+    );
+  });
+
+  it('drops server spans for a live-update stream, which lasts as long as its page', () => {
+    expect(decide(SpanKind.SERVER, { 'url.path': '/api/v1/live' })).toBe(
       SamplingDecision.NOT_RECORD
     );
   });

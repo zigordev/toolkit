@@ -178,7 +178,7 @@ export function getNextAuth(): NextAuth {
 }
 ```
 
-- `app/api/auth/[...all]/route.ts` exports `GET` and `POST` from `getNextAuth().handlers`. With an API it forwards each request, body, cookies and redirects included, and answers 502 while the API is down. Pass `{ auth }` in place of `{ apiUrl }` when Next.js runs Better Auth itself.
+- `app/api/auth/[...all]/route.ts` exports `GET` and `POST` from `getNextAuth().handlers`. With an API it forwards each request, body, cookies and redirects included, and answers 502 while the API is down. When the browser goes away, it stops the call to the API, so a stream such as live updates ends with its page. Pass `{ auth }` in place of `{ apiUrl }` when Next.js runs Better Auth itself.
 - `getUser()` and `getSession()` read the session once per request in server components, and never renew it.
 - `requireUser('/account')` returns the user, or sends the browser to `/sign-in?next=%2Faccount`. The sign-in page accepts only local paths in `next`.
 

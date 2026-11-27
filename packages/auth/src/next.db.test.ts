@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import { createServer, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createLogger } from '@zigordev/otel';
 import { useTestDatabase } from '@zigordev/test/postgres';
@@ -122,6 +122,74 @@ describe('forwarding /api/auth/* from the web app to the API', () => {
 
   it('refuses an API address with a path', () => {
     expect(() => forwardToApi('http://api.internal:3000/v1')).toThrow(/origin with no path/);
+  });
+});
+
+describe('a browser that goes away while the API answers', () => {
+  async function upstream(answer: (response: ServerResponse) => void) {
+    const received: string[] = [];
+    const closed: string[] = [];
+    const server = createServer((request, response) => {
+      received.push(request.url ?? '');
+      request.on('close', () => closed.push(request.url ?? ''));
+      answer(response);
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    return {
+      url,
+      received,
+      closed,
+      stop: () => {
+        server.closeAllConnections();
+        return new Promise((resolve) => server.close(resolve));
+      },
+    };
+  }
+
+  it('stops the call to the API, so a stream behind the proxy ends with its page', async () => {
+    const api = await upstream((response) => {
+      response.writeHead(200, { 'content-type': 'text/event-stream' });
+      response.write(': ready\n\n');
+    });
+    const page = new AbortController();
+    try {
+      const response = await forwardToApi(api.url)(
+        webRequest('/api/v1/live', { signal: page.signal })
+      );
+      const reader = response.body?.getReader();
+      expect(new TextDecoder().decode((await reader?.read())?.value)).toBe(': ready\n\n');
+
+      page.abort();
+
+      await expect.poll(() => api.closed).toEqual(['/api/v1/live']);
+    } finally {
+      await api.stop();
+    }
+  });
+
+  it('logs nothing when the browser left before the API answered', async () => {
+    const lines: string[] = [];
+    const logger = createLogger({
+      service: 'toolkit-auth-test',
+      destination: { write: (line: string) => lines.push(line) },
+    });
+    const api = await upstream(() => {});
+    const page = new AbortController();
+    try {
+      const pending = forwardToApi(
+        api.url,
+        logger
+      )(webRequest('/api/v1/live', { signal: page.signal }));
+      await expect.poll(() => api.received).toEqual(['/api/v1/live']);
+      page.abort();
+
+      expect((await pending).status).toBe(502);
+      await expect.poll(() => api.closed).toEqual(['/api/v1/live']);
+      expect(lines).toEqual([]);
+    } finally {
+      await api.stop();
+    }
   });
 });
 

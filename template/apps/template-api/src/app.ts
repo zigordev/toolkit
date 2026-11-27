@@ -11,6 +11,7 @@ import { hello } from './features/hello/routes.ts';
 import { notes } from './features/notes/routes.ts';
 import { apiKeys } from './plugins/api-keys.ts';
 import { type EmailTopics, emailOutcomes, emailTopicsOf } from './plugins/emails.ts';
+import { serveLive } from './plugins/live.ts';
 import { anyOf, sendAuthEmails } from './plugins/sign-in.ts';
 
 export interface EmailsTuning {
@@ -70,6 +71,7 @@ export async function buildApp(options: AppOptions) {
     });
     sessions = authenticateWith(auth);
     await serveAuth(app, auth);
+    serveLive(app, { url: config.DATABASE_URL, logger });
   }
   const flags = await startFlags({ app: service, file: config.FLAGS_FILE });
   addHealthComponent(app, flags.health);

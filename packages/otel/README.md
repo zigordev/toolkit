@@ -26,6 +26,7 @@ OpenTelemetry is the open standard for traces and metrics, and the library that 
 | `createCounterAtZero(meter, name, options, known)` | A counter whose known series all start at 0                                                               |
 | `nameRoute(route)`                                 | Tells telemetry which route the request in progress matched, such as `/api/v1/pools/:poolId`              |
 | `isProbeRequest(url)`                              | Says whether a path is a probe, which leaves no trace                                                     |
+| `isUntracedRequest(url)`                           | Says whether a path leaves no trace: a probe, or a live-update stream from `streamPaths`                  |
 
 An instrumentation is code that records telemetry for a library, such as the database driver, without the app writing any. A probe is a request that only asks whether the app is alive.
 
@@ -84,6 +85,7 @@ Every span and every metric says who sent it, and nothing more. The start names 
 ### The rules it keeps
 
 - **A probe leaves no trace.** A request to `/health`, `/favicon.ico` or `/_next/static/` gets no span, whichever part of the app would start one.
+- **A live-update stream leaves no trace.** A request to `/api/v1/live` stays open for as long as its page does, so a span or a request duration would measure the visit, not the work, and would make the API look slow. It gets no span and no count in `http.server.request.duration`. `@zigordev/live` counts the streams instead.
 - **Background work starts no trace.** A query or an outgoing request gets a span only inside another span, so a timer that polls does not fill the store. A background task that is worth a trace starts its own span.
 - **Every trace is kept.** Nothing is sampled, so `OTEL_TRACES_SAMPLER` is not read.
 - **Nothing identifies a visitor.** Before a span leaves the service, it loses the visitor's address, the user agent and the query string. A web address keeps only what comes before its `?`.

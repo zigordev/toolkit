@@ -41,9 +41,19 @@ const handleKey = Symbol.for('zigordev.otel.telemetry');
 
 type TelemetryGlobal = typeof globalThis & { [handleKey]?: Telemetry };
 
+export const streamPaths: readonly string[] = ['/api/v1/live'];
+
+function pathOf(url: string | undefined): string {
+  return (url ?? '').split('?')[0] ?? '';
+}
+
 export function isProbeRequest(url: string | undefined): boolean {
-  const path = (url ?? '').split('?')[0] ?? '';
+  const path = pathOf(url);
   return path === '/health' || path === '/favicon.ico' || path.startsWith('/_next/static/');
+}
+
+export function isUntracedRequest(url: string | undefined): boolean {
+  return isProbeRequest(url) || streamPaths.includes(pathOf(url));
 }
 
 function requestPath(attributes: Attributes): string | undefined {
@@ -53,7 +63,7 @@ function requestPath(attributes: Attributes): string | undefined {
 
 const skipProbes: Sampler = {
   shouldSample(_context, _traceId, _spanName, spanKind, attributes) {
-    if (spanKind === SpanKind.SERVER && isProbeRequest(requestPath(attributes))) {
+    if (spanKind === SpanKind.SERVER && isUntracedRequest(requestPath(attributes))) {
       return { decision: SamplingDecision.NOT_RECORD };
     }
     return { decision: SamplingDecision.RECORD_AND_SAMPLED };
@@ -109,7 +119,7 @@ export function startTelemetry(options: TelemetryOptions = {}): Telemetry {
     logRecordProcessors: [],
     instrumentations: [
       new HttpInstrumentation({
-        ignoreIncomingRequestHook: (request: IncomingMessage) => isProbeRequest(request.url),
+        ignoreIncomingRequestHook: (request: IncomingMessage) => isUntracedRequest(request.url),
         requireParentforOutgoingSpans: true,
       }),
       new UndiciInstrumentation({ requireParentforSpans: true }),

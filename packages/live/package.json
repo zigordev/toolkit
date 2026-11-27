@@ -1,0 +1,98 @@
+{
+  "name": "@zigordev/live",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Live updates for zigordev apps: the API tells its open pages what changed, over Server-Sent Events, with every running copy hearing every change through PostgreSQL",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./react": {
+      "types": "./dist/react.client.d.ts",
+      "default": "./dist/react.client.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:browser": "vitest run --config vitest.browser.config.ts --coverage"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.10.0",
+    "@zigordev/api": "workspace:^",
+    "@zigordev/otel": "workspace:^",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.0",
+    "pg": "^8.23.0",
+    "react": "^19.3.0",
+    "zod": "^4.6.0"
+  },
+  "peerDependenciesMeta": {
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@zigordev/api": {
+      "optional": true
+    },
+    "@zigordev/otel": {
+      "optional": true
+    },
+    "drizzle-orm": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/sdk-metrics": "catalog:",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "@zigordev/api": "workspace:*",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/otel": "workspace:*",
+    "@zigordev/test": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "fastify": "catalog:",
+    "pg": "catalog:shipped",
+    "playwright": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "zod": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/live"
+  }
+}
