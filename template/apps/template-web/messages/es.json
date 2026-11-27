@@ -1,12 +1,19 @@
 {
   "app": {
     "name": "Template",
-    "home": "Template, la página de inicio"
+    "home": "Template, la página de inicio",
+    "skipToContent": "Saltar al contenido"
   },
   "language": {
     "label": "Idioma",
     "en": "English",
     "es": "Español"
+  },
+  "nav": {
+    "label": "Principal",
+    "home": "Inicio",
+    "notes": "Notas",
+    "account": "Cuenta"
   },
   "home": {
     "title": "Template",

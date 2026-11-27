@@ -1,0 +1,7 @@
+@layer ds.components {
+  .ds-icon {
+    flex: none;
+    inline-size: var(--ds-size-icon-md);
+    block-size: var(--ds-size-icon-md);
+  }
+}

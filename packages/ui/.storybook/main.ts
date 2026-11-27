@@ -5,6 +5,7 @@ export const prebundled = [
   '@base-ui/react/button',
   '@base-ui/react/field',
   '@base-ui/react/use-render',
+  'lucide-react',
 ];
 
 const config: StorybookConfig = {

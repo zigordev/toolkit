@@ -15,7 +15,7 @@ A product's web app is a Next.js app that shows what its API says. Every text a 
 | The `texts` rule   | `zigordev check`, in `pnpm check` and in CI             | Runs `inlang check`, which fails on a text missing or empty in one language, short of a variable, or used by no code                                           |
 | Fink               | A web editor at fink.inlang.com, run by inlang's makers | Lets a person who is not a developer change a text in the browser and push it to a branch, for a pull request. We host nothing. Step 6.5 tries it on this repo |
 
-| The design system | `@zigordev/ui` and its stylesheet, in every page | Every button, field, checkbox and message on a page, in light and in dark, in the product's own colours |
+| The design system | `@zigordev/ui` and its stylesheet, in every page | The shell and the navigation, and every button, field, checkbox and message on a page, in light and in dark, in the product's own colours |
 | The proxy | `src/proxy.ts` in the web app | Gives each page a content security policy with a fresh nonce |
 | The page check | `browser/pages.test.ts` in the web app | Opens every page in Chromium, in both languages and both modes, and fails on an axe finding or on anything the policy blocks |
 
@@ -39,7 +39,7 @@ The address does not change with the language, as in November's apps. The page's
 
 ### The pages, on the design system
 
-The root layout loads the stylesheet of `@zigordev/ui` and its two fonts, from Fontsource, and sets `data-mode="system"` on `<html>`, so the page follows the person's light or dark setting. The template sets no `data-product`, so it wears the template's colours, lavender on anthracite. A product whose colours toolkit holds sets its own name there too, such as `data-product="gpool"`, as [record 0058](../adr/0058-each-product-wears-its-own-colours.md) says. It draws a header, with the product's name and the language switch, and one `<main>`, which holds each page.
+The root layout loads the stylesheet of `@zigordev/ui` and its two fonts, from Fontsource, and sets `data-mode="system"` on `<html>`, so the page follows the person's light or dark setting. The template sets no `data-product`, so it wears the template's colours, lavender on anthracite. A product whose colours toolkit holds sets its own name there too, such as `data-product="gpool"`, as [record 0058](../adr/0058-each-product-wears-its-own-colours.md) says. It draws the design system's app shell, as [record 0060](../adr/0060-every-app-navigates-from-one-list-of-places.md) says: a skip link first, a top bar with the product's name and the language switch, the app's main places, and one `<main>`, which holds each page. The places, Home, Notes and Account, sit in a bar at the bottom of a phone and in a rail beside the content from 600 px wide. The layout lists them once, with their translated labels and Lucide icon names, and `src/app/navigation.client.tsx` marks the current one from the address, so the mark follows each move between pages.
 
 Every element comes from the design system: `TextField`, `TextArea`, `Checkbox`, `Button`, `LinkButton` and `Alert`. The app's own CSS Modules only place them, with the tokens: `layout.module.css` and `forms.module.css`.
 
@@ -104,7 +104,7 @@ Platform's shared services route `/rum` on every product's address to Alloy's Fa
 
 ### The browser tests
 
-A module that only runs in the browser, such as a form or the account's buttons, is named `*.client.tsx`. Its test sits beside it as `*.client.test.tsx`, and runs in Chromium through Vitest's browser mode on Playwright, with `vitest.browser.config.ts`. The test renders the component with `render` from `test/render.tsx`, which gives it the real English texts and a query client, then clicks and types through `page` and `userEvent` from `vitest/browser`, as a person would. It replaces only the edges with `vi.mock`: the auth client, the API's hooks in `src/lib/notes-client.ts`, the router, `@zigordev/rum` and `go`.
+A module that only runs in the browser, such as a form or the account's buttons, is named `*.client.tsx`. Its test sits beside it as `*.client.test.tsx`, and runs in Chromium through Vitest's browser mode on Playwright, with `vitest.browser.config.ts`. The test renders the component with `render` from `test/render.tsx`, which gives it the real English texts and a query client, then clicks and types through `page` and `userEvent` from `vitest/browser`, as a person would. It replaces only the edges with `vi.mock`: the auth client, the API's hooks in `src/lib/notes-client.ts`, the router, `@zigordev/rum`, `go`, and the link of Next.js, which a component takes from `src/lib/link.ts`, because Next's own reads `process.env`, which a browser lacks.
 
 `go`, in `src/lib/navigate.ts`, loads a new page in full, after a sign-in, a sign-out and the second step. A browser test replaces it, because a real load would leave the test's own page.
 
@@ -119,7 +119,7 @@ The run counts the coverage of `src/**/*.client.{ts,tsx}` against the floor of 9
 - axe finds nothing;
 - the policy blocked nothing, and the browser logged no error.
 
-One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. The web app runs with `RUM_URL=/rum`, so Faro runs on every page, and one case reads what Faro posts: it names the app and carries nothing of the address's query. Its configuration is `vitest.pages.config.ts`. The web app's script `test:browser` runs it after the browser tests, so `pnpm test:browser` runs both, after `pnpm build`, and the pipeline's Browser job runs them in the pinned Playwright image.
+One case serves the start page with an inline script that has no nonce, and checks that the browser refuses it and reports it, so the check proves that the policy holds. Another makes a note through the form, through the API, so the browser's own requests run under the policy too. One opens the notes on a phone's width: the main places sit at the bottom, the skip link takes the first press of Tab, axe finds nothing, and a tap on Account moves the mark of the current place. The web app runs with `RUM_URL=/rum`, so Faro runs on every page, and one case reads what Faro posts: it names the app and carries nothing of the address's query. Its configuration is `vitest.pages.config.ts`. The web app's script `test:browser` runs it after the browser tests, so `pnpm test:browser` runs both, after `pnpm build`, and the pipeline's Browser job runs them in the pinned Playwright image.
 
 ### Changing a text in Fink
 

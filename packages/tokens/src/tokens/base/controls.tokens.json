@@ -8,7 +8,8 @@
     },
     "icon": {
       "sm": { "$value": { "value": 1, "unit": "rem" } },
-      "md": { "$value": { "value": 1.25, "unit": "rem" } }
+      "md": { "$value": { "value": 1.25, "unit": "rem" } },
+      "lg": { "$value": { "value": 1.5, "unit": "rem" } }
     }
   },
   "space": {
