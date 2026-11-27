@@ -67,6 +67,12 @@ describe('createRamp', () => {
     }
   });
 
+  it('keeps its text readable on its own soft fills when asked, as a soft button needs', () => {
+    const ramp = createRamp(accents.lavender.seed, 'light', { inkHue: 215, readableOnSoft: true });
+    expect(contrast(step(ramp, 11), step(ramp, 3))).toBeGreaterThanOrEqual(targets.text);
+    expect(contrast(step(ramp, 11), step(ramp, 4))).toBeGreaterThanOrEqual(targets.text);
+  });
+
   it('meets the text target against extra backgrounds it is given', () => {
     const grey = { l: 0.9, c: 0, h: 0 };
     const ramp = createRamp(accents.lavender.seed, 'light', {

@@ -52,14 +52,14 @@ Only the tokens that a product or a mode owns are written again, so a radius or 
 
 The colour files under `color/` are generated, never written by hand. Each product has two seeds in `src/palette/seeds.ts`, a background and an accent, as colours in OKLCH, a colour space whose lightness looks even across hues. `pnpm --dir packages/tokens run generate` builds twelve steps per ramp from each seed and writes the files:
 
-| Steps  | Job                              | Placed by                                   |
-| ------ | -------------------------------- | ------------------------------------------- |
-| 1 to 3 | Page, raised and sunken surfaces | A fixed lightness curve                     |
-| 4 to 7 | Hover, pressed and border tints  | A fixed lightness curve                     |
-| 8      | Strong border                    | 3.1:1 against the surfaces                  |
-| 9, 10  | Solid fill and its hover         | 4.6:1 with their label, white or near-black |
-| 11     | Text                             | 4.6:1 against the surfaces                  |
-| 12     | Strong text                      | 7.5:1 against the surfaces                  |
+| Steps  | Job                              | Placed by                                                                                                                                     |
+| ------ | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 to 3 | Page, raised and sunken surfaces | A fixed lightness curve                                                                                                                       |
+| 4 to 7 | Hover, pressed and border tints  | A fixed lightness curve                                                                                                                       |
+| 8      | Strong border                    | 3.1:1 against the surfaces                                                                                                                    |
+| 9, 10  | Solid fill and its hover         | 4.6:1 with their label, white or near-black                                                                                                   |
+| 11     | Text                             | 4.6:1 against the surfaces, and for the accent and the states also against their own soft fills, so a soft button stays readable when hovered |
+| 12     | Strong text                      | 7.5:1 against the surfaces                                                                                                                    |
 
 So contrast holds by construction. Where an accent sits close to a status colour, that status colour moves for that product: gpool's success is a leaf green, and trading-bot's danger leans toward crimson. The generator does its colour maths itself, with no library, and makes November's colours exactly.
 

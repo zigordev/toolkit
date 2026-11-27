@@ -98,9 +98,9 @@
             "$type": "color",
             "$value": {
               "colorSpace": "oklch",
-              "components": [0.5225, 0.0945, 175],
+              "components": [0.51, 0.0945, 175],
               "alpha": 1,
-              "hex": "#117b66"
+              "hex": "#077763"
             }
           },
           "12": {

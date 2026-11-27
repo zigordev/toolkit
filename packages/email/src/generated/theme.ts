@@ -9,7 +9,7 @@ export const theme: EmailTheme = {
     "border": "#d4dcdd",
     "accent": "#b7a1f5",
     "accentOn": "#0b181c",
-    "accentText": "#7562a8"
+    "accentText": "#715ea3"
   },
   "font": "\"Mona Sans Variable\", \"Mona Sans\", system-ui, -apple-system, \"Segoe UI\", \"Roboto\", sans-serif",
   "fontSize": {

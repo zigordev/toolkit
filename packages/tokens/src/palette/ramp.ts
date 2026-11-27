@@ -14,6 +14,7 @@ export interface RampOptions {
   inkHue: number;
   overrides?: RampOverrides;
   backgrounds?: Oklch[];
+  readableOnSoft?: boolean;
 }
 
 export const targets = {
@@ -88,7 +89,7 @@ export function surfacesOf(ramp: Ramp): Swatch[] {
 export function createRamp(
   seed: Oklch,
   mode: Mode,
-  { inkHue, overrides = {}, backgrounds: extra = [] }: RampOptions
+  { inkHue, overrides = {}, backgrounds: extra = [], readableOnSoft = false }: RampOptions
 ): Ramp {
   const light = mode === 'light';
   const towardContrast: Direction = light ? -1 : 1;
@@ -133,11 +134,12 @@ export function createRamp(
     (candidate) => contrast(text, candidate) >= targets.onSolid
   );
 
+  const textBackgrounds = readableOnSoft ? [...backgrounds, ...surfaces.slice(2, 4)] : backgrounds;
   const muted = search(
     light ? 0.62 : 0.6,
     towardContrast,
     (l) => at(seed, mode, 11, l),
-    (candidate) => minContrast(candidate, backgrounds) >= targets.text
+    (candidate) => minContrast(candidate, textBackgrounds) >= targets.text
   );
   const strong = search(
     strongStart[mode],
