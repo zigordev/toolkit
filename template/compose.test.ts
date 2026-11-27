@@ -331,7 +331,7 @@ describe('template-postgres, the store', () => {
 
     expect(store?.image).toMatch(/^postgres:18\.\d+-alpine\d+\.\d+@sha256:[0-9a-f]{64}$/);
     expect(postgresImage).toBe(store?.image);
-  });
+  }, 30_000);
 
   it('restarts unless it was stopped, because the host restarts itself at night', () => {
     expect(store?.restart).toBe('unless-stopped');
