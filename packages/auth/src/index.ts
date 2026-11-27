@@ -7,6 +7,7 @@ export type {
   CreateAuthOptions,
 } from './create-auth.ts';
 export {
+  appOrigins,
   authBasePath,
   createAuth,
   linkLifetimeSeconds,

@@ -367,6 +367,39 @@ describe('sign-in with email and a password', () => {
   });
 });
 
+describe('the mobile app', () => {
+  function fromApp(url: string, body: unknown, cookie?: string) {
+    return server.app.inject({
+      method: 'POST',
+      url,
+      headers: {
+        'expo-origin': 'template://',
+        'content-type': 'application/json',
+        'x-forwarded-for': `10.4.${randomInt(256)}.${randomInt(1, 255)}`,
+        ...(cookie === undefined ? {} : { cookie }),
+      },
+      payload: JSON.stringify(body),
+    });
+  }
+
+  it('signs in and out from its own scheme, which the API trusts', async () => {
+    await signUp('ada.mobile@example.com');
+
+    const signIn = await fromApp('/api/auth/sign-in/email', {
+      email: 'ada.mobile@example.com',
+      password,
+    });
+    const header = signIn.headers['set-cookie'];
+    const cookies = header === undefined ? [] : Array.isArray(header) ? header : [header];
+    const session = cookies.find((cookie) => cookie.startsWith('template.session_token='));
+    const signOut = await fromApp('/api/auth/sign-out', {}, session?.split(';')[0]);
+
+    expect(signIn.statusCode).toBe(200);
+    expect(session).toBeDefined();
+    expect(signOut.statusCode).toBe(200);
+  });
+});
+
 describe('sign-in with Google', () => {
   it('signs in through the stand-in and creates the account with a verified address', async () => {
     google.signInAs({

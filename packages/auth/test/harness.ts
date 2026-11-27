@@ -58,6 +58,7 @@ export interface HarnessOptions {
   readonly twoFactor?: boolean;
   readonly deleteUserData?: (userId: string) => Promise<void>;
   readonly configure?: (app: FastifyInstance) => void;
+  readonly appSchemes?: readonly string[];
 }
 
 export interface Harness {
@@ -103,6 +104,7 @@ export async function startHarness(options: HarnessOptions): Promise<Harness> {
     ...(options.accountDeletion === undefined ? {} : { accountDeletion: options.accountDeletion }),
     ...(options.twoFactor === undefined ? {} : { twoFactor: options.twoFactor }),
     ...(options.deleteUserData === undefined ? {} : { deleteUserData: options.deleteUserData }),
+    ...(options.appSchemes === undefined ? {} : { appSchemes: options.appSchemes }),
   });
   const app = await createApi({
     service: 'toolkit-auth-test',

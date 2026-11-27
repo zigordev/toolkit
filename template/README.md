@@ -330,6 +330,7 @@ A notes page that is open hears at once when one of its notes changes, in anothe
 
 Today it has its start screen, with the API's greeting. Sign-in, the notes screens, native components on the design tokens, screen tests with Maestro and push on Android follow, in that order.
 
+- **Sign-in.** The API trusts the app's own address scheme, `template`, through `appSchemes` in `apps/template-api/src/app.ts`, so the app's signed-in requests pass sign-in's cross-site check. The sign-in screens come next.
 - **Run it on this Mac.** Start the API first, with `pnpm --dir template dev api` or in containers. Then `pnpm --dir template/apps/template-mobile run ios` builds the app and starts it on the iOS simulator, and `run android` on the Android emulator. `pnpm --dir template dev mobile` starts only Expo's development server, for an app that is already installed.
 - **The API's address.** The app asks `EXPO_PUBLIC_API_URL`, which Expo writes into the build, and `http://localhost:3000` without it. On the Android emulator, run `adb reverse tcp:3000 tcp:3000` first, so that `localhost` reaches this Mac.
 - **A build that needs no server.** `pnpm exec expo run:ios --configuration Release`, from the app's folder, carries its own JavaScript.
