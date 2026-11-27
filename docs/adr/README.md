@@ -65,3 +65,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0055](0055-browser-monitoring-carries-over-novembers-rum.md)                         | Browser monitoring carries over November's @zigordev/rum                 | 2026-11-26 | accepted                            |
 | [0056](0056-the-inlang-github-app-stays-installed-on-toolkit.md)                      | The Inlang GitHub App stays installed on toolkit                         | 2026-11-26 | accepted                            |
 | [0057](0057-live-updates-ship-as-their-own-package.md)                                | Live updates ship as their own package                                   | 2026-11-27 | accepted                            |
+| [0058](0058-each-product-wears-its-own-colours.md)                                    | Each product wears its own colours                                       | 2026-11-27 | accepted                            |

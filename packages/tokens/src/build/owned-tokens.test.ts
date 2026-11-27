@@ -26,8 +26,8 @@ describe('tokenIds', () => {
 describe('ownedTokens', () => {
   const owned = ownedTokens(resolver);
 
-  it('finds the one modifier of the resolver', () => {
-    expect(Object.keys(owned)).toEqual(['mode']);
+  it('finds the two modifiers of the resolver: the product and the mode', () => {
+    expect(Object.keys(owned)).toEqual(['product', 'mode']);
   });
 
   it('gives every token to one modifier only', () => {
@@ -41,6 +41,13 @@ describe('ownedTokens', () => {
     );
     expect(owned.mode).not.toContain('radius.button');
     expect(owned.mode).not.toContain('color.fg.muted');
+  });
+
+  it('gives the product its colour palettes and nothing else', () => {
+    expect(owned.product).toEqual(
+      expect.arrayContaining(['color.palette.accent.dark.9', 'color.palette.neutral.light.1'])
+    );
+    expect(owned.product?.every((id) => id.startsWith('color.palette.'))).toBe(true);
   });
 
   it('reads contexts written inline in the resolver as well as referenced files', () => {

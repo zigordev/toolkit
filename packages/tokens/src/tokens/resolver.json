@@ -1,7 +1,7 @@
 {
   "name": "zigordev design system",
   "version": "2025.10",
-  "description": "One brand for every app. The base set is shared; mode is the only modifier.",
+  "description": "Shared components for every app, with each product in its own colours. The base set is shared; the product chooses the colours, and the mode chooses light or dark.",
   "sets": {
     "base": {
       "sources": [
@@ -27,18 +27,50 @@
           "$ref": "base/brand.tokens.json"
         },
         {
-          "$ref": "color/palette-brand.tokens.json"
-        },
-        {
-          "$ref": "color/palette-status.tokens.json"
-        },
-        {
           "$ref": "base/roles.tokens.json"
         }
       ]
     }
   },
   "modifiers": {
+    "product": {
+      "description": "A product's colours: its background, its accent, and the status colours moved away from that accent. The default is the template's.",
+      "contexts": {
+        "default": [
+          {
+            "$ref": "color/default/palette-brand.tokens.json"
+          },
+          {
+            "$ref": "color/default/palette-status.tokens.json"
+          }
+        ],
+        "gpool": [
+          {
+            "$ref": "color/gpool/palette-brand.tokens.json"
+          },
+          {
+            "$ref": "color/gpool/palette-status.tokens.json"
+          }
+        ],
+        "trading-bot": [
+          {
+            "$ref": "color/trading-bot/palette-brand.tokens.json"
+          },
+          {
+            "$ref": "color/trading-bot/palette-status.tokens.json"
+          }
+        ],
+        "cv": [
+          {
+            "$ref": "color/cv/palette-brand.tokens.json"
+          },
+          {
+            "$ref": "color/cv/palette-status.tokens.json"
+          }
+        ]
+      },
+      "default": "default"
+    },
     "mode": {
       "description": "Light or dark: which half of each ramp the scales use, the surfaces and the elevation.",
       "contexts": {
@@ -65,6 +97,9 @@
   "resolutionOrder": [
     {
       "$ref": "#/sets/base"
+    },
+    {
+      "$ref": "#/modifiers/product"
     },
     {
       "$ref": "#/modifiers/mode"

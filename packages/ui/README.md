@@ -14,7 +14,7 @@ The design system's components, and the one stylesheet that dresses them: the Bu
 | `Alert`      | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
 | `ui.css`     | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
 
-Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in both modes, on this Mac.
+Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
 
 ## Why we have it
 
@@ -38,7 +38,7 @@ Lightning CSS bundles the files into `dist/ui.css` and lowers it for the browser
 
 ### The Button
 
-The Button is Base UI's button with the brand's look on top. It is a `type="button"` unless it is told otherwise, so it never submits a form by surprise.
+The Button is Base UI's button with the design system's look on top. It is a `type="button"` unless it is told otherwise, so it never submits a form by surprise.
 
 | State     | What it does                                                                                              |
 | --------- | --------------------------------------------------------------------------------------------------------- |
@@ -71,7 +71,7 @@ Every other prop goes to the input or the text area: `name`, `type`, `autoComple
 
 Each component has a `*.stories.tsx` beside it. A story is one state of the component, and its `play` function is a test: it clicks, types and checks, as a person would.
 
-Storybook's Vitest addon turns every story into a browser test, which runs in Chromium through Playwright, once in light and once in dark. After each story, axe checks the page, and any finding fails the story, contrast included. The run measures coverage of `src` against the floor of 90%.
+Storybook's Vitest addon turns every story into a browser test, which runs in Chromium through Playwright eight times: in the template's colours and in those of gpool, trading-bot and the CV, each in light and in dark. After each story, axe checks the page, and any finding fails the story, contrast included. The run measures coverage of `src` against the floor of 90%.
 
 | Where        | What runs                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
@@ -120,12 +120,12 @@ With Next.js, `LinkButton` hands its look to Next's own link:
 <LinkButton render={<Link href="/notes/new" />}>New note</LinkButton>;
 ```
 
-A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state in both modes.
+A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state, which the tests then run in every product's colours and both modes.
 
 ## How to check that it works
 
-- `pnpm --dir packages/ui run test:browser` in `toolkit` runs every story in Chromium, in light and in dark, with axe and with coverage. It needs Playwright's Chromium on the machine once: `pnpm exec playwright install chromium`. It builds nothing, so build the tokens first with `pnpm --dir packages/tokens run build`.
+- `pnpm --dir packages/ui run test:browser` in `toolkit` runs every story in Chromium, in every product's colours and in light and in dark, with axe and with coverage. It needs Playwright's Chromium on the machine once: `pnpm exec playwright install chromium`. It builds nothing, so build the tokens first with `pnpm --dir packages/tokens run build`.
 - `pnpm exec vitest run --project ui` checks the stylesheet: the bundle, its layers, the token-only rule on every file, and that the pipeline's Playwright image matches the Playwright version of the workspace.
 - A story that fails with `Expected the HTML found at ... to have no violations` names the axe rule and links to its explanation. Fix the component, not the story.
-- A story that fails in one mode only usually points at a colour role whose contrast holds in one half of its ramp. Open Storybook, switch the mode in the toolbar, and look.
+- A story that fails in one product or one mode only usually points at a colour role whose contrast holds in one theme and not another. Open Storybook, switch the Product and Mode in the toolbar, and look. The test names say which, such as `ui:stories gpool light`.
 - A story that fails with a link to `localhost:6006` can be opened in Storybook at that address, with the steps of its `play` function in the Interactions panel.
