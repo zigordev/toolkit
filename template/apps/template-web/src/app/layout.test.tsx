@@ -4,7 +4,7 @@ import { testLocale } from '../../test/locale.ts';
 import { asHtml, textsIn } from '../../test/texts.ts';
 import { generateMetadata } from './layout.tsx';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/notes' }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/notes', useRouter: () => ({}) }));
 
 beforeEach(() => {
   vi.stubEnv('OTEL_SERVICE_NAME', 'template-web');
@@ -36,6 +36,13 @@ describe('the root layout', () => {
     expect(html).toContain('<header class="ds-top-bar">');
     expect(html).toContain(`aria-label="${asHtml(t('app.home'))}"`);
     expect(html).toContain(`href="/">${asHtml(t('app.name'))}</a>`);
+    expect(html).toMatch(
+      new RegExp(
+        `<button type="button"[^>]* aria-haspopup="dialog" aria-expanded="false" aria-label="${asHtml(t('palette.label'))}" aria-keyshortcuts="Control\\+K Meta\\+K" class="ds-command-palette__trigger">`
+      )
+    );
+    expect(html).toContain('<span class="ds-command-palette__keys" aria-hidden="true"></span>');
+    expect(html).not.toContain('role="dialog"');
     expect(html).toContain(`<nav aria-label="${asHtml(t('language.label'))}">`);
     expect(html).toMatch(/value="en" lang="en" aria-pressed="true"/);
     expect(html).toMatch(/value="es" lang="es" aria-pressed="false"/);
@@ -71,6 +78,7 @@ describe('the root layout', () => {
     expect(html).toMatch(/^<html lang="es" data-mode="system">/);
     expect(html).toContain(`<nav aria-label="${asHtml(t('language.label'))}">`);
     expect(html).toMatch(/value="es" lang="es" aria-pressed="true"/);
+    expect(html).toContain(`aria-label="${asHtml(t('palette.label'))}"`);
     expect(html).toContain(`<nav aria-label="${asHtml(t('nav.label'))}" class="ds-app-nav">`);
     expect(html).toContain(`>${asHtml(t('app.skipToContent'))}</a>`);
   });

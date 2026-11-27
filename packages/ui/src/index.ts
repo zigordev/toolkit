@@ -14,6 +14,12 @@ export type {
 export { Button, LinkButton } from './button/button.tsx';
 export type { CheckboxProps } from './checkbox/checkbox.tsx';
 export { Checkbox } from './checkbox/checkbox.tsx';
+export type {
+  Command,
+  CommandGroup,
+  CommandPaletteProps,
+} from './command-palette/command-palette.tsx';
+export { CommandPalette } from './command-palette/command-palette.tsx';
 export type { IconName, IconProps } from './icon/icon.tsx';
 export { Icon, iconNames } from './icon/icon.tsx';
 export type { TextAreaProps, TextFieldProps } from './text-field/text-field.tsx';

@@ -105,6 +105,7 @@ describe('the CSS sources', () => {
     ['icon.css', 'ds.components'],
     ['app-shell.css', 'ds.components'],
     ['app-nav.css', 'ds.components'],
+    ['command-palette.css', 'ds.components'],
   ];
 
   it.each(files)('%s uses tokens only and stays in %s', (file, layer) => {

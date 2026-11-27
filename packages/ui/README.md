@@ -1,24 +1,26 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the command palette, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
-| Export       | What it is                                                                                                                                                                      |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`     | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state |
-| `LinkButton` | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                |
-| `TextField`  | A labelled one-line input, of any text type, with an optional description and an error                                                                                          |
-| `TextArea`   | The same field with a text area, for text of several lines                                                                                                                      |
-| `Checkbox`   | A labelled checkbox, with an optional description                                                                                                                               |
-| `Alert`      | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
-| `AppShell`   | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                   |
-| `TopBar`     | The bar at the top of a page: the product's name at the start, and actions such as the language switch at the end                                                               |
-| `AppNav`     | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                               |
-| `SkipLink`   | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                       |
-| `Place`      | The type of one main place: an address, a label and an icon name                                                                                                                |
-| `Icon`       | One of the design system's icons, from Lucide, by its name                                                                                                                      |
-| `ui.css`     | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
+| Export           | What it is                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state |
+| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                |
+| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                          |
+| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                      |
+| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                               |
+| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
+| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                   |
+| `TopBar`         | The bar at the top of a page: the product's name at the start, and actions such as the command palette and the language switch at the end                                       |
+| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                               |
+| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                       |
+| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                |
+| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                           |
+| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                     |
+| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                      |
+| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
 
@@ -56,6 +58,22 @@ Every app frames its pages the same way, as [record 0060](../../docs/adr/0060-ev
 The width is Material Design's line between compact and medium windows. `AppNav` takes the app's places, the address of the page shown, and an optional `renderLink`, which hands each place to a router's own link, as `LinkButton`'s `render` does. A place is current on its own address and on every address under it, so Notes is current on `/notes/42`, and the start page only on `/`. The current place says `aria-current="page"` and wears the accent's soft fill. Each place shows its icon and its label, so a tap target is never an icon alone, and a label too long for its slot ends in an ellipsis while its full text stays readable to assistive technology.
 
 The links are plain links, so the navigation works before any script loads. `AppShell`, `TopBar` and `SkipLink` hold no state, and a server component can render them. `AppNav` runs in the browser too, so it can follow the address.
+
+### The command palette
+
+`CommandPalette` finds a place or an action by its name and goes there, as [record 0063](../../docs/adr/0063-every-app-opens-a-command-palette-with-ctrl-k.md) says. Every app puts one in its top bar.
+
+| Part     | What it does                                                                                                                                                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button   | A magnifier on a phone. From 600 px wide, a button shaped like a field, with its label and the keys: ⌘K on Apple devices and Ctrl K elsewhere. `aria-keyshortcuts` tells assistive technology the same keys |
+| Shortcut | Ctrl+K or ⌘K opens the palette from anywhere on the page, and closes it again                                                                                                                               |
+| Dialog   | Base UI's modal dialog. The focus moves to the search field and stays inside, and goes back where it was when the palette closes. Escape, the close button and a press outside close it                     |
+| Search   | Base UI's autocomplete, inside the dialog. It matches a command's label and its keywords, and ignores case and accents, so `espanol` finds Español                                                          |
+| Results  | The commands in their groups. The first match is highlighted, the arrow keys move, and Enter or a click runs the command. A group with no match hides, and the empty text shows when nothing matches        |
+
+A command is data: an id, a label, an icon from the list, keywords, a `lang` for a label in another language, and `onSelect`, which runs when the command is chosen and the palette closes. The app builds its commands from its places and its actions, so the palette finds the same places as `AppNav`. The app passes every text, so the palette speaks its language.
+
+Until it opens, the palette renders its button alone, which a server can render. The keys on the button come from the browser after the page starts, and the stylesheet draws them from a data attribute. So the server's HTML matches the browser's first render, and the keys are not part of the button's name, which is the label.
 
 ### The icons
 
@@ -182,6 +200,45 @@ export function Navigation({ label, places }: { label: string; places: readonly 
 >
   {children}
 </AppShell>;
+```
+
+The palette runs in the browser, with the router of the app, so it sits in a small client component too. The app passes the texts in its own language:
+
+```tsx
+'use client';
+
+import { CommandPalette, type Place } from '@zigordev/ui';
+import { useRouter } from 'next/navigation';
+
+export function Palette({ places }: { places: readonly Place[] }) {
+  const router = useRouter();
+  return (
+    <CommandPalette
+      label="Search"
+      placeholder="Search places and actions"
+      emptyLabel="Nothing matches"
+      closeLabel="Close"
+      groups={[
+        {
+          label: 'Go to',
+          commands: places.map((place) => ({
+            id: place.href,
+            label: place.label,
+            icon: place.icon,
+            onSelect: () => router.push(place.href),
+          })),
+        },
+      ]}
+    />
+  );
+}
+```
+
+```tsx
+<TopBar
+  start={<LinkButton render={<Link href="/" />}>{t('name')}</LinkButton>}
+  end={<Palette places={places} />}
+/>;
 ```
 
 A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state, which the tests then run in every product's colours and both modes.

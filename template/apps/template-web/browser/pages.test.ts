@@ -315,6 +315,47 @@ describe('the main navigation', () => {
   });
 });
 
+describe('the command palette', () => {
+  it('opens with the shortcut, goes to a place and switches the language, under the policy', async () => {
+    const context = await watchedContext({ locale: 'en', colorScheme: 'light' });
+    await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/notes`, { waitUntil: 'networkidle' });
+
+      const t = textsIn('en');
+      const dialog = page.getByRole('dialog', { name: t('palette.label') });
+      await page.keyboard.press('Control+k');
+      await dialog.waitFor();
+      await page.waitForFunction(
+        () =>
+          document.activeElement?.getAttribute('role') === 'combobox' &&
+          document.getAnimations().length === 0
+      );
+      const { violations } = await new AxeBuilder({ page }).analyze();
+      expect(
+        violations.map(
+          (violation) =>
+            `${violation.id}: ${violation.nodes.map((node) => `${node.target.join(' ')} ${node.failureSummary ?? ''}`).join(', ')}`
+        )
+      ).toEqual([]);
+
+      await page.keyboard.type('acc');
+      await page.keyboard.press('Enter');
+      await page.waitForURL(`${base}/account`);
+      await dialog.waitFor({ state: 'detached' });
+
+      await page.getByRole('button', { name: t('palette.label') }).click();
+      await dialog.getByRole('option', { name: t('language.es') }).click();
+      await page.waitForFunction(() => document.documentElement.lang === 'es');
+      await page.getByRole('button', { name: textsIn('es')('palette.label') }).waitFor();
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 describe('the notes', () => {
   it('make a new note through the form, through the API, under the policy', async () => {
     const context = await watchedContext({ locale: 'en' });

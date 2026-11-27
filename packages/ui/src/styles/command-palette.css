@@ -1,0 +1,286 @@
+@layer ds.components {
+  .ds-command-palette__trigger {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ds-space-2);
+    min-block-size: var(--ds-size-control-sm);
+    min-inline-size: var(--ds-size-control-sm);
+    margin: 0;
+    padding: 0;
+    border: var(--ds-border-width-hairline) solid transparent;
+    border-radius: var(--ds-radius-button);
+    background-color: transparent;
+    color: var(--ds-color-fg-default);
+    font-family: var(--ds-font-family-sans);
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-font-line-height-tight);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, border-color, color;
+    transition-duration: var(--ds-duration-fast);
+    transition-timing-function: var(--ds-easing-standard);
+  }
+
+  .ds-command-palette__trigger:hover {
+    background-color: var(--ds-color-bg-hover);
+  }
+
+  .ds-command-palette__trigger:focus-visible {
+    outline: var(--ds-focus-width) solid var(--ds-color-focus-ring);
+    outline-offset: var(--ds-focus-offset);
+  }
+
+  .ds-command-palette__trigger-icon {
+    flex: none;
+    inline-size: var(--ds-size-icon-sm);
+    block-size: var(--ds-size-icon-sm);
+  }
+
+  .ds-command-palette__trigger-label,
+  .ds-command-palette__keys {
+    display: none;
+  }
+
+  .ds-command-palette__keys {
+    padding-inline: var(--ds-space-1);
+    border: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+    border-radius: var(--ds-radius-sm);
+    color: var(--ds-color-fg-muted);
+    font-family: var(--ds-font-family-mono);
+    font-size: var(--ds-font-size-xs);
+    line-height: var(--ds-font-line-height-normal);
+  }
+
+  .ds-command-palette__keys::before {
+    content: attr(data-keys);
+  }
+
+  .ds-command-palette__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    background-color: var(--ds-color-bg-scrim);
+    transition: opacity var(--ds-duration-base) var(--ds-easing-standard);
+  }
+
+  .ds-command-palette__backdrop[data-starting-style],
+  .ds-command-palette__backdrop[data-ending-style] {
+    opacity: 0;
+  }
+
+  .ds-command-palette__viewport {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-block: calc(env(safe-area-inset-top, 0px) + var(--ds-space-2)) var(--ds-space-2);
+    padding-inline: var(--ds-space-2);
+  }
+
+  .ds-command-palette {
+    display: flex;
+    flex-direction: column;
+    inline-size: min(100%, var(--ds-size-overlay-dialog-md));
+    max-block-size: calc(100dvh - env(safe-area-inset-top, 0px) - 2 * var(--ds-space-2));
+    overflow: hidden;
+    border-radius: var(--ds-radius-lg);
+    background-color: var(--ds-color-bg-raised);
+    box-shadow: var(--ds-shadow-overlay);
+    color: var(--ds-color-fg-default);
+    transition-property: opacity, translate;
+    transition-duration: var(--ds-duration-base);
+    transition-timing-function: var(--ds-easing-emphasized);
+  }
+
+  .ds-command-palette[data-starting-style],
+  .ds-command-palette[data-ending-style] {
+    opacity: 0;
+    translate: 0 calc(-1 * var(--ds-space-2));
+  }
+
+  .ds-command-palette[data-ending-style] {
+    transition-duration: var(--ds-duration-fast);
+    transition-timing-function: var(--ds-easing-exit);
+  }
+
+  .ds-command-palette__header {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-1);
+    padding-inline-end: var(--ds-space-2);
+    border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+  }
+
+  .ds-command-palette__header:has(.ds-command-palette__input:focus) {
+    border-block-end-color: var(--ds-color-focus-ring);
+    box-shadow: inset 0 calc(-1 * var(--ds-border-width-hairline)) 0 var(--ds-color-focus-ring);
+  }
+
+  .ds-command-palette__search {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--ds-space-3);
+    min-inline-size: 0;
+    padding-inline-start: var(--ds-space-4);
+    cursor: text;
+  }
+
+  .ds-command-palette__search-icon {
+    flex: none;
+    color: var(--ds-color-fg-muted);
+  }
+
+  .ds-command-palette__input {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: var(--ds-size-control-lg);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    color: var(--ds-color-fg-default);
+    font-family: var(--ds-font-family-sans);
+    font-size: var(--ds-font-size-field);
+    line-height: var(--ds-font-line-height-normal);
+    outline: none;
+  }
+
+  .ds-command-palette__input::placeholder {
+    color: var(--ds-color-fg-muted);
+    opacity: 1;
+  }
+
+  .ds-command-palette__results {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: var(--ds-space-2);
+  }
+
+  .ds-command-palette__list {
+    padding: var(--ds-space-2);
+  }
+
+  .ds-command-palette__list:empty {
+    padding: 0;
+  }
+
+  .ds-command-palette__group + .ds-command-palette__group {
+    margin-block-start: var(--ds-space-2);
+  }
+
+  .ds-command-palette__group-label {
+    padding-block: var(--ds-space-2) var(--ds-space-1);
+    padding-inline: var(--ds-space-3);
+    color: var(--ds-color-fg-muted);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-semibold);
+    line-height: var(--ds-font-line-height-snug);
+  }
+
+  .ds-command-palette__item {
+    display: grid;
+    grid-template-columns: var(--ds-size-icon-md) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--ds-space-3);
+    min-block-size: var(--ds-size-control-md);
+    padding-inline: var(--ds-space-3);
+    border-radius: var(--ds-radius-md);
+    color: var(--ds-color-fg-default);
+    font-size: var(--ds-font-size-md);
+    line-height: var(--ds-font-line-height-snug);
+    cursor: pointer;
+    user-select: none;
+    scroll-margin-block: var(--ds-space-2);
+  }
+
+  .ds-command-palette__item[data-highlighted] {
+    background-color: var(--ds-color-accent-soft);
+  }
+
+  .ds-command-palette__item-icon {
+    color: var(--ds-color-fg-muted);
+  }
+
+  .ds-command-palette__item[data-highlighted] .ds-command-palette__item-icon {
+    color: var(--ds-color-accent-text);
+  }
+
+  .ds-command-palette__item-label {
+    grid-column: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ds-command-palette__empty {
+    margin: 0;
+    padding-block: var(--ds-space-6);
+    padding-inline: var(--ds-space-4);
+    color: var(--ds-color-fg-muted);
+    text-align: center;
+  }
+
+  @media (width >= 37.5rem) {
+    .ds-command-palette__trigger {
+      justify-content: flex-start;
+      inline-size: var(--ds-size-column-sm);
+      padding-inline: var(--ds-space-3) var(--ds-space-2);
+      border-color: var(--ds-color-border-field);
+      border-radius: var(--ds-radius-field);
+      background-color: var(--ds-color-bg-field);
+      color: var(--ds-color-fg-muted);
+    }
+
+    .ds-command-palette__trigger-label {
+      display: block;
+      flex: 1;
+      overflow: hidden;
+      text-align: start;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ds-command-palette__keys {
+      display: inline-block;
+    }
+
+    .ds-command-palette__keys:not([data-keys]) {
+      display: none;
+    }
+
+    .ds-command-palette__viewport {
+      padding-block: var(--ds-space-16);
+    }
+
+    .ds-command-palette {
+      max-block-size: min(var(--ds-size-overlay-dialog-md), calc(100dvh - 2 * var(--ds-space-16)));
+    }
+  }
+
+  @media (forced-colors: active) {
+    .ds-command-palette {
+      border: var(--ds-border-width-hairline) solid CanvasText;
+    }
+
+    .ds-command-palette__trigger {
+      border-color: ButtonText;
+    }
+
+    .ds-command-palette__header:has(.ds-command-palette__input:focus) {
+      border-block-end-color: Highlight;
+    }
+
+    .ds-command-palette__item[data-highlighted] {
+      outline: var(--ds-focus-width) solid Highlight;
+      outline-offset: calc(-1 * var(--ds-focus-width));
+    }
+  }
+}
