@@ -44,7 +44,8 @@ Two things a session never does, even with a yes: it never sets, rotates or dele
 
 ## How work flows
 
-- Work happens in the repo's own folder, on one working branch per change. There is no worktree and no second copy of a repo.
+- Work happens in the repo's own folder, on one working branch per change. There is no second copy of a repo.
+- `toolkit` has one exception, so that several sessions can work in it at once. While one session works in its folder, a session that changes other folders under `packages/` or `template/` works in a git worktree of its own, at `~/Desktop/Personal/zigordev/.worktrees/toolkit-<short-summary>`, and removes it after the merge. A worktree is a second working folder of the same repo, on its own branch.
 - A branch is named `<type>/<short-summary>`, is cut from `origin/main`, lives for hours and holds one concern.
 - A pull request opens as a draft. Marking it ready means: merge it when `check` is green. Merges are squashes, so the title becomes the commit.
 - Unfinished work ships switched off, behind a flag that carries a removal date.

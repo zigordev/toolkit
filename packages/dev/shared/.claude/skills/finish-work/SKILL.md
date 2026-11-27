@@ -16,5 +16,5 @@ Run these steps in order. Stop at the first one that fails, and say why.
 7. **Open the pull request as a draft**, with `gh pr create --draft`. Its title is the commit title, because a squash merge turns it into the commit. Its description has these sections: What, Why, How it was tested, Observability, Docs, Follow-ups.
 8. **Wait for `check`.** A red check is yours to fix before anything else.
 9. **Mark it ready, or leave it a draft.** Marking a pull request ready means: merge it when `check` is green. Do that with `gh pr ready` and then `gh pr merge --auto --squash`. Leave it a draft instead, and say why, when the change is one that waits for the owner.
-10. **After the merge**, run `git switch main` and `git pull`, and delete the local branch. Stop every server, container and process you started.
+10. **After the merge**, run `git switch main` and `git pull`, and delete the local branch. In a toolkit worktree, go back to the toolkit folder instead, run `git worktree remove ~/Desktop/Personal/zigordev/.worktrees/toolkit-<short-summary>`, and delete the local branch there. Stop every server, container and process you started.
 11. **Report.** Say what changed, with the pull request link. Say how it was checked, and what was not checked. Say what needs the owner. Show the output of anything that failed.
