@@ -1,12 +1,33 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from '@zigordev/ui-native';
+import { ThemeProvider, useTokens } from '@zigordev/ui-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
-import { IntlProvider } from 'use-intl';
+import { IntlProvider, useTranslations } from 'use-intl';
 import { deviceLocale } from '../src/locale';
 import { messages } from '../src/messages';
 import { createQueryClient } from '../src/query-client';
+
+function Screens() {
+  const t = useTranslations();
+  const tokens = useTokens();
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: tokens['color-bg-page'] },
+        headerTintColor: tokens['color-fg-default'],
+        headerShadowVisible: false,
+        headerBackButtonDisplayMode: 'minimal',
+        contentStyle: { backgroundColor: tokens['color-bg-page'] },
+      }}
+    >
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="sign-in" options={{ title: t('signIn.title') }} />
+      <Stack.Screen name="two-factor" options={{ title: t('twoFactor.title') }} />
+      <Stack.Screen name="account" options={{ title: t('account.title') }} />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const [client] = useState(createQueryClient);
@@ -20,7 +41,7 @@ export default function RootLayout() {
       <QueryClientProvider client={client}>
         <ThemeProvider>
           <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <Screens />
         </ThemeProvider>
       </QueryClientProvider>
     </IntlProvider>

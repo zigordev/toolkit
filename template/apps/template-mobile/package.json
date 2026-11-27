@@ -16,14 +16,17 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@better-auth/expo": "catalog:",
     "@expo/metro-runtime": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@zigordev/tokens": "workspace:*",
     "@zigordev/ui-native": "workspace:*",
+    "better-auth": "catalog:shipped",
     "expo": "catalog:",
     "expo-constants": "catalog:",
     "expo-linking": "catalog:",
     "expo-router": "catalog:",
+    "expo-secure-store": "catalog:",
     "expo-status-bar": "catalog:",
     "openapi-react-query": "catalog:",
     "react": "catalog:mobile",

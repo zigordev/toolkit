@@ -1,14 +1,17 @@
 import { Alert, Button, lineHeight, useTokens } from '@zigordev/ui-native';
+import { router } from 'expo-router';
 import { Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslations } from 'use-intl';
 import { api } from '../src/api';
+import { authClient } from '../src/auth-client.native';
 import { showsFailure } from '../src/failure';
 
 export default function Home() {
   const t = useTranslations();
   const tokens = useTokens();
   const hello = api.useQuery('get', '/api/v1/hello');
+  const session = authClient.useSession();
   const title = tokens['font-size-3xl'];
   const body = tokens['font-size-lg'];
   return (
@@ -57,6 +60,14 @@ export default function Home() {
           {hello.data?.message ?? ''}
         </Text>
       )}
+      <Button
+        variant="outline"
+        tone="neutral"
+        onPress={() => router.push(session.data === null ? '/sign-in' : '/account')}
+        testID="account"
+      >
+        {t('home.account')}
+      </Button>
     </SafeAreaView>
   );
 }
