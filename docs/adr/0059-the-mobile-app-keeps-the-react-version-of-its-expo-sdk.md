@@ -1,6 +1,6 @@
 # 0059. The mobile app keeps the React version of its Expo SDK
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-27
 - Supersedes: none
 
@@ -11,6 +11,8 @@
 React Native carries its own copy of React's renderer, and refuses to start with any other React version than the one that copy was built from. Expo names that version for each SDK: on 2026-11-27, Expo SDK 58.0.26, the newest release older than a day, named React and React DOM 19.3.0, with React Native 0.88.1.
 
 The workspace keeps one exact version of each dependency, and its default catalog holds React 19.3.1, which the web app and the design system run. [Record 0036](0036-the-client-generator-runs-on-its-own-typescript-5.md) made the one exception so far: a catalog of its own, held to one package, for a tool that cannot run the shared version.
+
+The owner accepted this exception on 2026-11-27, in their words: "Accept".
 
 ## Decision
 
