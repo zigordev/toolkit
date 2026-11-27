@@ -24,6 +24,8 @@ export type {
   CommandPaletteProps,
 } from './command-palette/command-palette.tsx';
 export { CommandPalette } from './command-palette/command-palette.tsx';
+export type { HeaderNavProps } from './header-nav/header-nav.tsx';
+export { HeaderNav } from './header-nav/header-nav.tsx';
 export type { IconName, IconProps } from './icon/icon.tsx';
 export { Icon, iconNames } from './icon/icon.tsx';
 export type { NavDrawerProps } from './nav-drawer/nav-drawer.tsx';

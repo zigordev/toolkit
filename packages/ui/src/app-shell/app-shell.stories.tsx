@@ -207,6 +207,7 @@ export const TopBarAlone: Story = {
   play: async ({ canvas, canvasElement }) => {
     await expect(canvas.getByRole('banner')).toHaveClass('story-top-bar');
     await expect(canvasElement.querySelector('.ds-top-bar__end')).toBeNull();
+    await expect(canvasElement.querySelector('.ds-top-bar__nav')).toBeNull();
     await expect(canvas.queryByRole('navigation')).toBeNull();
   },
 };
