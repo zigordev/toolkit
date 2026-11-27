@@ -1,11 +1,11 @@
 import { Alert, Button, Checkbox, TextField } from '@zigordev/ui-native';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslations } from 'use-intl';
 import { authClient } from '../src/auth-client.native';
 import { check, codeFields } from '../src/forms';
 import { Screen } from '../src/screen.native';
-import { verifyCode } from '../src/sign-in';
+import { localPath, verifyCode } from '../src/sign-in';
 import { fieldText, problemText } from '../src/texts';
 
 const trustedDays = 30;
@@ -13,6 +13,8 @@ const trustedDays = 30;
 export default function TwoFactor() {
   const t = useTranslations();
   const session = authClient.useSession();
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  const target = localPath(next);
   const [code, setCode] = useState('');
   const [trust, setTrust] = useState(false);
   const [problems, setProblems] = useState<Readonly<Record<string, string>>>({});
@@ -20,7 +22,7 @@ export default function TwoFactor() {
   const [busy, setBusy] = useState(false);
 
   if (session.data !== null) {
-    return <Redirect href="/account" />;
+    return <Redirect href={target} />;
   }
 
   async function submit() {
@@ -34,7 +36,7 @@ export default function TwoFactor() {
     const result = await verifyCode(authClient, checked.values);
     setBusy(false);
     if (result === 'signed-in') {
-      router.replace('/account');
+      router.replace(target);
     } else {
       setMessage(problemText(t, result, t('twoFactor.failed')));
     }

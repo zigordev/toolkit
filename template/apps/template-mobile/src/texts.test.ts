@@ -17,6 +17,12 @@ describe('fieldText', () => {
     expect(fieldText(es, 'required')).toBe(messages.es.fields.required);
   });
 
+  it('gives the longest length of a note’s title and text', () => {
+    expect(fieldText(t, 'title-too-long')).toBe(t('fields.tooLong', { max: 200 }));
+    expect(fieldText(t, 'body-too-long')).toBe(t('fields.tooLong', { max: 10_000 }));
+    expect(fieldText(t, 'title-too-long')).toContain('200');
+  });
+
   it('asks to check the value for any other problem', () => {
     expect(fieldText(t, 'too_small')).toBe(messages.en.fields.invalid);
   });

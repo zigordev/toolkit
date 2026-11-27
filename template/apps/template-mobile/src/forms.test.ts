@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { check, codeFields, signInFields } from './forms';
+import { check, codeFields, noteFields, noteLength, signInFields } from './forms';
 
 describe('check', () => {
   it('gives the values back when every field is right, trimmed as the web app trims them', () => {
@@ -43,6 +43,24 @@ describe('check', () => {
     expect(check(codeFields, { code: '123456', trust: true }).values).toEqual({
       code: '123456',
       trust: true,
+    });
+  });
+
+  it('checks a note with the web app’s lengths', () => {
+    expect(check(noteFields, { title: ' ', body: '', done: false }).problems).toEqual({
+      title: 'required',
+    });
+    expect(
+      check(noteFields, {
+        title: 'x'.repeat(noteLength.title + 1),
+        body: 'x'.repeat(noteLength.body + 1),
+        done: false,
+      }).problems
+    ).toEqual({ title: 'title-too-long', body: 'body-too-long' });
+    expect(check(noteFields, { title: 'Milk', body: '', done: true }).values).toEqual({
+      title: 'Milk',
+      body: '',
+      done: true,
     });
   });
 });

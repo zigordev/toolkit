@@ -1,3 +1,5 @@
+import { isRefused } from './failure';
+
 type Fetch = typeof globalThis.fetch;
 
 export const requestTimeoutMs = 10_000;
@@ -56,5 +58,5 @@ export function withTimeout(fetcher: Fetch = lateFetch, afterMs = requestTimeout
 }
 
 export function shouldRetry(failureCount: number, error: unknown): boolean {
-  return !(error instanceof RequestTimeoutError) && failureCount < retries;
+  return !(error instanceof RequestTimeoutError) && !isRefused(error) && failureCount < retries;
 }

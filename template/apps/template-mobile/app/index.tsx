@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslations } from 'use-intl';
-import { api } from '../src/api';
+import { api } from '../src/api-client.native';
 import { authClient } from '../src/auth-client.native';
 import { showsFailure } from '../src/failure';
 
@@ -60,6 +60,16 @@ export default function Home() {
           {hello.data?.message ?? ''}
         </Text>
       )}
+      <Button
+        onPress={() =>
+          router.push(
+            session.data === null ? { pathname: '/sign-in', params: { next: '/notes' } } : '/notes'
+          )
+        }
+        testID="notes"
+      >
+        {t('home.notes')}
+      </Button>
       <Button
         variant="outline"
         tone="neutral"
