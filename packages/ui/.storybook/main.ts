@@ -2,10 +2,13 @@ import type { StorybookConfig } from '@storybook/react-vite';
 import { mergeConfig } from 'vite';
 
 export const prebundled = [
+  '@base-ui/react/autocomplete',
   '@base-ui/react/button',
+  '@base-ui/react/dialog',
   '@base-ui/react/field',
   '@base-ui/react/use-render',
   'lucide-react',
+  'react-dom/server',
 ];
 
 const config: StorybookConfig = {

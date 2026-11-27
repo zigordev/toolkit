@@ -15,6 +15,13 @@
     "notes": "Notes",
     "account": "Account"
   },
+  "palette": {
+    "label": "Search",
+    "placeholder": "Search places and actions",
+    "empty": "Nothing matches",
+    "close": "Close",
+    "places": "Go to"
+  },
   "home": {
     "title": "Template",
     "apiDown": "The API does not answer.",

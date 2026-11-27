@@ -15,6 +15,13 @@
     "notes": "Notas",
     "account": "Cuenta"
   },
+  "palette": {
+    "label": "Buscar",
+    "placeholder": "Busca lugares y acciones",
+    "empty": "No hay resultados",
+    "close": "Cerrar",
+    "places": "Ir a"
+  },
   "home": {
     "title": "Template",
     "apiDown": "La API no contesta.",

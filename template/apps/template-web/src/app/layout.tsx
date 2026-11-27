@@ -13,6 +13,7 @@ import { environmentOf, getConfig } from '../lib/config.ts';
 import { LanguageSwitch } from './language-switch.tsx';
 import styles from './layout.module.css';
 import { Navigation } from './navigation.client.tsx';
+import { Palette } from './palette.client.tsx';
 import { Providers } from './providers.tsx';
 import { Rum } from './rum.client.tsx';
 
@@ -28,6 +29,7 @@ export default async function RootLayout({ children }: { readonly children: Reac
   const app = await getTranslations('app');
   const language = await getTranslations('language');
   const nav = await getTranslations('nav');
+  const palette = await getTranslations('palette');
   const places = [
     { href: '/', label: nav('home'), icon: 'house' },
     { href: '/notes', label: nav('notes'), icon: 'notebook-pen' },
@@ -61,11 +63,26 @@ export default async function RootLayout({ children }: { readonly children: Reac
                   </LinkButton>
                 }
                 end={
-                  <LanguageSwitch
-                    current={locale}
-                    label={language('label')}
-                    names={{ en: language('en'), es: language('es') }}
-                  />
+                  <>
+                    <Palette
+                      places={places}
+                      locale={locale}
+                      languages={{ en: language('en'), es: language('es') }}
+                      texts={{
+                        label: palette('label'),
+                        placeholder: palette('placeholder'),
+                        empty: palette('empty'),
+                        close: palette('close'),
+                        places: palette('places'),
+                        language: language('label'),
+                      }}
+                    />
+                    <LanguageSwitch
+                      current={locale}
+                      label={language('label')}
+                      names={{ en: language('en'), es: language('es') }}
+                    />
+                  </>
                 }
               />
             }

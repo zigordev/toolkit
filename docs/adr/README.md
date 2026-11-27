@@ -70,3 +70,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0060](0060-every-app-navigates-from-one-list-of-places.md)                           | Every app navigates from one list of places                              | 2026-11-27 | accepted                            |
 | [0061](0061-react-native-reads-the-tokens-as-javascript-values.md)                    | React Native reads the tokens as JavaScript values                       | 2026-11-27 | accepted                            |
 | [0062](0062-native-components-ship-as-their-own-package.md)                           | Native components ship as their own package                              | 2026-11-27 | accepted                            |
+| [0063](0063-every-app-opens-a-command-palette-with-ctrl-k.md)                         | Every app opens a command palette with Ctrl+K                            | 2026-11-27 | accepted                            |

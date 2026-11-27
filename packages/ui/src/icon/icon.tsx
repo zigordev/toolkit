@@ -1,10 +1,21 @@
-import { CircleUser, House, type LucideIcon, NotebookPen } from 'lucide-react';
+import {
+  CircleUser,
+  House,
+  Languages,
+  type LucideIcon,
+  NotebookPen,
+  Search,
+  X,
+} from 'lucide-react';
 import { classNames } from '../internal/class-names.ts';
 
 const glyphs = {
   'circle-user': CircleUser,
   house: House,
+  languages: Languages,
   'notebook-pen': NotebookPen,
+  search: Search,
+  x: X,
 } as const satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof glyphs;
