@@ -1,0 +1,100 @@
+@layer ds.components {
+  .ds-app-nav {
+    padding-block-end: env(safe-area-inset-bottom, 0);
+    border-block-start: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+    background-color: var(--ds-color-bg-raised);
+  }
+
+  .ds-app-nav__list {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .ds-app-nav__item {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+
+  .ds-app-nav__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ds-space-1);
+    min-block-size: var(--ds-size-nav-bar);
+    padding-block: var(--ds-space-2);
+    padding-inline: var(--ds-space-1);
+    color: var(--ds-color-fg-muted);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-medium);
+    line-height: var(--ds-font-line-height-tight);
+    text-align: center;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .ds-app-nav__indicator {
+    display: grid;
+    place-items: center;
+    inline-size: var(--ds-size-nav-indicator-inline);
+    block-size: var(--ds-size-nav-indicator-block);
+    border-radius: var(--ds-radius-full);
+    transition-property: background-color, color;
+    transition-duration: var(--ds-duration-fast);
+    transition-timing-function: var(--ds-easing-standard);
+  }
+
+  .ds-app-nav__icon {
+    inline-size: var(--ds-size-icon-lg);
+    block-size: var(--ds-size-icon-lg);
+  }
+
+  .ds-app-nav__label {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ds-app-nav__link:hover .ds-app-nav__indicator {
+    background-color: var(--ds-color-bg-hover);
+  }
+
+  .ds-app-nav__link[aria-current="page"] {
+    color: var(--ds-color-fg-default);
+    font-weight: var(--ds-font-weight-semibold);
+  }
+
+  .ds-app-nav__link[aria-current="page"] .ds-app-nav__indicator {
+    background-color: var(--ds-color-accent-soft);
+    color: var(--ds-color-accent-text);
+  }
+
+  @media (width >= 37.5rem) {
+    .ds-app-nav {
+      box-sizing: border-box;
+      inline-size: var(--ds-size-nav-rail);
+      block-size: 100%;
+      padding-block: var(--ds-space-3);
+      border-block-start: 0;
+      border-inline-end: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+    }
+
+    .ds-app-nav__list {
+      flex-direction: column;
+      gap: var(--ds-space-1);
+    }
+
+    .ds-app-nav__item {
+      flex: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .ds-app-nav__link[aria-current="page"] .ds-app-nav__indicator {
+      outline: var(--ds-border-width-thick) solid Highlight;
+    }
+  }
+}

@@ -340,7 +340,7 @@ Today it has its start screen, with the API's greeting. Sign-in, the notes scree
 
 ## The pages and their security
 
-Every page wears the design system, `@zigordev/ui`, and follows the person's light or dark setting. The root layout draws a header, with the product's name and the language switch, and one `<main>`. The forms use React Hook Form with the Zod schemas of `apps/template-web/src/lib/forms.ts`, so a field that fails says why under it, in the person's language. [Web apps](../docs/handbook/web-apps.md) explains each part.
+Every page wears the design system, `@zigordev/ui`, and follows the person's light or dark setting. The root layout draws the design system's app shell: a skip link, a top bar with the product's name and the language switch, the main places, Home, Notes and Account, in a bar at the bottom of a phone and in a rail beside the content on a wider screen, and one `<main>`. The forms use React Hook Form with the Zod schemas of `apps/template-web/src/lib/forms.ts`, so a field that fails says why under it, in the person's language. [Web apps](../docs/handbook/web-apps.md) explains each part.
 
 `apps/template-web/src/proxy.ts` gives every page a content security policy with a fresh nonce: only scripts and styles that carry it run, from the page's own address, and nothing may show the page in a frame. So every page is rendered per request. The app has its own 404 page and error page, in both languages, because those of Next.js set inline styles.
 

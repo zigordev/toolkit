@@ -1,0 +1,97 @@
+@layer ds.components {
+  .ds-app-shell {
+    position: relative;
+    display: grid;
+    grid-template-areas:
+      "top"
+      "main"
+      "nav";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    min-block-size: 100dvh;
+    background-color: var(--ds-color-bg-page);
+    color: var(--ds-color-fg-default);
+  }
+
+  .ds-app-shell__top {
+    grid-area: top;
+    min-inline-size: 0;
+  }
+
+  .ds-app-shell__main {
+    grid-area: main;
+    min-inline-size: 0;
+  }
+
+  .ds-app-shell__main:focus {
+    outline: none;
+  }
+
+  .ds-app-shell__nav {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 1;
+    grid-area: nav;
+    min-inline-size: 0;
+  }
+
+  @media (width >= 37.5rem) {
+    .ds-app-shell {
+      grid-template-areas:
+        "nav top"
+        "nav main";
+      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
+    }
+
+    .ds-app-shell__nav {
+      inset-block: 0 auto;
+      align-self: start;
+      block-size: 100dvh;
+    }
+  }
+
+  .ds-top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-3);
+    padding-block: var(--ds-space-3);
+    padding-inline: var(--ds-space-4);
+    border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+  }
+
+  .ds-top-bar__start,
+  .ds-top-bar__end {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    min-inline-size: 0;
+  }
+
+  .ds-skip-link {
+    position: absolute;
+    inset-block-start: var(--ds-space-2);
+    inset-inline-start: var(--ds-space-2);
+    z-index: 2;
+    padding-block: var(--ds-space-2);
+    padding-inline: var(--ds-space-3);
+    border-radius: var(--ds-radius-button);
+    background-color: var(--ds-color-accent-solid);
+    color: var(--ds-color-accent-on);
+    font-weight: var(--ds-font-weight-semibold);
+    text-decoration: none;
+    translate: 0 -200%;
+  }
+
+  .ds-skip-link:focus {
+    translate: none;
+  }
+
+  @media (forced-colors: active) {
+    .ds-skip-link {
+      border: var(--ds-border-width-thick) solid LinkText;
+    }
+  }
+}

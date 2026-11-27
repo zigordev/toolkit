@@ -1,6 +1,6 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the Button, the form fields and the alert today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
@@ -12,6 +12,12 @@ The design system's components, and the one stylesheet that dresses them: the Bu
 | `TextArea`   | The same field with a text area, for text of several lines                                                                                                                      |
 | `Checkbox`   | A labelled checkbox, with an optional description                                                                                                                               |
 | `Alert`      | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                              |
+| `AppShell`   | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                   |
+| `TopBar`     | The bar at the top of a page: the product's name at the start, and actions such as the language switch at the end                                                               |
+| `AppNav`     | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                               |
+| `SkipLink`   | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                       |
+| `Place`      | The type of one main place: an address, a label and an icon name                                                                                                                |
+| `Icon`       | One of the design system's icons, from Lucide, by its name                                                                                                                      |
 | `ui.css`     | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                       |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
@@ -35,6 +41,25 @@ The stylesheet is plain CSS in `src/styles`, in five cascade layers, so a later 
 ```
 
 Lightning CSS bundles the files into `dist/ui.css` and lowers it for the browsers the platform supports: Chrome and Edge 111, Firefox 113, and Safari 16.4. A component's CSS uses tokens only: no raw length, duration or colour, and no colour ramp, only roles. A test reads every file and fails on a value that breaks this. System colours are allowed only for Windows' forced colours.
+
+### The app shell and the navigation
+
+Every app frames its pages the same way, as [record 0060](../../docs/adr/0060-every-app-navigates-from-one-list-of-places.md) says. `AppShell` lays out four parts:
+
+| Part        | Below 600 px wide, a phone                             | From 600 px                                         |
+| ----------- | ------------------------------------------------------ | --------------------------------------------------- |
+| Skip link   | First on the page, shown on the first press of Tab     | The same                                            |
+| Top bar     | At the top, with the product's name and its actions    | At the top of the content, right of the rail        |
+| Main places | A bar at the bottom of the screen, which stays in view | A rail beside the content, the height of the screen |
+| `main`      | Between the two                                        | Beside the rail                                     |
+
+The width is Material Design's line between compact and medium windows. `AppNav` takes the app's places, the address of the page shown, and an optional `renderLink`, which hands each place to a router's own link, as `LinkButton`'s `render` does. A place is current on its own address and on every address under it, so Notes is current on `/notes/42`, and the start page only on `/`. The current place says `aria-current="page"` and wears the accent's soft fill. Each place shows its icon and its label, so a tap target is never an icon alone, and a label too long for its slot ends in an ellipsis while its full text stays readable to assistive technology.
+
+The links are plain links, so the navigation works before any script loads. `AppShell`, `TopBar` and `SkipLink` hold no state, and a server component can render them. `AppNav` runs in the browser too, so it can follow the address.
+
+### The icons
+
+`Icon` draws one of Lucide's icons, under the ISC licence, by its Lucide name, such as `house` or `notebook-pen`. `@zigordev/ui` lists the names it offers in `src/icon/icon.tsx`, and a product that needs another adds it there, in toolkit, as it adds its colours. A bundler keeps only the icons a page imports. An icon is decorative: it says `aria-hidden`, and the text beside it names the action.
 
 ### The Button
 
@@ -118,6 +143,45 @@ With Next.js, `LinkButton` hands its look to Next's own link:
 
 ```tsx
 <LinkButton render={<Link href="/notes/new" />}>New note</LinkButton>;
+```
+
+The root layout frames every page in the shell. `AppNav` follows the address in the browser, so it sits in a small client component of the app:
+
+```tsx
+'use client';
+
+import { AppNav, type Place } from '@zigordev/ui';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export function Navigation({ label, places }: { label: string; places: readonly Place[] }) {
+  return (
+    <AppNav
+      label={label}
+      places={places}
+      pathname={usePathname()}
+      renderLink={(place) => <Link href={place.href} />}
+    />
+  );
+}
+```
+
+```tsx
+<AppShell
+  skipLinkLabel={t('skipToContent')}
+  topBar={<TopBar start={<LinkButton render={<Link href="/" />}>{t('name')}</LinkButton>} />}
+  nav={
+    <Navigation
+      label={t('mainPlaces')}
+      places={[
+        { href: '/', label: t('home'), icon: 'house' },
+        { href: '/notes', label: t('notes'), icon: 'notebook-pen' },
+      ]}
+    />
+  }
+>
+  {children}
+</AppShell>;
 ```
 
 A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state, which the tests then run in every product's colours and both modes.

@@ -102,6 +102,9 @@ describe('the CSS sources', () => {
     ['text-field.css', 'ds.components'],
     ['checkbox.css', 'ds.components'],
     ['alert.css', 'ds.components'],
+    ['icon.css', 'ds.components'],
+    ['app-shell.css', 'ds.components'],
+    ['app-nav.css', 'ds.components'],
   ];
 
   it.each(files)('%s uses tokens only and stays in %s', (file, layer) => {

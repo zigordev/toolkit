@@ -28,7 +28,8 @@
   },
   "dependencies": {
     "@base-ui/react": "catalog:shipped",
-    "@zigordev/tokens": "workspace:^"
+    "@zigordev/tokens": "workspace:^",
+    "lucide-react": "catalog:shipped"
   },
   "peerDependencies": {
     "react": "^19.3.0",

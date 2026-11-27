@@ -48,6 +48,17 @@ const preview: Preview = {
   parameters: {
     a11y: { test: 'error' },
     layout: 'centered',
+    viewport: {
+      options: {
+        phone: { name: 'Phone', styles: { width: '390px', height: '844px' }, type: 'mobile' },
+        tablet: { name: 'Tablet', styles: { width: '834px', height: '1112px' }, type: 'tablet' },
+        computer: {
+          name: 'Computer',
+          styles: { width: '1280px', height: '800px' },
+          type: 'desktop',
+        },
+      },
+    },
   },
   tags: ['autodocs'],
 };

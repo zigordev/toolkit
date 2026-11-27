@@ -275,6 +275,46 @@ describe('the policy', () => {
   });
 });
 
+describe('the main navigation', () => {
+  it('sits at the bottom of a phone, marks the current place and follows the person', async () => {
+    const context = await watchedContext({
+      locale: 'en',
+      colorScheme: 'dark',
+      viewport: { width: 390, height: 844 },
+    });
+    await context.addCookies([{ name: sessionCookie, value: 'stand-in', url: base }]);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${base}/notes`, { waitUntil: 'networkidle' });
+
+      const t = textsIn('en');
+      const nav = page.getByRole('navigation', { name: t('nav.label') });
+      const box = await nav.boundingBox();
+      expect(Math.round((box?.y ?? 0) + (box?.height ?? 0))).toBe(844);
+      expect(
+        await nav.getByRole('link', { name: t('nav.notes') }).getAttribute('aria-current')
+      ).toBe('page');
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => document.activeElement?.textContent)).toBe(
+        t('app.skipToContent')
+      );
+      const { violations } = await new AxeBuilder({ page }).analyze();
+      expect(violations.map((violation) => violation.id)).toEqual([]);
+
+      await nav.getByRole('link', { name: t('nav.account') }).click();
+      await page.waitForURL(`${base}/account`);
+      await page.waitForFunction(
+        (name) =>
+          document.querySelector('[aria-current="page"] .ds-app-nav__label')?.textContent === name,
+        t('nav.account')
+      );
+      expect(await page.evaluate(() => window.blockedByPolicy)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 describe('the notes', () => {
   it('make a new note through the form, through the API, under the policy', async () => {
     const context = await watchedContext({ locale: 'en' });

@@ -1,6 +1,6 @@
 # Tools
 
-Every tool of the platform is listed here once, 100 in all, each with what it is, exactly what we use it for, and where it runs. A tool that is not on this page is not part of the platform, and adding one waits for the owner.
+Every tool of the platform is listed here once, 101 in all, each with what it is, exactly what we use it for, and where it runs. A tool that is not on this page is not part of the platform, and adding one waits for the owner.
 
 The platform is built in eight phases, so many of these tools are not in use yet. The [reading order](README.md) of the handbook says which pieces exist.
 
@@ -56,7 +56,7 @@ Nineteen tools build a service. Each has one job, and no second tool does the sa
 
 ## Web and design system
 
-Fourteen tools build a web app and the design system it wears.
+Fifteen tools build a web app and the design system it wears.
 
 | Tool                                    | What it is                                               | Exactly what we use it for                                                                                                                                                                                                                                                                                                                                               | Where it runs         |
 | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------- |
@@ -72,6 +72,7 @@ Fourteen tools build a web app and the design system it wears.
 | Terrazzo                                | A builder for design tokens                              | Turns the token files into CSS variables                                                                                                                                                                                                                                                                                                                                 | Laptop, CI            |
 | Lightning CSS                           | A CSS bundler                                            | Bundles the design system's CSS into the one file that `@zigordev/ui` ships, and turns the tokens' colours into the hexadecimal form that mail clients read                                                                                                                                                                                                              | Laptop, CI            |
 | Base UI                                 | Accessible components without styles                     | The behaviour under the Button, and under each component that comes later                                                                                                                                                                                                                                                                                                | Web apps              |
+| Lucide                                  | An open set of icons, under the ISC licence              | The icons of the design system, through `lucide-react`: `@zigordev/ui` offers them by Lucide's names in one list, and the mobile app can draw the same names with `lucide-react-native`                                                                                                                                                                                  | Web apps, mobile apps |
 | Fontsource                              | Fonts as packages                                        | Ships the typeface with the app, so no build depends on a font server                                                                                                                                                                                                                                                                                                    | Web apps              |
 | Storybook 10                            | A showroom for components                                | Shows every component in every state on this Mac, and its stories are the components' browser tests in CI                                                                                                                                                                                                                                                                | Laptop, CI            |
 
