@@ -59,6 +59,7 @@ export async function buildApp(options: AppOptions) {
       displayName: product.displayName,
       config: signIn.config,
       methods: signIn.methods,
+      appSchemes: [product.name],
       db,
       logger,
       sendEmail: sendAuthEmails({

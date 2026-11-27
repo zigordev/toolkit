@@ -5,6 +5,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { twoFactor } from 'better-auth/plugins';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { appOrigin } from './app-origin.ts';
 import { createBackgroundTasks } from './background.ts';
 import type { AuthConfig, AuthMethod } from './config.ts';
 import { authTables } from './drizzle.ts';
@@ -35,6 +36,19 @@ export const linkLifetimeSeconds = 60 * 60;
 
 export const trustedDeviceSeconds = 30 * 24 * 60 * 60;
 
+const schemePattern = /^[a-z][a-z0-9+.-]*$/;
+
+export function appOrigins(schemes: readonly string[]): string[] {
+  return schemes.map((scheme) => {
+    if (!schemePattern.test(scheme)) {
+      throw new Error(
+        `An app scheme is lower case, starts with a letter and has no colon: ${scheme}`
+      );
+    }
+    return `${scheme}://`;
+  });
+}
+
 export interface CreateAuthOptions<TSchema extends Record<string, unknown>> {
   readonly appName: string;
   readonly displayName?: string;
@@ -47,6 +61,7 @@ export interface CreateAuthOptions<TSchema extends Record<string, unknown>> {
   readonly twoFactor?: boolean;
   readonly deleteUserData?: (userId: string) => Promise<void>;
   readonly meter?: Meter;
+  readonly appSchemes?: readonly string[];
 }
 
 export interface Authentication {
@@ -128,9 +143,11 @@ function buildAuth<TSchema extends Record<string, unknown>>(options: CreateAuthO
     logger.warn({ event: 'auth.google_stand_in_enabled', standInUrl });
   }
 
+  const nativeOrigins = appOrigins(options.appSchemes ?? []);
   const instance = betterAuth({
     appName,
     baseURL: config.AUTH_URL,
+    ...(nativeOrigins.length === 0 ? {} : { trustedOrigins: nativeOrigins }),
     basePath: authBasePath,
     secret: config.AUTH_SECRET,
     database: drizzleAdapter(db, {
@@ -248,6 +265,7 @@ function buildAuth<TSchema extends Record<string, unknown>>(options: CreateAuthO
     },
     databaseHooks: events.databaseHooks,
     plugins: [
+      ...(nativeOrigins.length === 0 ? [] : [appOrigin()]),
       ...(passkeys
         ? [
             passkey({
