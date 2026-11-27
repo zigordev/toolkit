@@ -1,13 +1,16 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@zigordev/ui-native';
 import { Redirect, router } from 'expo-router';
 import { useTranslations } from 'use-intl';
 import { authClient } from '../src/auth-client.native';
+import { forgetPerson } from '../src/query-client';
 import { Body, Screen } from '../src/screen.native';
 import { signOut } from '../src/sign-in';
 
 export default function Account() {
   const t = useTranslations();
   const session = authClient.useSession();
+  const queries = useQueryClient();
 
   if (session.data === null) {
     return session.isPending ? <Screen /> : <Redirect href="/sign-in" />;
@@ -17,6 +20,7 @@ export default function Account() {
 
   function leave() {
     router.dismissTo('/');
+    forgetPerson(queries);
     void signOut(authClient);
   }
 

@@ -1,15 +1,17 @@
+import { noteLength } from './forms';
 import type { Problem } from './sign-in';
 
 type TextKey =
   | 'fields.required'
   | 'fields.email'
   | 'fields.invalid'
+  | 'fields.tooLong'
   | 'problems.wrongCredentials'
   | 'problems.notVerified'
   | 'problems.wrongCode'
   | 'problems.tooMany';
 
-export type Translate = (key: TextKey) => string;
+export type Translate = (key: TextKey, values?: { readonly max: number }) => string;
 
 export function fieldText(t: Translate, problem: string | undefined): string | undefined {
   switch (problem) {
@@ -19,6 +21,10 @@ export function fieldText(t: Translate, problem: string | undefined): string | u
       return t('fields.required');
     case 'email':
       return t('fields.email');
+    case 'title-too-long':
+      return t('fields.tooLong', { max: noteLength.title });
+    case 'body-too-long':
+      return t('fields.tooLong', { max: noteLength.body });
     default:
       return t('fields.invalid');
   }

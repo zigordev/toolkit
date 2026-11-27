@@ -1,6 +1,7 @@
 import type { CodeValues, SignInValues } from '../../template-web/src/lib/forms';
 import { type Problem, problemOf } from '../../template-web/src/lib/sign-in';
 
+export { localPath } from '../../template-web/src/lib/paths';
 export type { Problem };
 
 export type SignInStep = 'signed-in' | 'two-factor' | Problem;

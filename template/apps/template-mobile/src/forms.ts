@@ -1,4 +1,4 @@
-export { codeFields, signInFields } from '../../template-web/src/lib/forms';
+export { codeFields, noteFields, noteLength, signInFields } from '../../template-web/src/lib/forms';
 
 interface Issue {
   readonly path: readonly PropertyKey[];

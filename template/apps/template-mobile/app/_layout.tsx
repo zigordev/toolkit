@@ -25,6 +25,9 @@ function Screens() {
       <Stack.Screen name="sign-in" options={{ title: t('signIn.title') }} />
       <Stack.Screen name="two-factor" options={{ title: t('twoFactor.title') }} />
       <Stack.Screen name="account" options={{ title: t('account.title') }} />
+      <Stack.Screen name="notes/index" options={{ title: t('notes.title') }} />
+      <Stack.Screen name="notes/new" options={{ title: t('notes.newTitle') }} />
+      <Stack.Screen name="notes/[noteId]" options={{ title: '' }} />
     </Stack>
   );
 }

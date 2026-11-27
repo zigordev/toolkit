@@ -1,16 +1,18 @@
 import { Alert, Button, TextField } from '@zigordev/ui-native';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslations } from 'use-intl';
 import { authClient } from '../src/auth-client.native';
 import { check, signInFields } from '../src/forms';
 import { Screen } from '../src/screen.native';
-import { signInWithPassword } from '../src/sign-in';
+import { localPath, signInWithPassword } from '../src/sign-in';
 import { fieldText, problemText } from '../src/texts';
 
 export default function SignIn() {
   const t = useTranslations();
   const session = authClient.useSession();
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  const target = localPath(next);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [problems, setProblems] = useState<Readonly<Record<string, string>>>({});
@@ -18,7 +20,7 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
 
   if (session.data !== null) {
-    return <Redirect href="/account" />;
+    return <Redirect href={target} />;
   }
 
   async function submit() {
@@ -32,9 +34,9 @@ export default function SignIn() {
     const step = await signInWithPassword(authClient, checked.values);
     setBusy(false);
     if (step === 'signed-in') {
-      router.replace('/account');
+      router.replace(target);
     } else if (step === 'two-factor') {
-      router.replace('/two-factor');
+      router.replace({ pathname: '/two-factor', params: { next: target } });
     } else {
       setMessage(problemText(t, step, t('signIn.failed')));
     }

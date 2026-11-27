@@ -142,4 +142,13 @@ describe('shouldRetry', () => {
   it('never asks again after a timeout, because the person has waited already', () => {
     expect(shouldRetry(0, new RequestTimeoutError(requestTimeoutMs))).toBe(false);
   });
+
+  it('never asks again after the API refused the request, as the answer would not change', () => {
+    expect(shouldRetry(0, { status: 401, title: 'Unauthorized' })).toBe(false);
+    expect(shouldRetry(0, { status: 404, title: 'Not Found' })).toBe(false);
+  });
+
+  it('asks again after a failure on the server’s side', () => {
+    expect(shouldRetry(0, { status: 503, title: 'Service Unavailable' })).toBe(true);
+  });
 });

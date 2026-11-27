@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type SignInClient, signInWithPassword, signOut, verifyCode } from './sign-in';
+import { localPath, type SignInClient, signInWithPassword, signOut, verifyCode } from './sign-in';
 import { RequestTimeoutError } from './timeout';
 
 const values = { email: 'ada@example.com', password: 'correct horse battery staple' };
@@ -104,5 +104,14 @@ describe('signOut', () => {
     });
 
     await expect(signOut(client)).resolves.toBeUndefined();
+  });
+});
+
+describe('localPath', () => {
+  it('goes back to the screen that asked for sign-in, with the web app’s rule', () => {
+    expect(localPath('/notes')).toBe('/notes');
+    expect(localPath(undefined)).toBe('/account');
+    expect(localPath('//elsewhere.example')).toBe('/account');
+    expect(localPath('https://elsewhere.example')).toBe('/account');
   });
 });
