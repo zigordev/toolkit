@@ -26,6 +26,7 @@ export default defineConfig({
       exclude: [
         '**/*.test.{js,ts,tsx}',
         '**/*.client.{ts,tsx}',
+        '**/*.native.{ts,tsx}',
         '**/*.d.ts',
         '**/src/generated/**',
         'packages/ui/src/**',

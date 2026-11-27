@@ -1,0 +1,46 @@
+{
+  "name": "@zigordev/ui-native",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The design system's components for React Native: the Button, the form fields, the checkbox and the alert, drawn from the design tokens, in light and in dark",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "@zigordev/tokens": "workspace:^",
+    "react": "^19.3.0",
+    "react-native": "^0.88.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "@zigordev/dev": "workspace:*",
+    "@zigordev/tokens": "workspace:*",
+    "react": "catalog:mobile",
+    "react-native": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zigordev/toolkit.git",
+    "directory": "packages/ui-native"
+  }
+}

@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@zigordev/ui-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -16,8 +17,10 @@ export default function RootLayout() {
       timeZone={Intl.DateTimeFormat().resolvedOptions().timeZone}
     >
       <QueryClientProvider client={client}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <Stack screenOptions={{ headerShown: false }} />
+        </ThemeProvider>
       </QueryClientProvider>
     </IntlProvider>
   );

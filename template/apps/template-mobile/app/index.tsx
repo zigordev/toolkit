@@ -1,32 +1,62 @@
-import { StyleSheet, Text, useColorScheme } from 'react-native';
+import { Alert, Button, lineHeight, useTokens } from '@zigordev/ui-native';
+import { Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslations } from 'use-intl';
 import { api } from '../src/api';
-
-const palettes = {
-  light: { background: '#ffffff', text: '#111111' },
-  dark: { background: '#111111', text: '#f2f2f2' },
-};
+import { showsFailure } from '../src/failure';
 
 export default function Home() {
-  const t = useTranslations('home');
-  const palette = palettes[useColorScheme() === 'light' ? 'light' : 'dark'];
+  const t = useTranslations();
+  const tokens = useTokens();
   const hello = api.useQuery('get', '/api/v1/hello');
-  const greeting = hello.data?.message ?? (hello.isError ? t('apiDown') : '');
+  const title = tokens['font-size-3xl'];
+  const body = tokens['font-size-lg'];
   return (
-    <SafeAreaView style={[styles.page, { backgroundColor: palette.background }]}>
-      <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>
-        {t('title')}
+    <SafeAreaView
+      style={{
+        flex: 1,
+        gap: tokens['space-4'],
+        padding: tokens['space-6'],
+        backgroundColor: tokens['color-bg-page'],
+      }}
+    >
+      <Text
+        accessibilityRole="header"
+        style={{
+          color: tokens['color-fg-default'],
+          fontSize: title,
+          fontWeight: tokens['font-weight-bold'],
+          lineHeight: lineHeight(title, tokens['font-line-height-tight']),
+        }}
+      >
+        {t('home.title')}
       </Text>
-      <Text testID="greeting" style={[styles.greeting, { color: palette.text }]}>
-        {greeting}
-      </Text>
+      {showsFailure(hello) ? (
+        <>
+          <Alert tone="danger" testID="api-down">
+            {t('home.apiDown')}
+          </Alert>
+          <Button
+            variant="soft"
+            loading={hello.isFetching}
+            onPress={() => void hello.refetch()}
+            testID="retry"
+          >
+            {t('failure.retry')}
+          </Button>
+        </>
+      ) : (
+        <Text
+          testID="greeting"
+          style={{
+            color: tokens['color-fg-muted'],
+            fontSize: body,
+            lineHeight: lineHeight(body, tokens['font-line-height-normal']),
+          }}
+        >
+          {hello.data?.message ?? ''}
+        </Text>
+      )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  page: { flex: 1, padding: 24, gap: 12 },
-  title: { fontSize: 32, fontWeight: '700' },
-  greeting: { fontSize: 18 },
-});

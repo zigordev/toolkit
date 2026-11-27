@@ -30,6 +30,8 @@ Each command runs a part of the tests:
 
 A module that only runs in the browser, such as a form, is named `*.client.tsx`, and its test, `*.client.test.tsx`, runs in Chromium through Vitest's browser mode. `pnpm check` leaves those modules out of its coverage, because a test in Node.js cannot click a button, and the browser tests count them against the same floor. [Web apps](web-apps.md) shows how to write one.
 
+A module that only runs on a phone, such as a component of [`@zigordev/ui-native`](../../packages/ui-native/README.md), is named `*.native.tsx`, and `pnpm check` leaves it out too, because Vitest cannot draw React Native's views. What it shows in each state lives in a pure function beside it, such as `buttonStyles`, which Vitest tests with the real tokens and counts against the floor. The mobile app's screens show the rest on the simulator and the emulator, until Maestro tests them.
+
 A test that needs a container sits in a file named `*.db.test.ts`. Those files belong to a Vitest project of their own, named after the app or package with `:db` at the end, and that project's global setup starts the container. `check:quick` leaves out every project whose name ends in `:db`, so a push never waits for Docker.
 
 ```mermaid

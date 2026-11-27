@@ -33,32 +33,33 @@ It stays minimal on purpose, and it is never deployed. Its `.github/workflows/ci
 
 ## What it is built with
 
-| Tool                             | What it does here                                                                                         |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Node.js 26                       | Runs both apps. The API's TypeScript files run directly, with no build step                               |
-| Fastify 5                        | Serves the API's routes                                                                                   |
-| Next.js 16                       | Builds the web app, and renders its page on the server at each request                                    |
-| React 19                         | The web app's pages                                                                                       |
-| next-intl                        | Picks each request's language, and gives each page its texts in English or Spanish                        |
-| `@zigordev/ui`                   | Every button, field, checkbox and message on the pages, from the design system, in light and in dark      |
-| React Hook Form                  | Every form, checked by a Zod schema, with each problem shown under its field in the person's language     |
-| TanStack Query                   | The notes forms' writes from the browser, through `openapi-react-query` on the typed client               |
-| Playwright and axe               | Open every page in Chromium and check it for accessibility and for its content security policy            |
-| `@zigordev/rum`                  | Browser monitoring with Grafana Faro, once `RUM_URL` is set                                               |
-| `@zigordev/live`                 | Tells the notes pages at once that a note changed, so they fetch it again                                 |
-| Expo and React Native            | The mobile app, `apps/template-mobile`, for iOS and Android, with one file per screen through Expo Router |
-| The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                        |
-| `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                  |
-| `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                              |
-| `@zigordev/api`                  | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop    |
-| PostgreSQL 18                    | The product's database, in a container of its own on a network of its own                                 |
-| Drizzle                          | The API's queries, and with drizzle-kit the SQL of each migration                                         |
-| `@zigordev/test`                 | A real PostgreSQL for the API's tests, with one migrated copy per test file, and a real Kafka             |
-| `@zigordev/events`               | Saves each email request in the API's own database, sends it on to Kafka, and reads what became of it     |
-| `@zigordev/notifications-events` | The request and outcome events of the notifications service, and the names of their topics                |
-| Docker Compose                   | Runs the product as one project of two containers, on the network of the shared services                  |
-| The Node.js image                | The official image on Alpine Linux, at the same Node.js version as `mise.toml`. Both images are built on  |
-| Vitest 5                         | Tests the routes and the page, each app once as a real process, and the compose files                     |
+| Tool                             | What it does here                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Node.js 26                       | Runs both apps. The API's TypeScript files run directly, with no build step                                         |
+| Fastify 5                        | Serves the API's routes                                                                                             |
+| Next.js 16                       | Builds the web app, and renders its page on the server at each request                                              |
+| React 19                         | The web app's pages                                                                                                 |
+| next-intl                        | Picks each request's language, and gives each page its texts in English or Spanish                                  |
+| `@zigordev/ui`                   | Every button, field, checkbox and message on the pages, from the design system, in light and in dark                |
+| React Hook Form                  | Every form, checked by a Zod schema, with each problem shown under its field in the person's language               |
+| TanStack Query                   | The notes forms' writes from the browser, through `openapi-react-query` on the typed client                         |
+| Playwright and axe               | Open every page in Chromium and check it for accessibility and for its content security policy                      |
+| `@zigordev/rum`                  | Browser monitoring with Grafana Faro, once `RUM_URL` is set                                                         |
+| `@zigordev/live`                 | Tells the notes pages at once that a note changed, so they fetch it again                                           |
+| Expo and React Native            | The mobile app, `apps/template-mobile`, for iOS and Android, with one file per screen through Expo Router           |
+| `@zigordev/ui-native`            | Every button, field, checkbox and message on the mobile app's screens, from the design system, in light and in dark |
+| The inlang CLI                   | Checks the texts inside `pnpm check`, through the `texts` rule of `zigordev check`                                  |
+| `@zigordev/config`               | Reads each app's settings from the environment once, and stops the app when one is wrong                            |
+| `@zigordev/otel`                 | Each app's traces, metrics and log lines, and the answer of its health route                                        |
+| `@zigordev/api`                  | The API's base: the error format, paging, sign-in checks, the OpenAPI pages, the database and the stop              |
+| PostgreSQL 18                    | The product's database, in a container of its own on a network of its own                                           |
+| Drizzle                          | The API's queries, and with drizzle-kit the SQL of each migration                                                   |
+| `@zigordev/test`                 | A real PostgreSQL for the API's tests, with one migrated copy per test file, and a real Kafka                       |
+| `@zigordev/events`               | Saves each email request in the API's own database, sends it on to Kafka, and reads what became of it               |
+| `@zigordev/notifications-events` | The request and outcome events of the notifications service, and the names of their topics                          |
+| Docker Compose                   | Runs the product as one project of two containers, on the network of the shared services                            |
+| The Node.js image                | The official image on Alpine Linux, at the same Node.js version as `mise.toml`. Both images are built on            |
+| Vitest 5                         | Tests the routes and the page, each app once as a real process, and the compose files                               |
 
 ## Quick start
 
@@ -328,8 +329,9 @@ A notes page that is open hears at once when one of its notes changes, in anothe
 
 `apps/template-mobile` is an Expo app for iOS and Android: Expo SDK 58, React Native 0.88 and Expo Router, as [record 0045](../docs/adr/0045-mobile-apps-are-built-with-expo-beside-the-web-app.md) says. It is one more client of the API, and it shares the web app's pieces instead of copying them: the typed client of `packages/template-api-client`, with TanStack Query, and the texts of `apps/template-web/messages`, through use-intl, in the phone's language. It follows the phone's light or dark setting.
 
-Today it has its start screen, with the API's greeting. Sign-in, the notes screens, native components on the design tokens, screen tests with Maestro and push on Android follow, in that order.
+Today it has its start screen, with the API's greeting, drawn with the design system's native components. Sign-in, the notes screens, screen tests with Maestro and push on Android follow, in that order.
 
+- **The components.** The screens draw with [`@zigordev/ui-native`](../packages/ui-native/README.md): the Button, the fields, the checkbox and the alert, on the design tokens. `app/_layout.tsx` wraps every screen in its `ThemeProvider`, which follows the phone's light or dark setting, and a screen's own styles read the same tokens through `useTokens()`. When the API cannot be reached, the start screen shows a danger alert and a button that asks again. While it asks, the alert stays and the button shows a spinner, as `showsFailure` in `src/failure.ts` decides.
 - **Sign-in.** The API trusts the app's own address scheme, `template`, through `appSchemes` in `apps/template-api/src/app.ts`, so the app's signed-in requests pass sign-in's cross-site check. The sign-in screens come next.
 - **Run it on this Mac.** Start the API first, with `pnpm --dir template dev api` or in containers. Then `pnpm --dir template/apps/template-mobile run ios` builds the app and starts it on the iOS simulator, and `run android` on the Android emulator. `pnpm --dir template dev mobile` starts only Expo's development server, for an app that is already installed.
 - **The API's address.** The app asks `EXPO_PUBLIC_API_URL`, which Expo writes into the build, and `http://localhost:3000` without it. On the Android emulator, run `adb reverse tcp:3000 tcp:3000` first, so that `localhost` reaches this Mac.
@@ -491,7 +493,7 @@ Each slice arrived in one pull request. To leave one out, put the files of that 
 | 4, flags   | The API's `flags.json` and the flag `friendly-greeting`                                                                                                 | `@zigordev/flags`                                     | toolkit#95, first in v1.23.0, so the release before it is v1.22.0  |
 | 6, emails  | Sign-in's emails as request events to the notifications service over Kafka, the outbox tables of `@zigordev/events`, and the consumer of their outcomes | `@zigordev/events`, `@zigordev/notifications-events`  | toolkit#123                                                        |
 | 7, live    | Live updates of the notes: the API's stream and notices, and the refresh of the notes pages                                                             | `@zigordev/live`                                      | toolkit#164, first in v1.48.0, so the release before it is v1.47.1 |
-| 8, mobile  | The Expo app `apps/template-mobile`, so far its start screen with the API's greeting                                                                    | Expo and React Native                                 | toolkit's mobile step                                              |
+| 8, mobile  | The Expo app `apps/template-mobile`, so far its start screen with the API's greeting                                                                    | Expo and React Native, `@zigordev/ui-native`          | toolkit's mobile step                                              |
 
 Slice 5, the interface, is being built in step 6.5. Its first part gives each note an owner: `owner_id` points at slice 3's `users` table, so a product that leaves out slice 3 leaves out slice 5 too. Its second part puts every text of the web app in English and Spanish, its third the design system, the content security policy and the page check, its fourth the notes pages, and its fifth browser monitoring, which needs `@zigordev/rum` on npm. A product that copies the template before `@zigordev/auth` is on npm leaves out slice 3.
 
