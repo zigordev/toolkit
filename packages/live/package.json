@@ -1,7 +1,6 @@
 {
   "name": "@zigordev/live",
   "version": "0.0.0",
-  "private": true,
   "description": "Live updates for zigordev apps: the API tells its open pages what changed, over Server-Sent Events, with every running copy hearing every change through PostgreSQL",
   "license": "UNLICENSED",
   "type": "module",
