@@ -75,3 +75,4 @@ To add one, use the `write-decision-record` skill, or copy [its template](../../
 | [0065](0065-the-mobile-app-signs-in-with-better-auths-expo-client.md)                 | The mobile app signs in with Better Auth's Expo client                   | 2026-11-27 | accepted                            |
 | [0066](0066-the-account-menu-holds-the-persons-own-choices.md)                        | The account menu holds the person's own choices                          | 2026-11-27 | accepted                            |
 | [0067](0067-sites-with-a-few-pages-put-their-links-in-the-top-bar.md)                 | Sites with a few pages put their links in the top bar                    | 2026-11-27 | accepted                            |
+| [0068](0068-every-product-follows-one-look-for-its-main-content.md)                   | Every product follows one look for its main content                      | 2026-11-27 | accepted                            |
