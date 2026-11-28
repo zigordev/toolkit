@@ -19,6 +19,7 @@ jobs:
     with:
       product-folder: template
       browser: true
+      mobile-app: template/apps/template-mobile
     permissions:
       contents: read
       security-events: write
