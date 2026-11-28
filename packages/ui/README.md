@@ -1,36 +1,42 @@
 # @zigordev/ui
 
-The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the side navigation with its drawer, breadcrumbs and page tabs, the command palette, the account menu, the links in the top bar with their menu sheet, the Button, the form fields, the alert and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
+The design system's components, and the one stylesheet that dresses them: the app shell and its navigation, the side navigation with its drawer, breadcrumbs and page tabs, the command palette, the account menu, the links in the top bar with their menu sheet, the Button, the form fields, the alert, the tiles, the cards, the pills, the segmented control and the icons today, and each component a product needs later. Every component has stories, which are its browser tests.
 
 ## What it is
 
-| Export           | What it is                                                                                                                                                                               |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`         | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state          |
-| `LinkButton`     | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                         |
-| `TextField`      | A labelled one-line input, of any text type, with an optional description and an error                                                                                                   |
-| `TextArea`       | The same field with a text area, for text of several lines                                                                                                                               |
-| `Checkbox`       | A labelled checkbox, with an optional description                                                                                                                                        |
-| `Alert`          | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                                       |
-| `AppShell`       | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                            |
-| `TopBar`         | The bar at the top of a page: the product's name at the start, the main links in its `nav` slot, and actions such as the command palette and the account menu at the end                 |
-| `HeaderNav`      | The main links of a site with a few pages, in the top bar from 600 px wide. When they do not fit, and on a phone, they fold into a menu button, which opens the menu sheet               |
-| `AppNav`         | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                                        |
-| `SkipLink`       | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                                |
-| `Place`          | The type of one main place: an address, a label and an icon name                                                                                                                         |
-| `SideNav`        | The side navigation of a tool with many sections: the app's places in groups, as a rail from 600 px wide, and from 840 px as a sidebar that closes to the rail and remembers the choice  |
-| `NavDrawer`      | The menu button for the top bar of a phone, and the drawer it opens, with the same groups as `SideNav`                                                                                   |
-| `PlaceGroup`     | The type of a group of places, under an optional label                                                                                                                                   |
-| `sideNavCookie`  | The name of the cookie that keeps the person's choice for `SideNav`. `sideNavOpen` reads its value on the server                                                                         |
-| `Breadcrumbs`    | The way back from a deep page: the pages above it, as links, and its own name. On a phone, only the page above it                                                                        |
-| `PageTabs`       | The sections of one page, as links with their own addresses. It marks the current one                                                                                                    |
-| `PageLink`       | The type of a link with an address and a label, for `Breadcrumbs` and `PageTabs`. `Place` adds an icon to it                                                                             |
-| `CommandPalette` | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                                    |
-| `AccountMenu`    | The person's menu in the top bar: a button with their initials, which opens their name, their choices such as the language and light or dark, links such as their settings, and sign out |
-| `MenuChoice`     | The type of one choice in `AccountMenu`, such as the language: its label, the value chosen, the options and what runs on a change. `MenuOption` is one option                            |
-| `Command`        | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                              |
-| `Icon`           | One of the design system's icons, from Lucide, by its name                                                                                                                               |
-| `ui.css`         | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                                |
+| Export             | What it is                                                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`           | A button in four variants (`solid`, `soft`, `outline`, `ghost`), three tones (`accent`, `neutral`, `danger`) and three sizes, with icons, an icon-only form and a loading state                                           |
+| `LinkButton`       | A link that looks like the Button, for a move to another page. Its `render` prop hands it to a router's own link                                                                                                          |
+| `TextField`        | A labelled one-line input, of any text type, with an optional description and an error                                                                                                                                    |
+| `TextArea`         | The same field with a text area, for text of several lines                                                                                                                                                                |
+| `Checkbox`         | A labelled checkbox, with an optional description                                                                                                                                                                         |
+| `Alert`            | A message in a box, in four tones (`info`, `success`, `warning`, `danger`), with an optional title                                                                                                                        |
+| `Tiles`            | A few key numbers side by side, in equal columns from 600 px wide, and one above the other on a phone                                                                                                                     |
+| `Tile`             | One key number: a small muted label over the number in bold, such as Points and 117                                                                                                                                       |
+| `Card`             | One thing of a list on a raised surface: a muted label, then a row with the bold title at the start and a pill or one small button at the end, and any content below. A link in the title opens from anywhere on the card |
+| `Pill`             | A state in a small rounded label, in six tones (`accent`, `neutral`, `info`, `success`, `warning`, `danger`)                                                                                                              |
+| `SegmentedControl` | Two or more options side by side on a sunken track, the chosen one raised, under one label                                                                                                                                |
+| `Segment`          | One option of `SegmentedControl`: a button for a choice on the page, or, through `render`, a link for a choice with its own address                                                                                       |
+| `AppShell`         | The frame of every page: a skip link first, the top bar, the app's main places and one `main`                                                                                                                             |
+| `TopBar`           | The bar at the top of a page: the product's name at the start, the main links in its `nav` slot, and actions such as the command palette and the account menu at the end                                                  |
+| `HeaderNav`        | The main links of a site with a few pages, in the top bar from 600 px wide. When they do not fit, and on a phone, they fold into a menu button, which opens the menu sheet                                                |
+| `AppNav`           | The app's main places: a bar at the bottom of a phone, and a rail beside the content from 600 px wide. It marks the current place                                                                                         |
+| `SkipLink`         | A link to the main content, hidden until a keyboard reaches it. `AppShell` puts one first                                                                                                                                 |
+| `Place`            | The type of one main place: an address, a label and an icon name                                                                                                                                                          |
+| `SideNav`          | The side navigation of a tool with many sections: the app's places in groups, as a rail from 600 px wide, and from 840 px as a sidebar that closes to the rail and remembers the choice                                   |
+| `NavDrawer`        | The menu button for the top bar of a phone, and the drawer it opens, with the same groups as `SideNav`                                                                                                                    |
+| `PlaceGroup`       | The type of a group of places, under an optional label                                                                                                                                                                    |
+| `sideNavCookie`    | The name of the cookie that keeps the person's choice for `SideNav`. `sideNavOpen` reads its value on the server                                                                                                          |
+| `Breadcrumbs`      | The way back from a deep page: the pages above it, as links, and its own name. On a phone, only the page above it                                                                                                         |
+| `PageTabs`         | The sections of one page, as links with their own addresses. It marks the current one                                                                                                                                     |
+| `PageLink`         | The type of a link with an address and a label, for `Breadcrumbs` and `PageTabs`. `Place` adds an icon to it                                                                                                              |
+| `CommandPalette`   | A search for the app's places and actions, opened with Ctrl+K or ⌘K or from its button in the top bar                                                                                                                     |
+| `AccountMenu`      | The person's menu in the top bar: a button with their initials, which opens their name, their choices such as the language and light or dark, links such as their settings, and sign out                                  |
+| `MenuChoice`       | The type of one choice in `AccountMenu`, such as the language: its label, the value chosen, the options and what runs on a change. `MenuOption` is one option                                                             |
+| `Command`          | The type of one entry of the palette: an id, a label, an optional icon, keywords and language, and what it does. `CommandGroup` holds entries under a label                                                               |
+| `Icon`             | One of the design system's icons, from Lucide, by its name                                                                                                                                                                |
+| `ui.css`           | One minified stylesheet: the tokens of [`@zigordev/tokens`](../tokens/README.md), a small reset, the base styles of the page, and each component's styles                                                                 |
 
 Two tools sit under it. Base UI gives the behaviour of each component: the keyboard, the focus and the right roles for assistive technology, with no styles of its own. Storybook is the showroom: it shows every component in every state, in the template's colours and in each product's, in both modes, on this Mac.
 
@@ -168,6 +174,30 @@ Every other prop goes to the input or the text area: `name`, `type`, `autoComple
 ### The alert
 
 `Alert` is a box for a message the person has to see: a form that failed, a step that worked. A `warning` or a `danger` alert has the role `alert`, so a screen reader reads it as soon as it appears. An `info` or a `success` alert has the role `status`, which waits for a pause. It holds no script, so a server component can render it.
+
+### The content of a page
+
+Inside the navigation, every product's pages follow one look, as [record 0068](../../docs/adr/0068-every-product-follows-one-look-for-its-main-content.md) says. The handbook's page [The product look](../../docs/handbook/the-product-look.md) shows it in pictures. Four components draw it. None of them holds state, so a server component can render each.
+
+| Component                        | What it draws                                                                                                                                                                                                                                                         |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tiles` and `Tile`               | A few key numbers, each a small muted label over a bold number with figures of one width. Side by side in equal columns from 600 px wide, and one above the other on a phone. `Tiles` is a description list, so assistive technology reads each label with its number |
+| `Card`                           | One thing of a list, on a surface a step above the page with a hairline border: a muted label, then a row with the bold title at the start and a pill or one small button at its end. Other content goes below the row                                                |
+| `Pill`                           | A state, in words, in a small rounded label: the accent's soft fill by default, and `neutral`, `info`, `success`, `warning` or `danger` for the rest. Its text stays on one line and ends in an ellipsis when it runs out of room                                     |
+| `SegmentedControl` and `Segment` | Two or more options side by side on a sunken track, the chosen one raised with a hairline ring                                                                                                                                                                        |
+
+None of them casts a shadow, because a shadow belongs to what floats over the page, such as a menu or a dialog. A number keeps the default text colour, and a pill beside it says the state, so the state never rests on colour alone.
+
+A link in a card's title opens from anywhere on the card: the link stretches over it, and its focus ring goes around the whole card. The end of the row and the content below stay above the link, so a button there still works. A card holds one such link.
+
+`SegmentedControl` is a `fieldset` named by its label, so assistive technology reads the options as one group, and `disabled` on it turns every option off. A `Segment` is one of two things:
+
+| Kind                     | When                                                                | What it says                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A button                 | A choice on the page, such as the language or the view of a list    | `aria-pressed`, true on the chosen one. It is a `type="button"` unless it is told otherwise, so in a form it can be a submit button with a `name` and a `value` |
+| A link, through `render` | A choice with its own address, such as a filter in the query string | `aria-current="page"` on the current one, so the choice can be shared and reloaded                                                                              |
+
+The control is not Base UI's toggle group or radio group. The toggle group does nothing before the page's script runs, and the radio renders its hidden input with an inline `style` attribute, which the strict content security policy of the web apps blocks. A plain button in a form and a plain link work before any script loads. Each option is a stop of the Tab key. An option is 24 px high in a track of 32 px, and 40 px in a track of 48 px on a touch screen. When the options do not fit, the track scrolls sideways.
 
 ### The stories, which are the tests
 
@@ -462,6 +492,54 @@ export function Account({ name, email, mode }: { name: string; email: string; mo
     />
   );
 }
+```
+
+The content of a page uses the same components in a server component. A list of matches with key numbers above it:
+
+```tsx
+import { Button, Card, Pill, Tile, Tiles } from '@zigordev/ui';
+import Link from 'next/link';
+
+<Tiles>
+  <Tile label="Points" value="117" />
+  <Tile label="Position" value="3rd" />
+  <Tile label="Picks left" value="2" />
+</Tiles>
+<ul className={styles.cards}>
+  <li>
+    <Card
+      label="Today, 21:00"
+      title={<Link href="/matches/12">Spain – Italy</Link>}
+      end={<Pill>Your pick 2–1</Pill>}
+    />
+  </li>
+  <li>
+    <Card
+      label="Tomorrow, 20:45"
+      title={<Link href="/matches/13">Portugal – Chile</Link>}
+      end={<Button size="sm" onClick={pick}>Pick</Button>}
+    />
+  </li>
+</ul>
+```
+
+A filter with its own address hands each option to the router's link. A choice in a form posts its value:
+
+```tsx
+import { Segment, SegmentedControl } from '@zigordev/ui';
+
+<SegmentedControl label="Show">
+  <Segment current={status === undefined} render={<Link href="/notes" />}>All</Segment>
+  <Segment current={status === 'open'} render={<Link href="/notes?status=open" />}>Open</Segment>
+  <Segment current={status === 'done'} render={<Link href="/notes?status=done" />}>Done</Segment>
+</SegmentedControl>
+
+<form action={chooseLanguage}>
+  <SegmentedControl label="Language">
+    <Segment type="submit" name="locale" value="en" lang="en" current={locale === 'en'}>English</Segment>
+    <Segment type="submit" name="locale" value="es" lang="es" current={locale === 'es'}>Español</Segment>
+  </SegmentedControl>
+</form>
 ```
 
 A new component starts in its own pull request, with its CSS in `src/styles`, imported in `index.css`, its React code beside its stories, and its stories covering every state, which the tests then run in every product's colours and both modes.

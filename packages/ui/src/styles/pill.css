@@ -1,0 +1,52 @@
+@layer ds.components {
+  .ds-pill {
+    --_soft: var(--ds-color-accent-soft);
+    --_text: var(--ds-color-accent-text);
+
+    display: inline-block;
+    max-inline-size: 100%;
+    padding-inline: var(--ds-space-2);
+    overflow: hidden;
+    border: var(--ds-border-width-hairline) solid transparent;
+    border-radius: var(--ds-radius-full);
+    background-color: var(--_soft);
+    color: var(--_text);
+    font-size: var(--ds-font-size-xs);
+    font-weight: var(--ds-font-weight-semibold);
+    line-height: var(--ds-font-line-height-normal);
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .ds-pill[data-tone="neutral"] {
+    --_soft: var(--ds-color-neutral-soft);
+    --_text: var(--ds-color-fg-default);
+  }
+
+  .ds-pill[data-tone="info"] {
+    --_soft: var(--ds-color-info-soft);
+    --_text: var(--ds-color-info-text);
+  }
+
+  .ds-pill[data-tone="success"] {
+    --_soft: var(--ds-color-success-soft);
+    --_text: var(--ds-color-success-text);
+  }
+
+  .ds-pill[data-tone="warning"] {
+    --_soft: var(--ds-color-warning-soft);
+    --_text: var(--ds-color-warning-text);
+  }
+
+  .ds-pill[data-tone="danger"] {
+    --_soft: var(--ds-color-danger-soft);
+    --_text: var(--ds-color-danger-text);
+  }
+
+  @media (forced-colors: active) {
+    .ds-pill {
+      border-color: CanvasText;
+    }
+  }
+}

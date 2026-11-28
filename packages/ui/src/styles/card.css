@@ -1,0 +1,85 @@
+@layer ds.components {
+  .ds-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+    padding-block: var(--ds-space-3);
+    padding-inline: var(--ds-space-4);
+    border: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+    border-radius: var(--ds-radius-card);
+    background-color: var(--ds-color-bg-raised);
+    color: var(--ds-color-fg-default);
+  }
+
+  .ds-card__label {
+    color: var(--ds-color-fg-muted);
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-font-line-height-snug);
+  }
+
+  .ds-card__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ds-space-2);
+    min-inline-size: 0;
+  }
+
+  .ds-card__title {
+    min-inline-size: 0;
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold);
+    line-height: var(--ds-font-line-height-snug);
+    overflow-wrap: anywhere;
+  }
+
+  .ds-card__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ds-card__title a::after {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--ds-radius-card);
+    content: "";
+  }
+
+  .ds-card__title a:hover {
+    text-decoration-line: underline;
+    text-decoration-thickness: var(--ds-font-underline-thickness);
+    text-underline-offset: var(--ds-font-underline-offset);
+  }
+
+  .ds-card__title a:focus-visible {
+    outline: none;
+  }
+
+  .ds-card__title a:focus-visible::after {
+    outline: var(--ds-focus-width) solid var(--ds-color-focus-ring);
+    outline-offset: var(--ds-focus-offset);
+  }
+
+  .ds-card__end {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--ds-space-2);
+  }
+
+  .ds-card__body {
+    position: relative;
+    z-index: 1;
+    margin-block-start: var(--ds-space-2);
+  }
+
+  @media (forced-colors: active) {
+    .ds-card__title a:focus-visible::after {
+      outline-color: Highlight;
+    }
+  }
+}
