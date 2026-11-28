@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, lstatSync, readFileSync, statSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
+import { affected } from './affected.ts';
 import { contract } from './contract/run.ts';
 import { repoFiles } from './files.ts';
 import { firstPublish, type Interact } from './first-publish.ts';
@@ -30,6 +31,7 @@ function usage(rules: readonly Rule[]): string {
     '       zigordev release pack <folder> <version>',
     '       zigordev first-publish [--dry-run] <package...>',
     '       zigordev contract',
+    '       zigordev affected --base <commit> <folder...>',
     '',
     'check          With no rule, every rule runs. With files, the rules that read files read only those.',
     'sync           Links the shared rules and skills of @zigordev/dev into this repo, and copies',
@@ -41,6 +43,10 @@ function usage(rules: readonly Rule[]): string {
     '               Only the owner of the npm account runs it. With --dry-run it changes nothing.',
     'contract       Starts the product of this folder from its built images, beside a stand-in for the',
     '               telemetry agent, and holds each app to promises 1 to 6 of the platform contract.',
+    'affected       Says whether the changes since a commit reach the projects in the folders: their',
+    '               files, the files they import from outside, the workspace packages they ship with,',
+    '               mise.toml, or the packages they resolve to. A folder that holds no project counts',
+    '               as itself. The last line, affected=true or affected=false, is for the pipeline.',
     '',
     'Rules:',
     ...rules.map((rule) => `  ${rule.name.padEnd(13)}${rule.summary}`),
@@ -219,6 +225,22 @@ function publishFirst(args: readonly string[], io: Io): number | undefined {
   return 0;
 }
 
+function reach(args: readonly string[], io: Io): number | undefined {
+  const [flag, base, ...paths] = args;
+  if (flag !== '--base' || base === undefined || paths.length === 0) {
+    return undefined;
+  }
+  if (paths.some((path) => path.startsWith('-'))) {
+    return undefined;
+  }
+  try {
+    return affected(paths, base, io);
+  } catch (error) {
+    io.write(`zigordev affected: ${error instanceof Error ? error.message : String(error)}\n`);
+    return 1;
+  }
+}
+
 export function main(argv: readonly string[], io: Io): number {
   const [command, ...rest] = argv;
   const rules = rulesWith(io.shared);
@@ -236,6 +258,12 @@ export function main(argv: readonly string[], io: Io): number {
   }
   if (command === 'first-publish') {
     const code = publishFirst(rest, io);
+    if (code !== undefined) {
+      return code;
+    }
+  }
+  if (command === 'affected') {
+    const code = reach(rest, io);
     if (code !== undefined) {
       return code;
     }

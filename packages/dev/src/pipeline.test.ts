@@ -71,12 +71,16 @@ describe('the machines of the pipeline', () => {
     'template/.github/workflows/ci.yml': product,
   };
   const arm = new Set(['contract', 'image']);
+  const mac = new Set(['screens-ios']);
 
   it('reads every job of the five workflows', () => {
     expect(jobs(workflow)).toEqual([
       'quality',
       'contract',
       'browser',
+      'mobile-changes',
+      'screens-ios',
+      'screens-android',
       'title',
       'dependencies',
       'scan',
@@ -88,14 +92,14 @@ describe('the machines of the pipeline', () => {
     expect(jobs(product)).toEqual(['pipeline', 'check', 'publish', 'deploy']);
   });
 
-  it('name Ubuntu 26.04 exactly on every job, or call a workflow of this repo that does', () => {
+  it('name Ubuntu 26.04 exactly on every job, macOS 26 for the iPhone, or call a workflow of this repo that does', () => {
     const wrong = Object.entries(files).flatMap(([file, text]) =>
       jobs(text).flatMap((name) => {
         const block = job(text, name);
         const label = /^ {4}runs-on: (.+)$/m.exec(block)?.[1];
         const calls =
           /^ {4}uses: \S*\.github\/workflows\/[\w-]+\.yml(?:@[0-9a-f]{40} # v\S+)?$/m.test(block);
-        const named = arm.has(name) ? `${ubuntu}-arm` : ubuntu;
+        const named = mac.has(name) ? 'macos-26' : arm.has(name) ? `${ubuntu}-arm` : ubuntu;
         const right = label === undefined ? calls : label === named;
         return right ? [] : [`${file}: the job ${name} runs on ${label ?? 'no named machine'}`];
       })
@@ -345,6 +349,84 @@ describe('the Browser job', () => {
   it('is asked for by this repo and by the template, whose web app has browser tests', () => {
     expect(job(caller, 'pipeline')).toContain('      browser: true\n');
     expect(job(product, 'pipeline')).toContain('      browser: true\n');
+  });
+});
+
+describe('the screen tests of a mobile app', () => {
+  const screens = ['screens-ios', 'screens-android'];
+
+  it('look for changes only for a repo that names its mobile app, and only on a pull request', () => {
+    expect(workflow).toContain('      mobile-app:\n');
+    expect(job(workflow, 'mobile-changes')).toContain(
+      "    if: inputs.mobile-app != '' && github.event_name == 'pull_request'\n"
+    );
+  });
+
+  it('ask zigordev affected whether the changes since the base of the pull request reach the app, or the workflows that test it', () => {
+    const steps = job(workflow, 'mobile-changes');
+
+    expect(steps).toContain('          fetch-depth: 0\n');
+    expect(steps).toContain(`          BASE: \${{ github.event.pull_request.base.sha }}\n`);
+    expect(steps).toContain(
+      '          pnpm exec zigordev affected --base "$BASE" "$MOBILE_APP" .github/workflows/ci.yml .github/workflows/check.yml > "$RUNNER_TEMP/affected.txt"\n'
+    );
+    expect(steps).toContain(
+      '          tail -n 1 "$RUNNER_TEMP/affected.txt" >> "$GITHUB_OUTPUT"\n'
+    );
+    expect(steps).toContain(`      affected: \${{ steps.affected.outputs.affected }}\n`);
+  });
+
+  it('run on the iPhone and on Android only when the answer is yes', () => {
+    for (const name of screens) {
+      expect(job(workflow, name)).toContain(
+        "    needs: [mobile-changes]\n    if: needs.mobile-changes.outputs.affected == 'true'\n"
+      );
+    }
+  });
+
+  it('may read the repo, and nothing else', () => {
+    for (const name of [...screens, 'mobile-changes']) {
+      expect(permissions(job(workflow, name))).toEqual(['contents: read']);
+      expect(job(workflow, name)).toContain('persist-credentials: false');
+    }
+  });
+
+  it('install Maestro from the mise.toml of the app, beside Node.js and pnpm', () => {
+    for (const name of screens) {
+      expect(job(workflow, name)).toContain(
+        `          working_directory: \${{ inputs.mobile-app }}\n          install_args: node pnpm maestro\n`
+      );
+    }
+  });
+
+  it('start the API themselves, on a database of the job that no one else can reach', () => {
+    for (const name of screens) {
+      const steps = job(workflow, name);
+
+      expect(steps).toContain(
+        '      DATABASE_URL: postgresql://screens:screens-only@127.0.0.1:5432/screens\n'
+      );
+      expect(steps).toContain('--auth=trust');
+      expect(steps).toContain('-p 5432 -k $RUNNER_TEMP');
+      expect(steps).toMatch(
+        /run: pnpm --dir "\$MOBILE_APP" run test:screens -- --with-api --platform (ios|android)\n/
+      );
+    }
+  });
+
+  it('let only the Android build reach the API on plain http', () => {
+    expect(job(workflow, 'screens-android')).toContain('      EXPO_ALLOW_LOCAL_HTTP: "1"\n');
+    expect(job(workflow, 'screens-ios')).not.toContain('EXPO_ALLOW_LOCAL_HTTP');
+  });
+
+  it("never publish Maestro's output, which keeps the test passwords", () => {
+    for (const name of screens) {
+      expect(job(workflow, name)).not.toMatch(/upload-artifact|\.maestro/);
+    }
+  });
+
+  it('are asked for by this repo, for the mobile app of the template', () => {
+    expect(job(caller, 'pipeline')).toContain('      mobile-app: template/apps/template-mobile\n');
   });
 });
 

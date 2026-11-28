@@ -11,6 +11,10 @@ on:
         description: Whether the repo has browser tests, which the script test:browser runs after a build, in the pinned Playwright image that holds the browsers. In toolkit they are the design system's stories and the template's forms and pages. In a product, they are its web app's forms and pages.
         type: boolean
         default: false
+      mobile-app:
+        description: The folder of a product's mobile app. On a pull request that changes the app, or what it is built from, its screen tests run with Maestro on the iOS simulator and on the Android emulator. A repo without a mobile app leaves it out.
+        type: string
+        default: ""
 
 permissions: {}
 
@@ -92,6 +96,163 @@ jobs:
 
       - name: Run the browser tests
         run: pnpm run test:browser
+
+  mobile-changes:
+    name: Mobile changes
+    if: inputs.mobile-app != '' && github.event_name == 'pull_request'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      LEFTHOOK: "0"
+    outputs:
+      affected: ${{ steps.affected.outputs.affected }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          install_args: node pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Ask whether the changes reach the mobile app
+        id: affected
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          MOBILE_APP: ${{ inputs.mobile-app }}
+        run: |
+          pnpm exec zigordev affected --base "$BASE" "$MOBILE_APP" .github/workflows/ci.yml .github/workflows/check.yml > "$RUNNER_TEMP/affected.txt"
+          cat "$RUNNER_TEMP/affected.txt"
+          tail -n 1 "$RUNNER_TEMP/affected.txt" >> "$GITHUB_OUTPUT"
+
+  screens-ios:
+    name: Screens (iOS)
+    needs: [mobile-changes]
+    if: needs.mobile-changes.outputs.affected == 'true'
+    runs-on: macos-26
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      LEFTHOOK: "0"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      DATABASE_URL: postgresql://screens:screens-only@127.0.0.1:5432/screens
+      DATABASE_ADMIN_URL: postgresql://postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          working_directory: ${{ inputs.mobile-app }}
+          install_args: node pnpm maestro
+
+      - name: Start the simulator
+        run: |
+          udid="$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries | sort_by(.key)[] | select(.key | contains("iOS")) | .value[] | select(.name == "iPhone 17 Pro")] | last | .udid')"
+          test -n "$udid" && test "$udid" != "null"
+          echo "SIMULATOR=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Start PostgreSQL
+        run: |
+          brew install --quiet postgresql@18
+          bin="$(brew --prefix postgresql@18)/bin"
+          "$bin/initdb" --pgdata="$RUNNER_TEMP/postgres" --username=postgres --auth=trust --encoding=UTF8 --no-locale > /dev/null
+          "$bin/pg_ctl" --pgdata="$RUNNER_TEMP/postgres" --log="$RUNNER_TEMP/postgres.log" --options="-p 5432 -k $RUNNER_TEMP" --wait start
+
+      - name: Build the app and put it on the simulator
+        env:
+          MOBILE_APP: ${{ inputs.mobile-app }}
+        run: |
+          xcrun simctl bootstatus "$SIMULATOR" -b > /dev/null
+          pnpm --dir "$MOBILE_APP" exec expo run:ios --configuration Release --device "$SIMULATOR" --no-bundler
+
+      - name: Run the screen tests
+        env:
+          MOBILE_APP: ${{ inputs.mobile-app }}
+        run: pnpm --dir "$MOBILE_APP" run test:screens -- --with-api --platform ios
+
+  screens-android:
+    name: Screens (Android)
+    needs: [mobile-changes]
+    if: needs.mobile-changes.outputs.affected == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      LEFTHOOK: "0"
+      EXPO_ALLOW_LOCAL_HTTP: "1"
+      SYSTEM_IMAGE: system-images;android-35;default;x86_64
+      DATABASE_URL: postgresql://screens:screens-only@127.0.0.1:5432/screens
+      DATABASE_ADMIN_URL: postgresql://postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+        with:
+          working_directory: ${{ inputs.mobile-app }}
+          install_args: node pnpm maestro
+
+      - name: Start the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules > /dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          tools="$ANDROID_HOME/cmdline-tools/latest/bin"
+          "$tools/sdkmanager" --install emulator "$SYSTEM_IMAGE" > /dev/null
+          echo no | "$tools/avdmanager" create avd --name screens --package "$SYSTEM_IMAGE" --device pixel_7
+          nohup "$ANDROID_HOME/emulator/emulator" -avd screens -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Start PostgreSQL
+        run: |
+          bin=/usr/lib/postgresql/18/bin
+          "$bin/initdb" --pgdata="$RUNNER_TEMP/postgres" --username=postgres --auth=trust --encoding=UTF8 --no-locale > /dev/null
+          "$bin/pg_ctl" --pgdata="$RUNNER_TEMP/postgres" --log="$RUNNER_TEMP/postgres.log" --options="-p 5432 -k $RUNNER_TEMP" --wait start
+
+      - name: Wait for the emulator
+        run: |
+          adb wait-for-device
+          timeout 300 sh -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 2; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb reverse tcp:3000 tcp:3000
+
+      - name: Build the app and put it on the emulator
+        env:
+          MOBILE_APP: ${{ inputs.mobile-app }}
+        run: pnpm --dir "$MOBILE_APP" exec expo run:android --variant release --no-bundler
+
+      - name: Run the screen tests
+        env:
+          MOBILE_APP: ${{ inputs.mobile-app }}
+        run: pnpm --dir "$MOBILE_APP" run test:screens -- --with-api --platform android
 
   title:
     name: Title

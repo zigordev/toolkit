@@ -6,18 +6,18 @@ The developer setup that every zigordev repo shares: the `zigordev` command, one
 
 One command and a handful of files that a repo refers to instead of writing its own.
 
-| Part                    | What it holds                                                                                                                                  | A repo refers to it as                            |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `zigordev`              | The command that checks a repo against the standards, links and copies the shared files, and holds a product's images to the platform contract | `pnpm exec zigordev`                              |
-| `shared/`               | The files that are the same in every repo                                                                                                      | Linked or copied into the repo by `zigordev sync` |
-| `biome.json`            | The lint and format rules                                                                                                                      | `@zigordev/dev/biome`                             |
-| `tsconfig/base.json`    | The strict TypeScript options                                                                                                                  | `@zigordev/dev/tsconfig/base.json`                |
-| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                                                                                | `@zigordev/dev/tsconfig/node.json`                |
-| `tsconfig/library.json` | The same, for a package that is compiled before it ships                                                                                       | `@zigordev/dev/tsconfig/library.json`             |
-| `tsconfig/next.json`    | The base, for a Next.js app                                                                                                                    | `@zigordev/dev/tsconfig/next.json`                |
-| `lefthook.yml`          | The git hooks                                                                                                                                  | `node_modules/@zigordev/dev/lefthook.yml`         |
-| `commitlint.js`         | The commit rules                                                                                                                               | `@zigordev/dev/commitlint`                        |
-| `semantic-release.js`   | The release settings, for a repo that publishes packages                                                                                       | `@zigordev/dev/semantic-release`                  |
+| Part                    | What it holds                                                                                                                                                                           | A repo refers to it as                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `zigordev`              | The command that checks a repo against the standards, links and copies the shared files, holds a product's images to the platform contract, and says whether a change reaches a project | `pnpm exec zigordev`                              |
+| `shared/`               | The files that are the same in every repo                                                                                                                                               | Linked or copied into the repo by `zigordev sync` |
+| `biome.json`            | The lint and format rules                                                                                                                                                               | `@zigordev/dev/biome`                             |
+| `tsconfig/base.json`    | The strict TypeScript options                                                                                                                                                           | `@zigordev/dev/tsconfig/base.json`                |
+| `tsconfig/node.json`    | The base, for code that Node.js runs from `src`                                                                                                                                         | `@zigordev/dev/tsconfig/node.json`                |
+| `tsconfig/library.json` | The same, for a package that is compiled before it ships                                                                                                                                | `@zigordev/dev/tsconfig/library.json`             |
+| `tsconfig/next.json`    | The base, for a Next.js app                                                                                                                                                             | `@zigordev/dev/tsconfig/next.json`                |
+| `lefthook.yml`          | The git hooks                                                                                                                                                                           | `node_modules/@zigordev/dev/lefthook.yml`         |
+| `commitlint.js`         | The commit rules                                                                                                                                                                        | `@zigordev/dev/commitlint`                        |
+| `semantic-release.js`   | The release settings, for a repo that publishes packages                                                                                                                                | `@zigordev/dev/semantic-release`                  |
 
 ## Why we have it
 
@@ -156,6 +156,24 @@ When a job fails, its app never starts, and the command says that the product di
 
 It ends with code 0 when every promise is kept and with code 1 when one is broken. Either way it removes everything it started. Two apps that keep the contract take about 25 seconds. An app that breaks it takes longer, up to a minute more, because the command waits before it gives up.
 
+### The affected command
+
+`zigordev affected --base <commit> <folder...>` says whether the changes since a commit reach the projects in the folders. The pipeline's Mobile changes job asks it about the mobile app, and its answer starts the screen tests or skips them, as [The pipeline](../../docs/handbook/the-pipeline.md) says. It compares the commit with `HEAD` and counts five things:
+
+1. **The folders.** A changed file in a project's folder, or in a workspace package it ships with. pnpm names those packages, following production dependencies only, so a change to a test tool reaches nothing.
+2. **The imports from outside.** A changed file that the code imports by a relative path from outside the folders, such as the texts and forms the mobile app shares with the web app. The command follows those imports from file to file.
+3. **The tools.** A changed `mise.toml`, which pins Node.js and pnpm for every build.
+4. **The lockfile.** When `pnpm-lock.yaml` or `pnpm-workspace.yaml` changed, pnpm lists every package the projects resolve to, from the lockfile alone, at `HEAD` and at the commit. The command checks the commit out in a folder of its own for that, and removes it afterwards. Any package in or out counts.
+5. **Plain paths.** A folder or file that holds no project counts as itself, such as a workflow file.
+
+It prints what it found and ends with `affected=true` or `affected=false`, the line the pipeline reads. It changes nothing, and it ends with code 1 when git cannot compare the commits:
+
+```text
+Changed in the folders: template/apps/template-mobile/app/index.tsx
+So the changes since 1280515 reach template/apps/template-mobile
+affected=true
+```
+
 ### The session rules
 
 Claude Code does the building in every repo, and `shared/.claude/` holds what it works under. `zigordev sync` links its rules and skills into each repo and copies its settings and hooks, so a session finds the same rules everywhere, in a cloud session too once it has installed.
@@ -278,9 +296,10 @@ pnpm exec zigordev sync
 pnpm exec zigordev release plan
 pnpm exec zigordev first-publish --dry-run @zigordev/dev
 pnpm exec zigordev contract
+pnpm exec zigordev affected --base origin/main template/apps/template-mobile
 ```
 
-The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing. The sixth says what the first publish of a package would do, and changes nothing either. The seventh holds the product of the folder to the contract. It needs Docker running, and the product's images built.
+The first line runs every rule. The second runs two of them. The third reads one file only. The fourth brings the shared files up to date. The fifth says which public packages npm lacks at the latest version, and it changes nothing. The sixth says what the first publish of a package would do, and changes nothing either. The seventh holds the product of the folder to the contract. It needs Docker running, and the product's images built. The eighth says whether the changes of this branch reach the template's mobile app.
 
 ## How to check that it works
 

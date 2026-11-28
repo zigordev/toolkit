@@ -6,15 +6,17 @@ The pipeline is the set of checks that every change passes on GitHub: on its pul
 
 It is written once, in `toolkit`, as the file `.github/workflows/check.yml`. GitHub calls such a file a reusable workflow, because the workflow of another repo can call it. Every repo's own workflow is a short caller, and holds no check of its own.
 
-| Job          | What it checks                                                                                                                                                                                                                                                                         | Runs on                                                              |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Quality      | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage                                                                                                                                                                                                  | Every pull request and every merge                                   |
-| Title        | The pull request's title is a Conventional Commit                                                                                                                                                                                                                                      | Pull requests                                                        |
-| Dependencies | No package the pull request adds has a known flaw                                                                                                                                                                                                                                      | Pull requests                                                        |
-| Code scan    | CodeQL finds no vulnerable pattern in our own code or in the workflows                                                                                                                                                                                                                 | Every pull request and every merge                                   |
-| Contract     | Each app of a product keeps promises 1 to 7 of [the contract](the-platform.md), on its built images, and its compose files keep the rules of the deploy and the backup                                                                                                                 | Every pull request and every merge, in a repo that has a product     |
-| Browser      | The browser tests pass in Chromium and cover 90% of the code they test: the design system's stories, in light and in dark, with no accessibility finding, and a web app's forms. Then every page of the web app passes the same accessibility check, under its content security policy | Every pull request and every merge, in a repo that has browser tests |
-| `check`      | Every job above passed. It is the gate, and the one check that `main` requires                                                                                                                                                                                                         | Every pull request and every merge                                   |
+| Job                              | What it checks                                                                                                                                                                                                                                                                         | Runs on                                                              |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Quality                          | `pnpm check`, exactly as on a laptop: lint, build, type check and tests with coverage                                                                                                                                                                                                  | Every pull request and every merge                                   |
+| Title                            | The pull request's title is a Conventional Commit                                                                                                                                                                                                                                      | Pull requests                                                        |
+| Dependencies                     | No package the pull request adds has a known flaw                                                                                                                                                                                                                                      | Pull requests                                                        |
+| Code scan                        | CodeQL finds no vulnerable pattern in our own code or in the workflows                                                                                                                                                                                                                 | Every pull request and every merge                                   |
+| Contract                         | Each app of a product keeps promises 1 to 7 of [the contract](the-platform.md), on its built images, and its compose files keep the rules of the deploy and the backup                                                                                                                 | Every pull request and every merge, in a repo that has a product     |
+| Browser                          | The browser tests pass in Chromium and cover 90% of the code they test: the design system's stories, in light and in dark, with no accessibility finding, and a web app's forms. Then every page of the web app passes the same accessibility check, under its content security policy | Every pull request and every merge, in a repo that has browser tests |
+| Mobile changes                   | Whether the pull request changes the mobile app or what it is built from. Its answer starts the two Screens jobs, or skips them                                                                                                                                                        | Pull requests, in a repo that has a mobile app                       |
+| Screens (iOS), Screens (Android) | The mobile app's screen tests pass with Maestro, on its release build, on the iOS simulator and on the Android emulator, against the API                                                                                                                                               | Pull requests that change the mobile app                             |
+| `check`                          | Every job above passed. It is the gate, and the one check that `main` requires                                                                                                                                                                                                         | Every pull request and every merge                                   |
 
 The gate sits in the caller, not in `check.yml`. It is the same few lines in every repo.
 
@@ -38,12 +40,17 @@ flowchart LR
   pipeline --> scan["Code scan"]
   pipeline --> contract["Contract"]
   pipeline --> browser["Browser"]
+  pipeline --> mobile["Mobile changes"]
+  mobile -->|"affected=true"| ios["Screens (iOS)"]
+  mobile -->|"affected=true"| android["Screens (Android)"]
   quality --> gate{check}
   title --> gate
   deps --> gate
   scan --> gate
   contract --> gate
-  stories --> gate
+  browser --> gate
+  ios --> gate
+  android --> gate
   gate -->|"green, and marked ready"| merge["Squash merge to main"]
   merge --> again["The same pipeline on main"]
 ```
@@ -53,6 +60,16 @@ On the laptop, `pnpm check` runs what the Quality job runs, and the push hook ru
 The Contract job has a machine of its own, one of GitHub's arm64 runners, because an app's image is built for arm64 only. It builds the product's images from the pull request's code, starts them, and runs `zigordev contract`. [The developer setup](../../packages/dev/README.md) says what that command does for each promise. A repo without a product does not name a product folder, and the job is skipped there.
 
 The Browser job runs inside the official Playwright image, `mcr.microsoft.com/playwright`, on the same Ubuntu as every other job and pinned by its digest. The image already holds the browsers, so no run waits for a browser download, which hung November's pipeline for 30 minutes on 2026-11-20. Its Playwright version is the one the workspace installs, and a test of `@zigordev/ui` fails when the two differ. The job builds, then runs the script `test:browser`, which runs the script of the same name in every package that has one. In toolkit, those are the design system's stories, and the template web app's browser tests and page check, as [Web apps](web-apps.md) says. In a product, they are its web app's. On the laptop, `pnpm test:browser` runs the same, after `pnpm build`, and after `pnpm exec playwright install chromium` once. A repo without browser tests leaves `browser` out, and the job is skipped there.
+
+The Screens jobs test a mobile app's screens, which take 15 to 25 minutes, so they run only on a pull request that changes the app. The Mobile changes job decides that first, on a Linux machine, with `zigordev affected`. It compares the pull request with its base. The changes reach the app when they touch its folder, a workspace package it ships with, a file it imports from outside its folder, `mise.toml`, the packages it resolves to in the lockfile, or the workflow files. [The developer setup](../../packages/dev/README.md) says how the command finds each of these. Its last line, `affected=true` or `affected=false`, starts both Screens jobs or skips them. Then each Screens job:
+
+- starts a phone: the iPhone 17 Pro simulator on macOS, or an Android 15 emulator on Linux
+- installs the workspace and builds it
+- starts a PostgreSQL of its own, which only the job can reach
+- makes a release build of the app with Expo and installs it on the phone
+- runs the script `test:screens` with `--with-api`, which migrates the API's database, starts the API, makes the test accounts and runs every flow
+
+No job uploads Maestro's output, because it keeps the test passwords, and the runner hides them in the log. [The template's README](../../template/README.md#the-mobile-app) says how to run the same on the laptop. [Record 0069](../adr/0069-the-screen-tests-run-on-pull-requests-that-change-the-mobile-app.md) holds the decision. A repo without a mobile app leaves `mobile-app` out, and the three jobs are skipped there.
 
 Nothing of the pipeline runs on the host. In a repo that publishes packages, the release follows a green `check` on `main`. In a product, two more reusable workflows follow it: `publish.yml` builds and attests the images, and `deploy.yml` asks the host to run them. [Delivery](delivery.md) explains both. They are files of their own, apart from `check.yml`, because GitHub checks every job of a called workflow against the caller's permissions when the run starts, even a job that would be skipped, and a pull request must never be granted the right to push an image.
 
@@ -82,7 +99,7 @@ On `main`, the caller starts on every push, which is every merge. A run in progr
 
 ### The machines it runs on
 
-Every job names the machine it runs on exactly: `ubuntu-26.04`, and `ubuntu-26.04-arm` for the Contract job, because an app's image is built for arm64. No job names `ubuntu-latest`.
+Every job names the machine it runs on exactly: `ubuntu-26.04`, and `ubuntu-26.04-arm` for the Contract job, because an app's image is built for arm64. No job names `ubuntu-latest`. The one job off Ubuntu is Screens (iOS), on `macos-26`, because an iOS simulator runs only on macOS. It never names `macos-latest`, as [record 0069](../adr/0069-the-screen-tests-run-on-pull-requests-that-change-the-mobile-app.md) says. GitHub runs at most 5 macOS jobs at once on the Free plan, so a sixth waits in its queue.
 
 GitHub moves `ubuntu-latest` by itself, with no pull request. On 2026-11-23 the jobs on it already ran on Ubuntu 26.04, while GitHub's own list still gave the label as 24.04. A named version moves only through Renovate's pull request, and as a major version that waits a month and for a person. The host of phase 3 runs the same version, so a build and the machine that runs it share one system. [Record 0034](../adr/0034-the-pipeline-and-the-host-run-one-named-ubuntu-lts.md) holds the decision, and `packages/dev/src/pipeline.test.ts` holds every job of `toolkit` to its label.
 
@@ -90,14 +107,15 @@ A repo's own jobs, such as the gate in its caller, name their machine the same w
 
 ### What a repo has to bring
 
-| The job      | Needs from the repo                                                                                                               |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| Quality      | `mise.toml` with the pinned tools, the lockfile, and the script `check` in `package.json`                                         |
-| Title        | `@commitlint/cli` among the dev dependencies, and the shared `.commitlintrc.json`                                                 |
-| Dependencies | The dependency graph, switched on in the repo's settings. It is off in a new repo                                                 |
-| Code scan    | Nothing. It scans the JavaScript, the TypeScript and the workflows it finds                                                       |
-| Contract     | The folder of its product, named in the caller. In that folder: `compose.yaml`, and the script `check:contract` in `package.json` |
-| Browser      | `browser: true` in the caller, and the script `test:browser` in `package.json`, which runs every package's browser tests          |
+| The job                 | Needs from the repo                                                                                                                                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Quality                 | `mise.toml` with the pinned tools, the lockfile, and the script `check` in `package.json`                                                                                                                                            |
+| Title                   | `@commitlint/cli` among the dev dependencies, and the shared `.commitlintrc.json`                                                                                                                                                    |
+| Dependencies            | The dependency graph, switched on in the repo's settings. It is off in a new repo                                                                                                                                                    |
+| Code scan               | Nothing. It scans the JavaScript, the TypeScript and the workflows it finds                                                                                                                                                          |
+| Contract                | The folder of its product, named in the caller. In that folder: `compose.yaml`, and the script `check:contract` in `package.json`                                                                                                    |
+| Browser                 | `browser: true` in the caller, and the script `test:browser` in `package.json`, which runs every package's browser tests                                                                                                             |
+| Mobile changes, Screens | The folder of its mobile app, named in the caller as `mobile-app`. In that folder: an Expo app, Maestro in its `mise.toml`, and the script `test:screens`, which takes `--with-api`. The app asks the API at `http://localhost:3000` |
 
 ## How to use it, with one worked example
 
@@ -181,16 +199,21 @@ To add a check for every repo, add a job to `check.yml` in `toolkit`. It reaches
 | Title a pull request `added things`              | Title turns red                                                                                                |
 | Add a package that has a known flaw              | Dependencies turns red, and its summary names the package and the flaw                                         |
 | Make an app print a line of plain text           | Contract turns red, and its log says which app broke promise 4, and quotes the line                            |
+| Change a screen of the mobile app                | Mobile changes ends with `affected=true` and names the file, and both Screens jobs run                         |
+| Change only a page of the docs                   | Mobile changes ends with `affected=false`, and both Screens jobs are skipped                                   |
 | Mark a green pull request ready, with auto-merge | It merges by itself, as one commit, and the same pipeline starts on `main`                                     |
 
-| What you see                                                              | What it means                                                                         | What to do                                                                                                                        |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `check` is red, and every job of the newest run is green or still running | The red `check` belongs to an older run that a newer one cancelled                    | Wait for the newest run. The link of each check names its run                                                                     |
-| Quality is red on GitHub and green on the laptop                          | The laptop runs other tool versions, or a test leans on something only the laptop has | Run `mise install` and `pnpm install`, then `pnpm check`. If it still passes, read the job's log for the test                     |
-| Dependencies fails with a 403 in a new repo                               | The dependency graph is off                                                           | The owner switches it on in the repo's settings                                                                                   |
-| Contract is red, and its log has a line that says `broken`                | An app does not keep one of the first six promises                                    | The line names the app, the promise and what was seen. `pnpm check:contract` in the product's folder shows the same on the laptop |
-| Contract is red before any line says `kept` or `broken`                   | An image did not build, or the product did not start and get healthy                  | The lines above the failure name the step. `docker compose --file compose.yaml --file compose.local.yaml build` repeats the build |
-| Dependencies names a package that the pull request did not add by name    | Another package brought it in. In a new repo that is katex, which markdownlint brings | `pnpm why <name> -r` shows what brings it in. For katex, add `katex: 0.19.1` under `overrides` in `pnpm-workspace.yaml`           |
-| `zigordev check` refuses the `uses` line                                  | It is not a 40-character commit with its version beside it                            | Take the commit from the command above, and write the version after `#`                                                           |
+| What you see                                                              | What it means                                                                         | What to do                                                                                                                                 |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `check` is red, and every job of the newest run is green or still running | The red `check` belongs to an older run that a newer one cancelled                    | Wait for the newest run. The link of each check names its run                                                                              |
+| Quality is red on GitHub and green on the laptop                          | The laptop runs other tool versions, or a test leans on something only the laptop has | Run `mise install` and `pnpm install`, then `pnpm check`. If it still passes, read the job's log for the test                              |
+| Dependencies fails with a 403 in a new repo                               | The dependency graph is off                                                           | The owner switches it on in the repo's settings                                                                                            |
+| Contract is red, and its log has a line that says `broken`                | An app does not keep one of the first six promises                                    | The line names the app, the promise and what was seen. `pnpm check:contract` in the product's folder shows the same on the laptop          |
+| Contract is red before any line says `kept` or `broken`                   | An image did not build, or the product did not start and get healthy                  | The lines above the failure name the step. `docker compose --file compose.yaml --file compose.local.yaml build` repeats the build          |
+| Dependencies names a package that the pull request did not add by name    | Another package brought it in. In a new repo that is katex, which markdownlint brings | `pnpm why <name> -r` shows what brings it in. For katex, add `katex: 0.19.1` under `overrides` in `pnpm-workspace.yaml`                    |
+| `zigordev check` refuses the `uses` line                                  | It is not a 40-character commit with its version beside it                            | Take the commit from the command above, and write the version after `#`                                                                    |
+| A Screens job is red in a flow, and the same flow passes on the laptop    | The phone of the job differs: another iOS or Android version, or a slower machine     | Maestro's lines name the step that failed. Make the flow wait for what it looks for, and never skip the flow                               |
+| A Screens job is red before the flows, and its log quotes the API         | The API did not start: its migration failed, or it stopped                            | The runner prints the API's last lines. `pnpm --dir template/apps/template-mobile run test:screens -- --with-api` repeats it on the laptop |
+| Screens (iOS) waits a long time before it starts                          | Five macOS jobs of the account already run                                            | Wait. It starts when one of them ends                                                                                                      |
 
 [How toolkit reaches the other repos](../cloud-first-deploy.md) lists every other case, the release included.
