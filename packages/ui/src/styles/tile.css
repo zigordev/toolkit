@@ -1,0 +1,42 @@
+@layer ds.components {
+  .ds-tiles {
+    display: grid;
+    gap: var(--ds-space-2);
+    margin: 0;
+  }
+
+  @media (width >= 37.5rem) {
+    .ds-tiles {
+      grid-auto-columns: minmax(0, 1fr);
+      grid-auto-flow: column;
+    }
+  }
+
+  .ds-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+    padding-block: var(--ds-space-3);
+    padding-inline: var(--ds-space-4);
+    border: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+    border-radius: var(--ds-radius-card);
+    background-color: var(--ds-color-bg-raised);
+    color: var(--ds-color-fg-default);
+  }
+
+  .ds-tile__label {
+    color: var(--ds-color-fg-muted);
+    font-size: var(--ds-font-size-sm);
+    line-height: var(--ds-font-line-height-snug);
+  }
+
+  .ds-tile__value {
+    margin: 0;
+    font-size: var(--ds-font-size-lg);
+    font-weight: var(--ds-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--ds-font-line-height-tight);
+    overflow-wrap: anywhere;
+  }
+}

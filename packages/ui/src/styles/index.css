@@ -7,6 +7,10 @@
 @import "./text-field.css";
 @import "./checkbox.css";
 @import "./alert.css";
+@import "./pill.css";
+@import "./tile.css";
+@import "./card.css";
+@import "./segmented-control.css";
 @import "./icon.css";
 @import "./app-shell.css";
 @import "./app-nav.css";

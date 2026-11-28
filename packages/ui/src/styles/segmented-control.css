@@ -1,0 +1,73 @@
+@layer ds.components {
+  .ds-segmented {
+    display: inline-flex;
+    flex: none;
+    gap: var(--ds-space-1);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    margin: 0;
+    padding: var(--ds-space-1);
+    overflow-x: auto;
+    border: 0;
+    border-radius: var(--ds-radius-button);
+    background-color: var(--ds-color-bg-sunken);
+    scrollbar-width: none;
+  }
+
+  .ds-segment {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-block-size: calc(var(--ds-size-control-sm) - 2 * var(--ds-space-1));
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--ds-space-3);
+    border: var(--ds-border-width-hairline) solid transparent;
+    border-radius: var(--ds-radius-button);
+    background-color: transparent;
+    color: var(--ds-color-fg-muted);
+    font-family: var(--ds-font-family-sans);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-semibold);
+    line-height: var(--ds-font-line-height-tight);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition-property: background-color, border-color, color;
+    transition-duration: var(--ds-duration-fast);
+    transition-timing-function: var(--ds-easing-standard);
+  }
+
+  .ds-segment:hover {
+    color: var(--ds-color-fg-default);
+  }
+
+  .ds-segment:focus-visible {
+    outline: var(--ds-focus-width) solid var(--ds-color-focus-ring);
+    outline-offset: calc(-1 * var(--ds-focus-width));
+  }
+
+  .ds-segment[aria-pressed="true"],
+  .ds-segment[aria-current="page"] {
+    border-color: var(--ds-color-border-subtle);
+    background-color: var(--ds-color-bg-raised);
+    color: var(--ds-color-fg-default);
+  }
+
+  @media (pointer: coarse) {
+    .ds-segment {
+      min-block-size: calc(var(--ds-size-control-lg) - 2 * var(--ds-space-1));
+    }
+  }
+
+  @media (forced-colors: active) {
+    .ds-segment[aria-pressed="true"],
+    .ds-segment[aria-current="page"] {
+      outline: var(--ds-border-width-thick) solid Highlight;
+      outline-offset: calc(-1 * var(--ds-border-width-thick));
+    }
+  }
+}
