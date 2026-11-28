@@ -101,7 +101,7 @@ catalogs:
     "@testcontainers/postgresql": 12.2.2
     better-auth: 1.7.28
     fastify-type-provider-zod: 7.0.0
-    lucide-react: 1.81.0
+    lucide-react: 1.82.0
     pg: 8.23.1
     pino: 10.4.0
     testcontainers: 12.2.2
